@@ -26,7 +26,7 @@ for sel, decl in re.findall(r"([^{}]+)\{([^{}]*)\}", css_nc):
         if prop == "border-radius":
             for part in val.split():
                 if not (part.startswith(("var(--r-", "var(--p-r-")) or part in ("50%", "0")): V.append(("css-radius", sel, val)); break
-LAYOUT = {"width","height","min-height","max-width","flex","gap","padding","margin","margin-top","position","left","right","top","bottom","justify-content","align-items","align-self","text-align","display"}
+LAYOUT = {"width","height","min-height","max-width","flex","gap","padding","margin","margin-top","position","left","right","top","bottom","justify-content","align-items","align-self","text-align","display","opacity"}
 classes_css = set(re.findall(r"\.([a-zA-Z][\w-]*)", css_nc))
 class P(html.parser.HTMLParser):
     def handle_starttag(self, tag, attrs):

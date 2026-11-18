@@ -232,6 +232,7 @@ def page(title, body):
 ICONS = {
  'arrow-up-right':'<path d="M7 7h10v10"/><path d="M7 17 17 7"/>',
  'arrow-down-left':'<path d="M17 7 7 17"/><path d="M17 17H7V7"/>',
+ 'arrow-right':'<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
  'arrow-left':'<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
  'check':'<path d="M20 6 9 17l-5-5"/>',
  'x':'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',

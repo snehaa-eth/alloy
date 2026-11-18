@@ -1,4 +1,35 @@
-# Alloy: component system (v3)
+# Alloy: component system (v4: "Certificate")
+
+2026-11-19. **v4 supersedes v3's visual language.** v3 was too close to a public reference design. The rules in §0 below still hold; the **look** changes as follows. Visual spec: `components-v4.html`. Source: `cards-data/system_v4.py`.
+
+| Element | v4 anatomy |
+|---|---|
+| Radii | **2px** (`--r-xs`) buttons, fields, stamps, bars · **4px** (`--r-sm`) certificates, sheets, banners, toasts · 50% avatars/logos. **No pills.** |
+| Lines | 1px hairline frames everywhere; **2px burgundy signature rule** (`--rule`, `--acc`) under every engraving |
+| Buttons | Square-edged 48px full-width primary (paper fill) with the amount on the label; secondary = same box with a hairline outline; link = underlined 12 with → in the certificate foot |
+| Stamps | Hairline-outlined 22px rectangles, mono 12 uppercase + Lucide icon, no fill (neutral / accent / warn / gold) |
+| Certificate | Head (serial + stamp) → guilloche engraving from real data → signature rule → title → mono label + **Anton** figure → alloy bar → two-field ledger → one action → foot (link + mono meta). See CARDS.md |
+| Alloy bar | Layered recipe bands (thickness = weight), jewel tone fading by rank, `--sheen` gradient; 32px default, 56px on detail, 10px in rows; before → after pairs with a diff legend |
+| Engraving | `guilloche()` in system_v4.py: wave lattice on the real price path + epitrochoid rosette + double frame; fine 0.5px strokes via `currentColor` |
+| Ledger | Two fields side by side, mono key over Inter 15/600 value, hairlines |
+| Lists | 64px row: 44px rosette tile, name + 10px alloy bar, value + signed % |
+| Tabs | Underline tabs (hairline base, 2px accent under the active one) |
+| Nav | 4 tabs; active = 2px accent rule on top |
+| Toast / banner | 4px box with a 2px left rule in the status colour |
+| Anton | The figure on the one certificate per screen, or a page headline. Never both on one screen. |
+
+**Tokens added** (TOKENS.md §6): `--r-xs` 2px, `--r-sm` 4px, `--rule` 2px, `--sheen`, `--engrave`.
+
+**Checks on wireframes-v4:**
+- consistency 0 on all three v4 pages,
+- 19/19 screens pass,
+- burgundy max 0.77%, gold max 0.34%,
+- ≤ 3 type sizes and ≤ 1 Anton element per screen,
+- all word budgets met.
+
+---
+
+# (v3) component system: rules still apply, visual language superseded by v4 above
 
 2026-11-19. Founder rule: **"Clean designs always and better UX."**
 

@@ -66,7 +66,7 @@ CARDS = [
 def cards_page():
     grid = ''.join(f'<div><p class="p-cap"><b>{i+1:02d}</b> {n}</p><div style="width:320px">{c}</div><p class="p-note">{cap}</p></div>' for i, (n, cap, c) in enumerate(CARDS))
     srcs = ' · '.join(f"{k} {v['series'][0][0]}→{v['series'][-1][0]}" for k, v in FEEDS.items())
-    body = f'''<header class="p-head"><div class="p-wrap"><h1 class="p-h1">Ten cards, one shape.</h1>
+    body = f'''<header class="p-head"><div class="p-wrap"><h1 class="p-h1">Cards v3 (superseded)</h1><p class="p-lede">Retired 2026-11-19: too close to a public reference design. Use cards-v4.html (the Alloy register).</p>
 <p class="p-lede">Every card: real-data dot art in the basket's jewel tone → mono tag + meta → one context line → ONE number → one or two fact rows → one action and one quiet link. Colour says which basket; the tag says what kind. Built only from components-v3.</p>
 <ul class="p-idx"><li><a href="components-v3.html">Components v3</a></li><li><a href="wireframes-v3.html">Wireframes v3</a></li><li><a href="CARDS.md">CARDS.md</a></li></ul></div></header>
 <section class="p-sec"><div class="p-wrap"><div class="p-grid">{grid}</div>

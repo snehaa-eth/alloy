@@ -216,6 +216,10 @@ Minimum body size on mobile is 15px. Legal text is never smaller than 11px.
 
 - **Spacing (4-pt):** 4, 8, 12, 16, 20, 24, 32, 40, 56, 80. The mobile gutter is 16. Card padding is 16 on mobile and 24 on desktop.
 - **Radius:** 4 (chips, inputs), 12 (cards), 20 (bottom sheets, top corners only), 999 (pills).
+  - **v4 "Certificate" (current):** `--r-xs` **2px** for buttons, fields, stamps and bars; `--r-sm` **4px** for certificates, sheets, banners and toasts; 50% for avatars and logos. No pills.
+  - **Lines:** `--rule` 2px burgundy signature rule (`--acc`) under engravings; hairline 1px `--bd` frames.
+  - **Sheen:** `--sheen` rgba(242,240,237,.28) for alloy-bar metal.
+  - **Engrave:** `--engrave` .55 stroke opacity for guilloche.
   - Square-ish corners keep it editorial. Avoid bubbly 24+ radii.
 - **Elevation:** none in dark mode. Use surface steps plus a 1px border.
   - Light mode: `0 1px 2px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.06)` for sheets only.

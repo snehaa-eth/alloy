@@ -1,6 +1,95 @@
+# Alloy: certificate system (v4)
+
+2026-11-19. **v4 replaces v3.** The founder flagged v3 (cards-v3.html) as too close to "Penny" by @Tobi_Builder, a public design in our builder community. The rounded black card, dot-matrix wave, mono tag chip, big number with two fact rows, white pill with a quiet link, captions under each card, and the "N cards, one shape" title were all too close. We kept only the **principle** (one consistent anatomy, few words, one action) and rebuilt the visual language as Alloy's own.
+
+v3 files are kept for history only; don't build from them.
+
+- Visual: `cards-v4.html` ("The Alloy register").
+- Components: `components-v4.html` and COMPONENTS.md §v4.
+- Screens: `wireframes-v4.html`.
+- Builder: `cards-data/build_v4.py` + `cards-data/system_v4.py`.
+
+## 1. The idea
+Tokenized stocks are digital share certificates, so Alloy's documents look like **certificates**: engraved, framed, numbered, square-cornered. The recipe is shown as an **alloy bar**, a cross-section of layered metal bands, one per stock, with thickness equal to its weight.
+
+## 2. Certificate anatomy (fixed order)
+
+| # | Part | Spec |
+|---|---|---|
+| 1 | **Head** | 36px. Mono serial left (`No. 1591 · AIB`, derived from a hash of the basket's real series), **stamp** right: a hairline-outlined rectangle, mono 12 uppercase + Lucide icon, no fill. Hairline below. |
+| 2 | **Engraving** | 104px **guilloche** generated in SVG from the basket's **real data**: <ul><li>two crossing wave-lattice families whose centre line follows the real price path, with amplitude set by daily volatility;</li><li>an epitrochoid **rosette** whose loop count = 5 + 2 × stocks and whose inner ring harmonic follows the top weight;</li><li>a double hairline frame with corner rings.</li></ul>Fine 0.5px lines in the basket's jewel tone. Unique and reproducible per basket. |
+| 3 | **Signature rule** | 2px burgundy accent (`--acc`) under the engraving, on every certificate. |
+| 4 | **Title** | Inter 15/600: the basket (or instrument subject). |
+| 5 | **Figure** | Mono label (uppercase) over **Anton 32** figure + mono unit. The one Anton element on the screen. |
+| 6 | **Alloy bar** | Optional. 32px layered bands (thickness = weight, jewel tone fading by rank, metallic sheen). A **pair** (now → after, same band order, diff legend) on amendments and receipts. |
+| 7 | **Ledger** | Exactly two engraved fields side by side: mono key over Inter 15/600 value, hairline top/bottom, vertical hairline between. |
+| 8 | **Action** | One **square-edged** (2px) full-width primary, or one secondary outline for read-only instruments. |
+| 9 | **Foot** | 36px, hairline above: underlined link with → on the left, mono meta (countdown, date, creator) on the right. |
+
+- **Box:** `--s1`, 1px `--bd`, **4px** radius.
+- **In sheets:** `c-cert--flat` drops the box.
+- **In lists:** a 64px row with a 44px rosette tile + a slim 10px alloy bar.
+- **Budget:** ≤ 16 words per certificate (excluding numbers, tickers, quotes and links).
+- **Rule:** one full certificate per screen; anything else is a row.
+
+## 3. The ten instruments
+
+| No. | Instrument | Stamp | Figure | Ledger | Action · link |
+|---|---|---|---|---|---|
+| I-01 | Holding | BASKET | $8.86 value per token | Since Aug 21 ▼ −11.4% · Creator in $1.2k · 28% (gold) | Buy · See inside → |
+| I-02 | Buy order | BUY | $25.00 you pay | You get ≈ 2.82 AIB · Cost ≈ $0.03 | Buy $25 · Change amount → |
+| I-03 | Redemption | EXIT | $37.92 USDC | You keep $88.48 · Cost ≈ $0.05 | Sell 30% · Get the stocks instead → |
+| I-04 | Amendment notice | CHANGE (accent) | ≈ $14 of yours that moves | Runs Fri 9:45 PM · Reason (quoted) | Keep my basket · Exit before it runs → |
+| I-05 | Rebalance receipt | TRIM | $0.06 your cost | Moved NVDA 27.6 → 30% · Reason 7.4 pts under (real drift) | See the trade (secondary) |
+| I-06 | Held voucher | HELD (gold) | $17.38 value held | Amount 0.0651 · Network fee On us | Claim · Why held → |
+| I-07 | Guard notice | WAITING (warn) | 3h 12m to open | Why Market closed · Sell fills now ~0.8% lower | Get the stocks · Sell anyway → |
+| I-08 | Founding certificate | FOUNDING (gold) + TEST mark | #212 | Issued Nov 19, 2026 · Holder @asha | Share on X · Save image → |
+| I-09 | Weekly statement | STATEMENT | −$4.16 on $126 (real 5-day move) | Trims · Change | See the week (secondary) |
+| I-10 | Creator amendment | PROPOSE | 212 followers notified | Notice 24h · Reason | Send 24h notice · Preview follower view → |
+
+## 4. Difference audit vs the reference ("Penny", tobi-small.jpg)
+
+| Element | Reference | Alloy v4 | Different? |
+|---|---|---|---|
+| Card shape | Large rounded corners (~16–20px), soft black card | **4px** corners, hairline frame, a ruled head band and foot band | ✅ |
+| Header art | Dot-matrix / dithered wave, one colour | **Guilloche engraving** (crossing line lattice + epitrochoid rosette + double frame) in fine strokes, seeded by real data | ✅ |
+| Header-to-body join | Art fades into the card | **2px burgundy signature rule** under every engraving | ✅ |
+| Top-left mark | Coloured circular app/crew icon over the art | **No icon over the art**; the identity is a mono **serial** in a head band | ✅ |
+| Tag | Filled rounded chip with icon, inside the body | **Hairline stamp** (no fill, square) in the head band, opposite the serial | ✅ |
+| Number | Large sans (Inter-like) | **Anton** condensed figure over a mono uppercase label | ✅ |
+| Facts | 1–2 full-width key/value rows with hairlines | **Two-field ledger** side by side (key over value) | ✅ |
+| Extra layer | — | **Alloy bar** (layered recipe bands, before → after pairs) | ✅ new |
+| Primary button | White **pill** with icon ("Approve with Face ID") | **Square-edged** full-width block, label carries the amount | ✅ |
+| Secondary | Centred "View details ›" text | **Foot band**: underlined link with → left, mono meta right | ✅ |
+| Presentation | 2×4 grid, numbered labels above, caption sentence under every card, headline "Eight cards, one shape." | **Register layout**: one instrument per row with code (I-01), Anton name, purpose, the certificate, and an "Issued when / Action / Data" field list. Headline: **"The Alloy register."** No "N cards, one shape" phrasing anywhere. | ✅ |
+| Names | Invest, Send, Pay a bill, Request, Errand, Guard, Pick, Weekly check-in | Holding, Buy order, Redemption, Amendment notice, Rebalance receipt, Held voucher, Guard notice, Founding certificate, Weekly statement, Creator amendment (finance-document vocabulary) | ✅ |
+| Lists | — | 64px rows with a rosette tile + slim alloy bar (a full certificate is never repeated in a list) | ✅ |
+| Tabs / nav | — | Underline tabs and a top-rule nav indicator (no pill tracks) | ✅ |
+
+**Shared on purpose (generic principles, not visual expression):** dark surfaces, one primary action per surface, a small amount of text, one emphasised number. These are standard fintech practice and our own written principles (COPY.md word budgets, UX_MAP P-1).
+
+## 5. Real data
+The data is unchanged from v3:
+- Base mainnet Chainlink feeds → `cards-data/feeds.json` (Aug 20 to Nov 18, 2026, ~63 daily closes per stock; all 8 feeds answered).
+- Weighted indices → `cards-data/baskets.json`.
+
+Engravings, serials, alloy bars, drift and the weekly move all come from these files. Stakes, holder amounts and counts are illustrative.
+
+## 6. Regenerate
+```
+cd docs/design/cards-data
+python3 -I fetch_feeds.py && python3 -I build_series.py   # data
+python3 -I build_v4.py                                     # components-v4, cards-v4, wireframes-v4
+python3 -I check_consistency.py ../wireframes-v4.html
+node check_render.mjs file://$PWD/../wireframes-v4.html x /tmp/c.json && python3 -I inject_checks.py /tmp/c.json ../wireframes-v4.html
+```
+
+---
+
+# (History) v3 card system: superseded, too close to the reference
 # Alloy: card system (v3)
 
-"Ten cards, one shape." Visual: `cards-v3.html`. Reference studied: "Penny" by @Tobi_Builder ("Eight cards, one shape"). We borrowed the discipline, not the look.
+Visual: `cards-v3.html` (retired). It followed a reference too closely; see the v4 audit above.
 
 Cards are compositions of components (COMPONENTS.md). Builder: `cards-data/build_v3.py`.
 

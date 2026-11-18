@@ -1,0 +1,530 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Alloy Idea 01</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+  html, body { margin: 0; padding: 0; background: #0A0A0A; }
+  #stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #0A0A0A;
+    font-feature-settings: "tnum" 1, "cv11" 1, "ss01" 1; -webkit-font-smoothing: antialiased; }
+  #stage div, #stage span { box-sizing: border-box; }
+  .abs { position: absolute; }
+  canvas { position: absolute; left: 0; top: 0; }
+  #vig { position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse 75% 60% at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,.18) 100%); }
+  img { display: block; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="world" class="abs" style="inset:0"></div>
+  <div id="vig"></div>
+  <canvas id="grain" width="1080" height="1920"></canvas>
+</div>
+<script>
+// =====================================================================================================
+// ALLOY IDEA 01 "Which stocks?" — 780 frames @ 30 fps, 120 BPM grid (1 beat = 15 f, 1 bar = 60 f).
+// Every frame is a pure function of the frame number (seeded randomness, no clock).
+// UI is the interim "editorial" look (cover + Inter name + one Anton number + recipe strip, 4px corners,
+// hairline borders, square-edged off-white button). Not the cards-v3 look.
+// =====================================================================================================
+window.DURATION = 26; window.FPS = 30;
+const C = {bg:'#0A0A0A', paper:'#F2F0ED', t2:'#9A9894', t3:'#C9C7C3', acc:'#C41A42', brand:'#6D001A', b700:'#8C1230',
+  gold:'#C9A96E', warn:'#F2B33D', s1:'#141416', s2:'#1C1C1F', sheet:'#0F0F10', i800:'#26262A', i700:'#3A3A40', i600:'#6B6B70'};
+const TONE = {sapp:['#10223F','#3E6FB8'], emer:['#0F2E24','#2E8B6A'], amb:['#3A2A08','#C98A2E'], plum:['#2A1433','#8E5BA6'], burg:['#3A0010','#B5304F']};
+const INTER = "'Inter'", ANTON = "'Anton'";
+const CX = 510;
+// cards-data/baskets.json (The AI Build-Out recipe + its real buy-and-hold index series)
+const AIB = {name: 'The AI Build-Out', line: 'Chips and the clouds renting them', cover: 'ai-build-out', tone: 'sapp',
+  recipe: [['NVDA', 35], ['MSFT', 25], ['GOOGL', 20], ['AMZN', 12], ['META', 8]]};
+const SERIES = [100.0, 99.46, 100.12, 101.74, 103.07, 102.71, 102.25, 101.06, 102.22, 104.08, 104.64, 102.93, 102.21, 101.05, 102.03, 102.27, 101.48, 101.3, 102.89, 102.72, 105.31, 105.65, 104.61, 104.03, 105.56, 104.92, 105.63, 106.41, 105.78, 107.27, 108.58, 109.18, 108.65, 107.01, 108.08, 108.3, 108.82, 106.36, 105.8, 103.72, 105.48, 105.0, 105.01, 101.2, 101.07, 101.48, 102.22, 100.66, 97.7, 96.39, 96.13, 97.9, 99.89, 93.43, 95.54, 95.94, 93.61, 91.63, 93.08, 92.27, 90.09, 89.94, 88.62];
+const CAROUSEL = [
+  {name: 'Space Race', line: 'Launch, satellites, defence', cover: 'space-race', tone: 'plum'},
+  {name: 'Picks & Shovels', line: 'Chips, power, tooling', cover: 'picks-shovels', tone: 'amb'},
+  {name: 'Big Tech, Trimmed', line: 'Megacaps, equal-weighted', cover: 'big-tech', tone: 'emer'},
+  AIB,
+];
+
+// ---------------------------------------------------------------- utils
+function mulberry(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function bez(x1, y1, x2, y2) {
+  return function (x) {
+    if (x <= 0) return 0; if (x >= 1) return 1;
+    let t = x;
+    for (let i = 0; i < 12; i++) {
+      const cx = 3 * x1 * t * (1 - t) * (1 - t) + 3 * x2 * t * t * (1 - t) + t * t * t - x;
+      const d = 3 * x1 * (1 - t) * (1 - 3 * t) + 3 * x2 * t * (2 - 3 * t) + 3 * t * t;
+      if (Math.abs(d) < 1e-6) break; t -= cx / d; t = Math.min(1, Math.max(0, t));
+    }
+    return 3 * y1 * t * (1 - t) * (1 - t) + 3 * y2 * t * t * (1 - t) + t * t * t;
+  };
+}
+const easeOut = bez(0.2, 0.8, 0.2, 1), easeIn = bez(0.4, 0, 1, 1), easeInOut = bez(0.65, 0, 0.35, 1);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lin = (f, a, b) => clamp((f - a) / (b - a));
+const mix = (a, b, p) => a + (b - a) * p;
+function hexMix(a, b, p) {
+  const pa = [1, 3, 5].map((i) => parseInt(a.substr(i, 2), 16)), pb = [1, 3, 5].map((i) => parseInt(b.substr(i, 2), 16));
+  return '#' + pa.map((v, i) => Math.round(mix(v, pb[i], p)).toString(16).padStart(2, '0')).join('');
+}
+// critically-damped-ish spring (no overshoot): returns progress 0..1 after n frames
+function spring(n, k, c) { let x = 0, v = 0; const dt = 1 / 30; for (let i = 0; i < n; i++) { v += (k * (1 - x) - c * v) * dt; x += v * dt; } return Math.min(1, x); }
+
+// word registry (headline + caption words on screen this frame)
+let WORDS = 0;
+const countWords = (s) => s.replace(/<[^>]+>/g, ' ').trim().split(/\s+/).filter(Boolean).length;
+
+// generic text. x=null → centred in the live box (x 60–960); otherwise left-aligned at x. y = vertical centre.
+function T(s, o) {
+  const {x = null, y, font = INTER, w = 600, size, color = C.paper, ls = 0, scale = 1, op = 1, lh = 1.1, tx = 0, ty = 0, wrap = false, extra = ''} = o;
+  const pos = x === null ? `left:60px;width:900px;text-align:center;transform-origin:50% 50%;` : `left:${x}px;transform-origin:0 50%;`;
+  return `<div class="abs" style="${pos}top:${y}px;white-space:${wrap ? 'normal' : 'pre'};font-family:${font};font-weight:${w};font-size:${size}px;line-height:${lh};letter-spacing:${ls}em;color:${color};opacity:${op};transform:translate(${tx}px,calc(-50% + ${ty}px)) scale(${scale});${extra}">${s}</div>`;
+}
+// one Anton headline per shot
+function H(s, y, size, o = {}) { WORDS += countWords(s); return T(s, {y, font: ANTON, w: 400, size, lh: 0.9, ls: 0.005, wrap: true, ...o}); }
+// caption
+function Cap(s, y, o = {}) { WORDS += countWords(s); return T(s, {y, size: 40, w: 500, color: C.t3, ...o}); }
+function step(n, y, headline, size) {
+  // small step marker left of the headline's first line
+  return T(String(n), {x: 66, y: y, size: 40, w: 600, color: C.t2});
+}
+function wrapCam(html, cam = {}) {
+  const {s = 1, tx = 0, ty = 0, r = 0} = cam;
+  return `<div class="abs" style="inset:0;transform-origin:510px 890px;transform:translate(${tx}px,${ty}px) rotate(${r}deg) scale(${s})">${html}</div>`;
+}
+const ICON_PLUS = `<svg width="26" height="26" viewBox="0 0 26 26" style="display:inline-block;vertical-align:-3px;margin-right:12px"><path d="M13 3V23M3 13H23" stroke="currentColor" stroke-width="3"/></svg>`;
+const ICON_CHECK = `<svg width="26" height="26" viewBox="0 0 26 26" style="display:inline-block;vertical-align:-3px;margin-right:12px"><path d="M3 13.5L10 20.5L23 5.5" stroke="currentColor" stroke-width="3" fill="none"/></svg>`;
+
+// ---------------------------------------------------------------- editorial basket composition
+// cover (900x506, 4px corners, hairline) + name/line on a bottom scrim; below: one Anton number + label; recipe strip.
+const COMP_Y = 500;       // cover top
+const STRIP_Y = 1206;     // strip top
+function cover(b, x, y, w, h, extraStyle = '') {
+  return `<div class="abs" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px;border-radius:4px;overflow:hidden;border:1px solid ${C.i800};${extraStyle}">
+    <img src="assets/${b.cover}.webp" style="width:100%;height:100%;object-fit:cover">
+    <div class="abs" style="left:0;right:0;bottom:0;height:60%;background:linear-gradient(180deg, rgba(10,10,10,0) 0%, rgba(10,10,10,.82) 100%)"></div></div>`;
+}
+function bandColors(tone, n) {
+  const [deep, mid] = TONE[tone];
+  return Array.from({length: n}, (_, i) => hexMix(mid, deep, n === 1 ? 0 : (i / (n - 1)) * 0.62));
+}
+function stripHTML(b, y, {x = 60, w = 900, h = 16, grow = 1} = {}) {
+  const cols = bandColors(b.tone, b.recipe.length);
+  let acc = 0, out = '';
+  b.recipe.forEach(([t, wt], i) => {
+    const bx = x + (acc / 100) * w, bw = (wt / 100) * w - 4;
+    out += `<div class="abs" style="left:${bx}px;top:${y}px;width:${Math.max(0, bw * grow)}px;height:${h}px;background:${cols[i]};border-radius:1px"></div>`;
+    acc += wt;
+  });
+  return out;
+}
+// label targets for the strip (staggered above/below so narrow bands still read)
+function stripLabelTargets(b, y, x = 60, w = 900) {
+  let acc = 0; const out = [];
+  b.recipe.forEach(([t, wt], i) => {
+    const bx = x + (acc / 100) * w;
+    const above = i % 2 === 0;
+    let lx = bx;
+    if (i === b.recipe.length - 1) lx = Math.min(bx, 960 - 96);      // keep the last label inside the live box
+    out.push({t, x: lx, y: above ? y - 30 : y + 16 + 32});
+    acc += wt;
+  });
+  return out;
+}
+function compHTML(b, {full = true, labels = true, scale = 1, op = 1} = {}) {
+  let h = `<div class="abs" style="left:${CX - 1020}px;top:${COMP_Y + 253 - 560}px;width:2040px;height:1120px;background:radial-gradient(closest-side, rgba(109,0,26,.35), rgba(109,0,26,0))"></div>`;
+  h += cover(b, 60, COMP_Y, 900, 506);
+  h += T(b.name, {x: 96, y: COMP_Y + 506 - 104, size: 52, w: 600});
+  h += T(b.line, {x: 96, y: COMP_Y + 506 - 50, size: 34, w: 500, color: C.t3});
+  if (full) {
+    h += T('5', {x: 60, y: COMP_Y + 506 + 62, font: ANTON, w: 400, size: 120, lh: 0.9});
+    h += T('stocks · Balanced', {x: 140, y: COMP_Y + 506 + 76, size: 34, w: 500, color: C.t3});
+    h += stripHTML(b, STRIP_Y);
+    if (labels) stripLabelTargets(b, STRIP_Y).forEach((l) => { h += T(l.t, {x: l.x, y: l.y, size: 30, w: 600}); });
+  }
+  return `<div class="abs" style="inset:0;transform-origin:510px 830px;transform:scale(${scale});opacity:${op}">${h}</div>`;
+}
+
+// ---------------------------------------------------------------- S1 ticker wall
+const WALL_TICKERS = ['NVDA','AMD','AVGO','TSM','MSFT','GOOGL','META','AMZN','ORCL','ARM','SMCI','PLTR','MU','ASML','DELL','INTC','ANET','VRT','CRWV','SNOW',
+  'QCOM','MRVL','CRM','ADBE','NOW','IBM','AAPL','TSLA','LRCX','AMAT','KLAC','CDNS','SNPS','PANW','CRWD','NET','DDOG','MDB','HPE','CSCO','TXN','ON'];
+let WALL = null;
+function buildWall() {
+  const R = mulberry(2026), cols = 5, rows = 9;
+  const cells = [];
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) cells.push([c, r]);
+  // shuffle cells, but force the five basket tickers into the middle rows/cols (inside the live box)
+  for (let i = cells.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [cells[i], cells[j]] = [cells[j], cells[i]]; }
+  const basket = ['NVDA', 'MSFT', 'GOOGL', 'AMZN', 'META'];
+  const inner = cells.filter(([c, r]) => c >= 1 && c <= 3 && r >= 2 && r <= 6);
+  const used = new Set();
+  WALL = [];
+  const place = (t, cell) => {
+    used.add(cell.join(','));
+    const [c, r] = cell;
+    WALL.push({t, x: 40 + c * 205 + R() * 50, y: 60 + r * 222 + R() * 70, size: 56 + Math.floor(R() * 41), basket: basket.includes(t)});
+  };
+  basket.forEach((t, i) => place(t, inner[i]));
+  let k = 0;
+  for (const cell of cells) {
+    if (used.has(cell.join(','))) continue;
+    while (basket.includes(WALL_TICKERS[k])) k++;
+    if (k >= WALL_TICKERS.length) break;
+    place(WALL_TICKERS[k++], cell);
+  }
+}
+function wallPos(q, f) { return {x: q.x, y: q.y - 1.5 * Math.min(f, 59)}; }
+function S1(f) {
+  if (!WALL) buildWall();
+  const nFlash = f >= 30 ? 6 : 3, R = mulberry(7000 + Math.floor(f / 2));
+  const flash = new Set();
+  const eligible = WALL.map((q, i) => i).filter((i) => { const p = wallPos(WALL[i], f); return p.x > 80 && p.x < 820 && p.y > 180 && p.y < 1600; });
+  for (let i = 0; i < nFlash; i++) flash.add(eligible[Math.floor(R() * eligible.length)]);
+  let h = '';
+  WALL.forEach((q, i) => { const p = wallPos(q, f); h += T(q.t, {x: p.x, y: p.y, size: q.size, w: 600, color: flash.has(i) ? C.t2 : C.i700}); });
+  // ink plate behind the headlines
+  h += `<div class="abs" style="left:${CX - 640}px;top:${880 - 480}px;width:1280px;height:960px;background:radial-gradient(closest-side, rgba(10,10,10,.85) 60%, rgba(10,10,10,0))"></div>`;
+  h += H('EVERYONE SAYS<br>BUY AI.', 760, 150);
+  if (f >= 30) h += H('WHICH STOCKS?', 1060, 150, {scale: f - 30 < 3 ? mix(1.06, 1, (f - 30) / 3) : 1});
+  // headline words: H() counted both; only the visible headline lines count (one headline block per shot, two beats)
+  let cam = {};
+  if (f >= 30) { const r = mulberry(8000 + f); cam.tx = (r() * 2 - 1) * 3; cam.ty = (r() * 2 - 1) * 3; }
+  if (f >= 52) cam.s = mix(1, 1.03, easeIn(lin(f, 52, 60)));
+  return wrapCam(h, cam);
+}
+
+// ---------------------------------------------------------------- S2 the turn
+function S2(f) {
+  if (!WALL) buildWall();
+  let h = '';
+  const targets = Object.fromEntries(stripLabelTargets(AIB, STRIP_Y).map((l) => [l.t, l]));
+  // the card lands at f66
+  if (f >= 66) {
+    const sc = f - 66 < 6 ? mix(1.04, 1, easeOut((f - 66) / 6)) : 1;
+    h += compHTML(AIB, {labels: false, scale: sc});
+  }
+  const n = f - 60;
+  const sp = spring(n, 400, 38);
+  WALL.forEach((q) => {
+    const p0 = wallPos(q, 59);
+    if (q.basket) {
+      const tg = targets[q.t];
+      // centre of text block moves to target; font size eases to the label size
+      const x = mix(p0.x, tg.x, sp), y = mix(p0.y, tg.y, sp), size = mix(q.size, 30, sp);
+      h += T(q.t, {x, y, size, w: 600, color: hexMix(C.i700, C.paper, clamp(n / 4))});
+    } else if (n < 11) {
+      const pc = easeOut(lin(n, 0, 6));
+      const x = mix(p0.x, CX - 60, pc * 0.5), y = mix(p0.y, 900, pc * 0.35) + easeIn(lin(n, 0, 10)) * 1300;
+      h += T(q.t, {x, y, size: q.size, w: 600, color: C.i700, op: 1 - n / 10});
+    }
+  });
+  if (f >= 90) h += H('BUY THE<br>WHOLE IDEA.', 290, 140);
+  return wrapCam(h, {s: f >= 66 ? mix(1, 1.025, lin(f, 66, 120)) : 1});
+}
+
+// ---------------------------------------------------------------- S3 pick a story (carousel, one per beat)
+function S3(f) {
+  let h = '';
+  const idx = Math.min(3, Math.floor((f - 120) / 15)), fs = 120 + idx * 15;
+  const p = easeOut(lin(f, fs, fs + 6));
+  const cur = CAROUSEL[idx];
+  const prevHTML = idx === 0 ? compHTML(AIB, {}) : compHTML(CAROUSEL[idx - 1], {full: false});
+  const curHTML = compHTML(cur, {full: idx === 3, labels: idx === 3});
+  if (p < 1) {
+    for (let k = 1; k <= 4; k++) {
+      const pk = easeOut(lin(f - k * 0.5, fs, fs + 6));
+      h += `<div class="abs" style="inset:0;opacity:.12;transform:translateX(${1080 * (1 - pk)}px)">${curHTML}</div>`;
+    }
+    h += `<div class="abs" style="inset:0;transform:translateX(${-1080 * p}px)">${prevHTML}</div>`;
+  }
+  h += `<div class="abs" style="inset:0;transform:translateX(${1080 * (1 - p)}px)">${curHTML}</div>`;
+  // tap ring on the final pick
+  if (f >= 165 && f < 176) {
+    const r = mix(0, 80, (f - 165) / 10), op = 1 - (f - 165) / 11;
+    h += `<div class="abs" style="left:${CX - r}px;top:${COMP_Y + 253 - r}px;width:${2 * r}px;height:${2 * r}px;border:2px solid ${C.acc};border-radius:50%;opacity:${op}"></div>`;
+  }
+  h += step(1, 300) + H('PICK A STORY.', 300, 120);
+  return wrapCam(h, {});
+}
+
+// ---------------------------------------------------------------- S4–S5 buy sheet → success → token unfolds
+const SHEET_TOP = 560;
+function sheetY(f) { return mix(1920, SHEET_TOP, spring(f - 180, 520, 46)); }
+function bars(f, weights, {appear = null} = {}) {
+  // rows: ticker | pct | bar (x 290, 16 px per %)
+  let h = '';
+  AIB.recipe.forEach(([t], i) => {
+    const y = 860 + i * 58;
+    let g = 1;
+    if (appear !== null) { const fa = appear + i * 3; if (f < fa) return; g = easeOut(lin(f, fa, fa + 4)); }
+    const w = weights[i];
+    h += T(t, {x: 60, y, size: 36, w: 600, op: g});
+    h += T(`${Math.round(w)}%`, {x: 190, y, size: 36, w: 600, color: C.t3, op: g, extra: 'width:92px;text-align:right;'});
+    h += `<div class="abs" style="left:300px;top:${y - 18}px;width:${w * 16 * g}px;height:36px;background:${TONE.sapp[1]};opacity:.7;border-radius:2px"></div>`;
+  });
+  return h;
+}
+const W0 = AIB.recipe.map(([, w]) => w);
+function weightsAt(nvda) { const rest = 100 - nvda; return W0.map((w, i) => i === 0 ? nvda : w * rest / 65); }
+function S4(f) {
+  let h = '';
+  // the selected comp shrinks away while the sheet rises
+  if (f < 188) h += compHTML(AIB, {scale: mix(1, 0.6, easeIn(lin(f, 180, 188))), op: 1 - lin(f, 180, 188)});
+  const sy = sheetY(f), dy = sy - SHEET_TOP;
+  let s = `<div class="abs" style="left:0;top:${sy}px;width:1080px;height:${1920 - sy + 40}px;background:${C.sheet};border-top:1px solid ${C.i800};border-radius:4px 4px 0 0"></div>`;
+  let c = '';
+  c += cover(AIB, 90, 612, 64, 64);
+  c += T('Buy The AI Build-Out', {x: 178, y: 644, size: 44, w: 600});
+  const amt5 = lin(f, 195, 199);
+  c += T('$0', {y: 830, font: ANTON, w: 400, size: 200, lh: 0.9, op: 1 - amt5});
+  c += T('$5', {y: 830, font: ANTON, w: 400, size: 200, lh: 0.9, op: amt5});
+  const presets = ['$5', '$25', '$100'];
+  presets.forEach((p, i) => {
+    const x = CX - 300 + i * 210, on = i === 0 && f >= 195;
+    c += `<div class="abs" style="left:${x}px;top:${1000 - 42}px;width:180px;height:84px;border:1px solid ${on ? C.paper : C.i600};background:${on ? C.paper : 'transparent'};border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:${INTER};font-weight:600;font-size:40px;color:${on ? C.bg : C.paper}">${p}</div>`;
+  });
+  if (f >= 195 && f < 206) {
+    const r = mix(0, 80, (f - 195) / 10), op = 1 - (f - 195) / 11;
+    c += `<div class="abs" style="left:${CX - 210 - r}px;top:${1000 - r}px;width:${2 * r}px;height:${2 * r}px;border:2px solid ${C.acc};border-radius:50%;opacity:${op}"></div>`;
+  }
+  const ready = f >= 195;
+  const hold = lin(f, 210, 229);
+  c += `<div class="abs" style="left:90px;top:1132px;width:840px;height:96px;background:${ready ? C.paper : C.s2};border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-family:${INTER};font-weight:600;font-size:40px;color:${ready ? C.bg : C.t2}">${ready ? 'Hold to buy $5' : 'Choose an amount'}
+    <div class="abs" style="left:0;bottom:0;height:8px;width:${840 * hold}px;background:${C.acc}"></div></div>`;
+  c += T('Tokenized stock exposure, not shares.', {y: 1292, size: 28, w: 500, color: C.t2});
+  s += `<div class="abs" style="inset:0;transform:translateY(${dy}px)">${c}</div>`;
+  h += s;
+  h += step(2, 300) + H('START WITH $5.', 300, 120);
+  return wrapCam(h, {});
+}
+function goldRing(f, f0, cy) {
+  const r = 66, circ = 2 * Math.PI * r, p = easeInOut(lin(f, f0, f0 + 18)), pc = easeOut(lin(f, f0 + 14, f0 + 20)), cl = 100;
+  return `<svg class="abs" style="left:${CX - 74}px;top:${cy - 74}px" width="148" height="148" viewBox="0 0 148 148">
+    <circle cx="74" cy="74" r="${r}" fill="none" stroke="${C.gold}" stroke-width="8" stroke-dasharray="${circ}" stroke-dashoffset="${circ * (1 - p)}" transform="rotate(-90 74 74)"/>
+    <path d="M45 76 L66 96 L104 54" fill="none" stroke="${C.paper}" stroke-width="8" stroke-dasharray="${cl}" stroke-dashoffset="${cl * (1 - pc)}"/></svg>`;
+}
+function S5(f) {
+  let h = `<div class="abs" style="left:0;top:${SHEET_TOP}px;width:1080px;height:1400px;background:${C.sheet};border-top:1px solid ${C.i800};border-radius:4px 4px 0 0"></div>`;
+  h += goldRing(f, 240, 630);
+  h += T(`You're in.`, {y: 760, size: 64, w: 600}); WORDS += 2;
+  if (f >= 255 && f < 264) {
+    const op = f < 262 ? 1 : 1 - (f - 262) / 2;
+    h += `<div class="abs" style="left:${CX - 70}px;top:${860 - 36}px;width:140px;height:72px;background:${TONE.sapp[0]};border:1px solid ${TONE.sapp[1]};border-radius:4px;opacity:${op};display:flex;align-items:center;justify-content:center;font-family:${INTER};font-weight:600;font-size:40px;color:${C.paper}">AIB</div>`;
+  }
+  h += bars(f, W0, {appear: 262});
+  h += f < 270 ? (step(2, 300) + H('START WITH $5.', 300, 120)) : H('ONE TOKEN.<br>FIVE STOCKS.', 290, 120);
+  return wrapCam(h, {});
+}
+
+// ---------------------------------------------------------------- S6–S7 drift and trim
+function S6(f) {
+  const nv = mix(35, 41, easeInOut(lin(f, 305, 335)));
+  let h = bars(f, weightsAt(nv));
+  // band edge at 40% on the NVDA row
+  const pulse = f >= 335 && f < 341 ? [1, .7, .4, .4, .7, 1][f - 335] : 1;
+  h += `<svg class="abs" style="left:${300 + 40 * 16 - 1}px;top:${860 - 34}px" width="2" height="68"><line x1="1" y1="0" x2="1" y2="68" stroke="${C.warn}" stroke-width="2" stroke-dasharray="8 6" opacity="${pulse}"/></svg>`;
+  h += step(3, 300) + H('PRICES DRIFT.', 300, 120);
+  return wrapCam(h, {s: mix(1, 1.015, lin(f, 300, 360))});
+}
+function S7(f) {
+  const nv = mix(41, 40, easeInOut(lin(f, 360, 381)));
+  let h = bars(f, weightsAt(nv));
+  h += `<svg class="abs" style="left:${300 + 40 * 16 - 1}px;top:${860 - 34}px" width="2" height="68"><line x1="1" y1="0" x2="1" y2="68" stroke="${C.warn}" stroke-width="2" stroke-dasharray="8 6"/></svg>`;
+  if (f >= 375) {
+    const p = easeOut(lin(f, 375, 381));
+    h += `<div class="abs" style="left:60px;top:${1180 + 60 * (1 - p)}px;width:900px;height:280px;background:${C.s1};border:1px solid ${C.i800};border-radius:4px;opacity:${p}">
+      <div class="abs" style="left:40px;top:36px;font-family:${INTER};font-weight:500;font-size:30px;color:${C.t2}">Back inside the band · The AI Build-Out</div>
+      <div class="abs" style="left:40px;top:104px;font-family:${INTER};font-weight:600;font-size:38px;color:${C.paper}">NVDA 41% → 40%</div>
+      <div class="abs" style="left:40px;top:172px;font-family:${INTER};font-weight:500;font-size:34px;color:${C.t3}">Reason: NVDA ran ahead.</div></div>`;
+  }
+  if (f < 390) h += H('WE TRIM IT BACK.', 300, 120);
+  else h += Cap('Every change has a reason.', 1540);
+  return wrapCam(h, {s: mix(1, 1.02, lin(f, 360, 420))});
+}
+
+// ---------------------------------------------------------------- S8–S9 followers vs creator
+const PLOT = {x: 110, y: 760, w: 800, h: 300};
+function linePath(vals) {
+  const mn = 86, mx = 112;
+  return vals.map((v, i) => `${i ? 'L' : 'M'}${(PLOT.x + (i / (vals.length - 1)) * PLOT.w).toFixed(1)} ${(PLOT.y + PLOT.h - ((v - mn) / (mx - mn)) * PLOT.h).toFixed(1)}`).join(' ');
+}
+// follower line: the real index with the follower gap growing linearly to −0.6% (illustrative shape, no axis values)
+const FOLLOW = SERIES.map((v, i) => v * (1 - 0.006 * i / (SERIES.length - 1)));
+function chart(f) {
+  const p = easeInOut(lin(f, 425, 455));
+  const clipW = PLOT.w * p + 4;
+  const fp = linePath(FOLLOW), cp = linePath(SERIES);
+  const area = fp + ` L${PLOT.x + PLOT.w} ${PLOT.y + PLOT.h} L${PLOT.x} ${PLOT.y + PLOT.h} Z`;
+  let h = `<div class="abs" style="left:60px;top:600px;width:900px;height:640px;background:${C.s1};border:1px solid ${C.i800};border-radius:4px"></div>`;
+  h += `<svg class="abs" style="left:0;top:0" width="1080" height="1920">
+    <defs><linearGradient id="af" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${TONE.sapp[1]}" stop-opacity=".18"/><stop offset="1" stop-color="${TONE.sapp[1]}" stop-opacity="0"/></linearGradient>
+    <clipPath id="cl"><rect x="${PLOT.x - 2}" y="${PLOT.y - 40}" width="${clipW}" height="${PLOT.h + 80}"/></clipPath></defs>
+    <line x1="${PLOT.x}" y1="${PLOT.y + PLOT.h}" x2="${PLOT.x + PLOT.w}" y2="${PLOT.y + PLOT.h}" stroke="${C.i800}" stroke-width="1"/>
+    <g clip-path="url(#cl)">
+      <path d="${area}" fill="url(#af)"/>
+      <path d="${cp}" fill="none" stroke="${C.t2}" stroke-width="4" stroke-dasharray="12 9"/>
+      <path d="${fp}" fill="none" stroke="${C.paper}" stroke-width="5"/>
+    </g></svg>`;
+  // legend
+  h += `<svg class="abs" style="left:110px;top:1112px" width="60" height="8"><line x1="0" y1="4" x2="60" y2="4" stroke="${C.paper}" stroke-width="5"/></svg>`;
+  h += T('Followers', {x: 184, y: 1116, size: 32, w: 500, color: C.t3});
+  h += `<svg class="abs" style="left:420px;top:1112px" width="60" height="8"><line x1="0" y1="4" x2="60" y2="4" stroke="${C.t2}" stroke-width="4" stroke-dasharray="12 9"/></svg>`;
+  h += T('Creator', {x: 494, y: 1116, size: 32, w: 500, color: C.t3});
+  h += T(`Example basket. Past performance isn't a promise.`, {x: 110, y: 1190, size: 28, w: 500, color: C.t2});
+  return h;
+}
+function S8(f) {
+  let h = chart(f);
+  h += H('DID FOLLOWERS<br>WIN TOO?', 290, 120);
+  return wrapCam(h, {});
+}
+function S9(f) {
+  let h = chart(f);
+  h += `<div class="abs" style="left:110px;top:${676 - 36}px;height:72px;padding:0 28px;background:${C.s2};border:1px solid ${C.i800};border-radius:4px;display:flex;align-items:center;font-family:${INTER};font-weight:600;font-size:40px;color:${C.paper};white-space:nowrap">Followers −0.6% vs creator</div>`;
+  h += H('SAME CHART.<br>NO HIDING.', 290, 120);
+  return wrapCam(h, {s: mix(1, 1.02, lin(f, 480, 540))});
+}
+
+// ---------------------------------------------------------------- S10 creators
+const NEW_PICKS = ['NVDA', 'AVGO', 'TSM', 'VRT'];
+const PICK_F = [555, 563, 570, 578];   // 8ths at 120 BPM (7.5 f), rounded
+function S10(f) {
+  let h = '';
+  // faint ticker callback sliding in behind
+  const ghosts = [['AMD', 120, 470, -1], ['ASML', 700, 560, 1], ['MU', 140, 1450, -1], ['ARM', 740, 1470, 1], ['ORCL', 420, 1580, -1]];
+  ghosts.forEach(([t, x, y, d], i) => { const p = easeOut(lin(f, 540 + i, 548 + i)); h += T(t, {x: x + d * 200 * (1 - p), y, size: 80, w: 600, color: C.i700, op: p}); });
+  // chips
+  const cw = 196, gap = 20, x0 = CX - (4 * cw + 3 * gap) / 2;
+  NEW_PICKS.forEach((t, i) => {
+    const on = f >= PICK_F[i];
+    h += `<div class="abs" style="left:${x0 + i * (cw + gap)}px;top:${930 - 40}px;width:${cw}px;height:80px;border:1px solid ${on ? C.paper : C.i600};background:${on ? C.s2 : 'transparent'};border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:${INTER};font-weight:600;font-size:36px;color:${on ? C.paper : C.t2}">${on ? ICON_CHECK : ICON_PLUS}${t}</div>`;
+  });
+  const nOn = PICK_F.filter((x) => f >= x).length;
+  h += `<div class="abs" style="left:60px;top:1040px;width:900px;height:10px;background:${C.s2};border-radius:2px"></div>`;
+  h += `<div class="abs" style="left:60px;top:1040px;width:${900 * nOn / 4}px;height:10px;background:${C.paper};border-radius:2px"></div>`;
+  h += T('Weights', {x: 60, y: 1090, size: 30, w: 500, color: C.t2});
+  h += T(nOn === 4 ? `100% ${'✓'}` : `${nOn * 25}%`, {x: 760, y: 1090, size: 30, w: 600, color: C.paper, extra: 'width:200px;text-align:right;'});
+  // cover tone picker → plum
+  const tones = ['sapp', 'emer', 'amb', 'plum', 'burg'];
+  tones.forEach((t, i) => {
+    const sel = f >= 585 ? t === 'plum' : t === 'sapp';
+    h += `<div class="abs" style="left:${60 + i * 84}px;top:${1160}px;width:64px;height:64px;background:linear-gradient(160deg, ${TONE[t][1]} 0%, ${TONE[t][0]} 100%);border-radius:4px;outline:${sel ? `2px solid ${C.paper}` : 'none'};outline-offset:4px"></div>`;
+  });
+  h += T('Cover', {x: 500, y: 1192, size: 30, w: 500, color: C.t2});
+  if (f < 570) h += H('GOT A THESIS?', 760, 140);
+  else { h += H('BOTTLE IT.', 760, 140); h += Cap('Creators earn a fee.', 1320, {size: 48, w: 600}); }
+  return wrapCam(h, {s: mix(1, 1.02, lin(f, 540, 600))});
+}
+
+// ---------------------------------------------------------------- S11 exit anytime
+const OUT_CHIPS = ['NVDAc', 'MSFTc', 'GOOGLc', 'AMZNc', 'METAc'];
+function S11(f) {
+  let h = `<div class="abs" style="left:60px;top:560px;width:900px;height:620px;background:${C.s1};border:1px solid ${C.i800};border-radius:4px"></div>`;
+  if (f < 630) {
+    const p = lin(f, 605, 625);
+    const pct = Math.round(p * 100);
+    h += T('Sell The AI Build-Out', {x: 100, y: 630, size: 40, w: 600});
+    h += T(pct >= 100 ? 'All' : `${pct}%`, {y: 820, font: ANTON, w: 400, size: 180, lh: 0.9});
+    h += `<div class="abs" style="left:120px;top:1000px;width:780px;height:4px;background:${C.i700}"></div>`;
+    h += `<div class="abs" style="left:120px;top:1000px;width:${780 * p}px;height:4px;background:${C.paper}"></div>`;
+    h += `<div class="abs" style="left:${120 + 780 * p - 20}px;top:${1002 - 20}px;width:40px;height:40px;background:${C.paper};border-radius:4px"></div>`;
+    h += T('0', {x: 120, y: 1070, size: 30, w: 500, color: C.t2});
+    h += T('All', {x: 852, y: 1070, size: 30, w: 500, color: C.t2});
+  } else {
+    h += T('Get the stocks', {x: 100, y: 630, size: 40, w: 600});
+    // basket token splits into its five stock tokens
+    const tokOp = 1 - lin(f, 630, 634);
+    h += `<div class="abs" style="left:${CX - 70}px;top:${760 - 36}px;width:140px;height:72px;background:${TONE.sapp[0]};border:1px solid ${TONE.sapp[1]};border-radius:4px;opacity:${tokOp};display:flex;align-items:center;justify-content:center;font-family:${INTER};font-weight:600;font-size:40px;color:${C.paper}">AIB</div>`;
+    h += T('Your account', {x: 100, y: 930, size: 30, w: 500, color: C.t2});
+    const cw = 160, gap = 15, x0 = 100;
+    OUT_CHIPS.forEach((t, i) => {
+      const fa = 630 + i * 3; if (f < fa) return;
+      const p = easeOut(lin(f, fa, fa + 6));
+      const tx = x0 + i * (cw + gap), ty = 1030;
+      const x = mix(CX - cw / 2, tx, p), y = mix(760, ty, p);
+      h += `<div class="abs" style="left:${x}px;top:${y - 34}px;width:${cw}px;height:68px;background:${C.s2};border:1px solid ${C.i800};border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:${INTER};font-weight:600;font-size:32px;color:${C.paper}">${t}</div>`;
+    });
+    h += Cap('Or take the stocks.', 1520, {size: 48, w: 600});
+  }
+  h += H('EXIT ANYTIME.', 300, 150);
+  return wrapCam(h, {});
+}
+
+// ---------------------------------------------------------------- S12 tagline with silk
+function silk(f) {
+  // satin ribbon: a filled diagonal band (cubic edges) with a 2 px highlight; sweeps in L→R f675–f700
+  const p = easeInOut(lin(f, 675, 700));
+  const top = 'M-80 940 C 220 820, 520 900, 760 760 S 1060 640, 1180 600';
+  const bot = 'L1180 690 C 1060 730, 900 800, 760 850 S 300 960, -80 1040 Z';
+  return `<svg class="abs" style="left:0;top:0" width="1080" height="1920">
+    <defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="0.3">
+      <stop offset="0" stop-color="#4A0012"/><stop offset=".45" stop-color="${C.brand}"/><stop offset=".6" stop-color="${C.b700}"/><stop offset=".75" stop-color="${C.brand}"/><stop offset="1" stop-color="#4A0012"/></linearGradient>
+      <clipPath id="sc"><rect x="-100" y="0" width="${1300 * p}" height="1920"/></clipPath></defs>
+    <g clip-path="url(#sc)"><path d="${top} ${bot}" fill="url(#sg)"/>
+      <path d="M-80 990 C 260 900, 560 900, 760 805 S 1050 690, 1180 645" fill="none" stroke="${C.b700}" stroke-width="2" opacity=".9"/></g></svg>`;
+}
+function S12(f) {
+  let h = '';
+  if (f >= 675) h += silk(f);
+  const lines = [['INVEST IN', 660, 690], ['STORIES,', 675, 834], ['NOT SYMBOLS.', 690, 978]];
+  for (const [t, fl, y] of lines) {
+    if (f < fl) continue;
+    const sc = f - fl < 3 ? mix(1.05, 1, (f - fl) / 3) : 1;
+    WORDS += countWords(t);
+    h += T(t, {x: 76, y, font: ANTON, w: 400, size: 160, lh: 0.9, ls: 0.005, scale: sc});
+  }
+  return wrapCam(h, {s: f >= 700 ? mix(1, 1.03, lin(f, 700, 720)) : 1});
+}
+
+// ---------------------------------------------------------------- S13 end card
+function S13(f) {
+  let h = T('ALLOY', {y: 780, font: ANTON, w: 400, size: 280, lh: 0.9, ls: 0.01}); WORDS += 1;
+  h += Cap('Stories, not symbols.', 960, {size: 48, w: 500});
+  const pulse = f >= 750 && f < 756 ? [1, .55, .3, .3, .55, 1][f - 750] : 1;
+  h += `<div class="abs" style="left:${CX - 190}px;top:${1110 - 42}px;width:380px;height:84px;border:2px solid rgba(242,240,237,${pulse});border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:${INTER};font-weight:600;font-size:40px;letter-spacing:.08em;color:${C.paper};padding-left:.08em">COMING SOON</div>`;
+  WORDS += 2;
+  h += T('@alloy_fi', {y: 1220, size: 44, w: 600, color: C.t2});
+  h += T('Tokenized stock exposure, not shares. Not for US persons.', {y: 1560, size: 28, w: 500, color: C.t2});
+  return wrapCam(h, {});
+}
+
+// ---------------------------------------------------------------- grain
+const grainCv = document.getElementById('grain'), gctx = grainCv.getContext('2d');
+const gimg = gctx.createImageData(1080, 1920);
+function grain(f) {
+  const R = mulberry(90000 + f), d = gimg.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const n = R() * 2 - 1, v = n > 0 ? 255 : 0;
+    d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = Math.abs(n) * 0.04 * 255;
+  }
+  gctx.putImageData(gimg, 0, 0);
+}
+
+function world(f) {
+  if (f < 60) return S1(f);
+  if (f < 120) return S2(f);
+  if (f < 180) return S3(f);
+  if (f < 240) return S4(f);
+  if (f < 300) return S5(f);
+  if (f < 360) return S6(f);
+  if (f < 420) return S7(f);
+  if (f < 480) return S8(f);
+  if (f < 540) return S9(f);
+  if (f < 600) return S10(f);
+  if (f < 660) return S11(f);
+  if (f < 720) return S12(f);
+  return S13(f);
+}
+window.renderAt = function (t) {
+  const f = Math.max(0, Math.min(779, Math.round(t * 30)));
+  WORDS = 0;
+  document.getElementById('world').innerHTML = world(f);
+  grain(f);
+  window.__frame = f; window.__words = WORDS;
+};
+window.renderAt(0);
+</script>
+</body>
+</html>
