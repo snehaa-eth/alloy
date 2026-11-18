@@ -49,7 +49,7 @@ const to = parseFloat(args.to || DURATION);
 const n0 = Math.round(from * FPS), n1 = Math.round(to * FPS);
 const video = path.join(OUT, 'video-only.mp4');
 const ff = spawn(FFMPEG, ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'png', '-i', '-',
-  '-c:v', 'libx264', '-profile:v', 'high', '-pix_fmt', 'yuv420p', '-crf', '17', '-preset', 'slow',
+  '-c:v', 'libx264', '-profile:v', 'high', '-pix_fmt', 'yuv420p', '-crf', '18', '-preset', 'slow',
   '-color_primaries', 'bt709', '-color_trc', 'bt709', '-colorspace', 'bt709', '-r', String(FPS), video], {stdio: ['pipe', 'inherit', 'inherit']});
 const t0 = Date.now();
 for (let n = n0; n < n1; n++) {

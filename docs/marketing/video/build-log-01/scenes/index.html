@@ -13,7 +13,7 @@
   canvas { position: absolute; left: 0; top: 0; }
   #vig { position: absolute; inset: 0; pointer-events: none;
     background: radial-gradient(ellipse 75% 60% at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,.18) 100%); }
-  .ico { display: inline-block; width: 0.6em; height: 0.6em; margin-right: 0.6em; vertical-align: 0.02em; }
+  .ico { display: inline-block; width: 0.6em; height: 0.6em; margin-right: 0.4em; vertical-align: 0.02em; }
 </style>
 </head>
 <body>
@@ -23,7 +23,6 @@
 </svg>
 <div id="stage">
   <div id="world" class="abs" style="inset:0"></div>
-  <canvas id="parts" width="1080" height="1920"></canvas>
   <div id="chyron" class="abs" style="inset:0"></div>
   <div id="vig"></div>
   <canvas id="grain" width="1080" height="1920" style="opacity:1"></canvas>
@@ -201,8 +200,8 @@ function S4core(f) {
   FAILS.forEach((ln, i) => {
     const fl = 260 + i * 5;
     if (f >= fl) {
-      term += T(ICO_X + ln[0], {x: 66, y: 650 + row * 54, font: MONO, w: 400, size: 34, color: C.verm, ls: -0.025});
-      if (ln[1]) term += T('  ' + ln[1], {x: 66, y: 650 + (row + 1) * 54, font: MONO, w: 400, size: 34, color: C.verm, ls: -0.025});
+      term += T(ICO_X + ln[0], {x: 80, y: 650 + row * 54, font: MONO, w: 400, size: 34, color: C.verm, ls: -0.025});
+      if (ln[1]) term += T('  ' + ln[1], {x: 80, y: 650 + (row + 1) * 54, font: MONO, w: 400, size: 34, color: C.verm, ls: -0.025});
     }
     row += ln.length;
   });
@@ -227,7 +226,7 @@ function S4(f) {
     let tear = base;
     for (let b = 0; b < 6; b++) {
       const y0 = Math.floor(160 + R() * 1400), hh = Math.floor(20 + R() * 60), dx = Math.round((R() * 2 - 1) * 40);
-      const clip = `clip-path:inset(${y0}px 0 ${1920 - y0 - hh}px 0)`;
+      const clip = `clip-path:inset(${y0}px 120px ${1920 - y0 - hh}px 60px)`;
       tear += `<div class="abs" style="inset:0;${clip}"><div class="abs" style="inset:0;background:${C.bg}"></div>`
         + tinted(base, 'tA', dx + 8, 0.6) + tinted(base, 'tP', dx - 8, 0.6)
         + `<div class="abs" style="inset:0;transform:translateX(${dx}px)">${base}</div></div>`;
@@ -256,14 +255,14 @@ function S5(f) {
 
 // ---------------------------------------------------------------- S6–S7 the drop
 function passTerm(f, dim) {
-  let h = T(cmdHTML('$ base-forge test', 99, 34, false), {x: 66, y: 420, font: MONO, w: 400, size: 34, color: C.gray});
+  let h = T(cmdHTML('$ base-forge test', 99, 34, false), {x: 62, y: 420, font: MONO, w: 400, size: 34, color: C.gray});
   PASSES.forEach((ln, i) => {
     const fl = 400 + i * 5;
     if (f < fl) return;
     const y = 476 + i * 52;
     const bloom = f - fl < 6 ? 0.25 * (1 - (f - fl) / 6) : 0;
-    if (bloom > 0 && !dim) h += T(ICO_V + ln, {x: 66, y, font: MONO, w: 400, size: 34, color: C.jade, ls: -0.025, op: bloom, extra: 'filter:blur(20px);'});
-    h += T(ICO_V + ln, {x: 66, y, font: MONO, w: 400, size: 34, color: C.jade, ls: -0.025});
+    if (bloom > 0 && !dim) h += T(ICO_V + ln, {x: 62, y, font: MONO, w: 400, size: 34, color: C.jade, ls: -0.03, op: bloom, extra: 'filter:blur(20px);'});
+    h += T(ICO_V + ln, {x: 62, y, font: MONO, w: 400, size: 34, color: C.jade, ls: -0.03});
   });
   return dim ? `<div class="abs" style="inset:0;opacity:.25">${h}</div>` : h;
 }
@@ -336,77 +335,19 @@ function S8core(f) {
 }
 function S8cam(f) { return {s: mix(1, 1.02, lin(f, 566, 720))}; }
 
-// ---------------------------------------------------------------- S10 bust of bytes
-let BUST = null;
-function buildBust() {
-  const cw = 270, ch = 480, cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
-  const g = cv.getContext('2d'); g.fillStyle = '#fff';
-  const p = new Path2D('M120 62 C165 55 205 75 214 112 L222 128 C228 142 236 154 246 166 L226 174 C228 178 230 184 226 190 C228 196 224 202 220 206 C226 216 222 232 206 238 C190 244 176 246 170 252 L176 300 C205 318 238 350 244 404 L36 404 C38 370 60 330 108 300 L112 262 C72 240 50 200 52 160 C50 105 80 66 120 62 Z');
-  g.fill(p);
-  for (const [x, y, r] of [[66, 116, 14], [80, 90, 15], [104, 72, 14], [132, 63, 13], [158, 63, 11], [56, 144, 12], [62, 172, 10]]) { g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); }
-  g.fillRect(70, 410, 160, 20); g.fillRect(56, 432, 188, 28);
-  const d = g.getImageData(0, 0, cw, ch).data, inside = (x, y) => x >= 0 && y >= 0 && x < cw && y < ch && d[(y * cw + x) * 4 + 3] > 128;
-  const edge = [], interior = [];
-  for (let y = 0; y < ch; y += 2) for (let x = 0; x < cw; x += 2) {
-    if (!inside(x, y)) continue;
-    (inside(x - 3, y) && inside(x + 3, y) && inside(x, y - 3) && inside(x, y + 3) ? interior : edge).push([x, y]);
-  }
-  const R = mulberry(777), pts = [];
-  const NE = 1500, NI = 900;
-  for (let i = 0; i < NE; i++) pts.push(edge[Math.floor(R() * edge.length)]);
-  for (let i = 0; i < NI; i++) pts.push(interior[Math.floor(R() * interior.length)]);
-  const X0 = CX - 270, Y0 = 860 - 480;
-  BUST = pts.map(([bx, by], i) => ({
-    tx: X0 + bx * 2 + (R() - 0.5) * 2, ty: Y0 + by * 2 + (R() - 0.5) * 2,
-    sx: CARD.x + R() * CARD.w, sy: CARD.y + R() * CARD.h,
-    ch: '0xef'[Math.floor(R() * 4)], size: 13 + Math.floor(R() * 8), op: 0.3 + R() * 0.4,
-    visor: by >= 118 && by <= 152 && bx > 60,
-  }));
-}
-function bustPositions(f) {
-  if (!BUST) buildBust();
-  const k = 120, c = 18, dt = 1 / 30, steps = Math.min(f, 800) - 720;
-  return BUST.map((q, i) => {
-    let x = q.sx, y = q.sy, vx = 0, vy = 0;
-    for (let s = 0; s < steps; s++) {
-      vx += (k * (q.tx - x) - c * vx) * dt; vy += (k * (q.ty - y) - c * vy) * dt; x += vx * dt; y += vy * dt;
-    }
-    const jj = Math.floor(f / 3);
-    x += (hash(i, jj) - 0.5) * 2; y += (hash(i + 99991, jj) - 0.5) * 2;
-    return [x, y];
+// ---------------------------------------------------------------- S10 every stock in the basket: 0xef
+// captures/05-getbundle.txt: cast code on each component returns 0xef
+const COMPONENTS = ['0xB200…fdC4', '0xB200…8897', '0xB200…b39a'];
+function S10(f) {
+  let h = T('Every stock in this basket.', {y: 560, size: 52, w: 600});
+  COMPONENTS.forEach((a, i) => {
+    const fc = 720 + i * 20, y = 740 + i * 150;
+    if (f < fc) return;
+    const cmd = `$ cast code ${a}`;
+    h += T(cmdHTML(cmd, Math.ceil(cmd.length * lin(f + 1, fc, fc + 5)), 40, false), {x: 234, y, font: MONO, w: 400, size: 40, color: C.gray});
+    if (f >= fc + 10) h += T('0xef', {x: 234, y: y + 62, font: MONO, w: 600, size: 40, color: C.paper, scale: f === fc + 10 ? 1.08 : 1});
   });
-}
-function drawParticles(f) {
-  const cv = document.getElementById('parts'), g = cv.getContext('2d');
-  g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 1080, 1920);
-  if (f < 720 || f > 812) { cv.style.display = 'none'; return; }
-  cv.style.display = 'block';
-  // camera (match world cam)
-  let s = 1, r = 0;
-  if (f >= 760 && f < 800) { s = mix(1, 1.02, lin(f, 760, 800)); r = mix(0, 0.6, lin(f, 760, 800)); }
-  if (f >= 800) { s = 1.02; r = 0.6; }
-  g.translate(510, 890); g.rotate(r * Math.PI / 180); g.scale(s, s); g.translate(-510, -890);
-  const pos = bustPositions(f);
-  const explode = f >= 800 ? (f - 800) : -1;
-  g.textAlign = 'center'; g.textBaseline = 'middle';
-  BUST.forEach((q, i) => {
-    let [x, y] = pos[i], op = q.op;
-    if (explode >= 0) { const m = 0.22 * explode; x += (x - 510) * m; y += (y - 860) * m; op *= 1 - explode / 12; }
-    if (op <= 0) return;
-    g.globalAlpha = q.visor ? 0.9 * (explode >= 0 ? 1 - explode / 12 : 1) : op;
-    g.fillStyle = q.visor ? C.acc : C.paper;
-    g.font = `400 ${q.size}px 'JetBrains Mono'`;
-    g.fillText(q.ch, x, y);
-  });
-  g.globalAlpha = 1;
-  if (f >= 770 && f <= 785) {
-    // visor glint: a 2px paper line sweeping across the eye band
-    const X0 = CX - 270, Y0 = 860 - 480;
-    const gx = X0 + mix(60, 250, (f - 770) / 15) * 2;
-    g.fillStyle = C.paper; g.globalAlpha = 0.9;
-    g.fillRect(gx, Y0 + 118 * 2, 2, 34 * 2);
-    g.globalAlpha = 1;
-  }
+  return wrapCam(h, {s: mix(1, 1.03, lin(f, 720, 800))});
 }
 
 // ---------------------------------------------------------------- S11 tagline
@@ -493,7 +434,7 @@ function world(f) {
     return h;
   }
   if (f < 720) return wrapCam(S8core(f), S8cam(f));
-  if (f < 800) return '';                                  // particles only
+  if (f < 800) return S10(f);
   if (f < 880) return S11(f);
   return S12(f);
 }
@@ -503,7 +444,6 @@ window.renderAt = function (t) {
   document.getElementById('world').innerHTML = world(f);
   document.getElementById('chyron').innerHTML = chyron(f);
   document.getElementById('vig').style.display = (f >= 310 && f < 320) ? 'none' : 'block';
-  drawParticles(f);
   grain(f);
   window.__frame = f;
 };
