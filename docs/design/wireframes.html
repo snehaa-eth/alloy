@@ -207,7 +207,7 @@ table.t td:not(:first-child),table.t th:not(:first-child){text-align:right}
 <!-- ============ 0 TOKENS ============ -->
 <section class="s" id="tokens"><div class="wrap">
   <h2>0 · Palette &amp; type</h2>
-  <p class="lede"><b>v0.2 palette (founder decisions).</b> Dark is the default. Burgundy stays under 10% of any screen. Primary buttons on dark are off-white with black text. #6D001A is only for big brand surfaces; small accents on dark use #C41A42. Gain is jade, loss is vermilion, and there's no pink. All frames below are dark unless captioned "light option". Full ratios are in TOKENS.md §4.</p>
+  <p class="lede"><b>v0.3 palette (founder decisions).</b> Gold (≤ 3%) marks rare earned moments. Five jewel tones give content its colour, while the chrome stays neutral. Dark is the default. Burgundy stays under 10% of any screen. Primary buttons on dark are off-white with black text. #6D001A is only for big brand surfaces; small accents on dark use #C41A42. Gain is jade, loss is vermilion, and there's no pink. All frames below are dark unless captioned "light option". Full ratios are in TOKENS.md §4.</p>
   <p class="cap">Neutrals (warm)</p>
   <div class="row" style="gap:12px">
     <div class="swatch"><div style="background:#0A0A0A"></div><p><b>bg</b><br>#0A0A0A<br>dark default</p></div>
@@ -239,7 +239,7 @@ table.t td:not(:first-child),table.t th:not(:first-child){text-align:right}
   <div class="row" style="margin-top:18px;gap:12px">
     <div class="frame" style="width:320px;border-radius:12px;padding:16px">
       <p class="kick">Dark: primary, secondary, accent</p>
-      <div class="flex" style="margin-top:10px"><span class="btn p sm">Buy $25</span><span class="btn sm">Build a basket</span><span class="loss">▼ −1.8%</span><span class="gain">▲ +4.2%</span></div>
+      <div class="flex" style="margin-top:10px;flex-wrap:wrap"><span class="btn p sm">Buy $25</span><span class="btn sm">Build a basket</span><span class="loss">▼ −1.8%</span><span class="gain">▲ +4.2%</span></div>
       <div class="flex" style="margin-top:12px"><span class="chip on">3M</span><span class="chip">1Y</span><span style="display:inline-block;width:60px;height:4px;background:#C41A42;border-radius:2px"></span><span class="xs mut">accent progress</span></div>
       <p class="xs mut" style="margin-top:10px">No burgundy button on dark: #6D001A on #0A0A0A is 1.57:1.</p>
     </div>
@@ -248,6 +248,67 @@ table.t td:not(:first-child),table.t th:not(:first-child){text-align:right}
       <div class="flex" style="margin-top:10px"><span class="btn p sm">Buy $25</span><span class="btn sm">Build</span><span class="loss">▼ −1.8%</span><span class="gain">▲ +4.2%</span></div>
       <p class="xs mut" style="margin-top:10px">On light, burgundy fills are fine: white on #6D001A is 12.61:1. Links are burgundy.</p>
     </div>
+  </div>
+  <p class="cap" style="margin-top:22px">Gold: the "alloy" metal (rare; ≤ 3% of a screen, never gain/loss or buttons)</p>
+  <div class="row" style="gap:12px">
+    <div class="swatch"><div style="background:#E3CC9C"></div><p><b>gold-200</b><br>#E3CC9C · 12.62:1<br>highlight stop</p></div>
+    <div class="swatch"><div style="background:#C9A96E"></div><p><b>gold-400 (dark)</b><br>#C9A96E · 8.85:1 on bg</p></div>
+    <div class="swatch"><div style="background:#A07D3E"></div><p><b>gold-600</b><br>#A07D3E · 5.18:1<br>metal edge</p></div>
+    <div class="swatch"><div style="background:#7A5C26"></div><p><b>gold-700 (light)</b><br>#7A5C26 · 6.20:1 on white</p></div>
+    <div class="swatch"><div style="background:linear-gradient(135deg,#E3CC9C,#C9A96E 45%,#A07D3E)"></div><p><b>metal gradient</b><br>badges ≤ 24px</p></div>
+  </div>
+  <div class="row" style="gap:12px;margin-top:12px">
+    <div class="frame" style="width:340px;border-radius:12px;padding:16px">
+      <p class="kick">Gold in use</p>
+      <div class="flex" style="margin-top:10px"><span style="width:32px;height:32px;border-radius:50%;background:#3A3A40;box-shadow:0 0 0 2px #0A0A0A,0 0 0 4px #C9A96E"></span><b>@kavya</b><span class="pill" style="background:transparent;color:#C9A96E;box-shadow:inset 0 0 0 1px #A07D3E">Creator</span><span class="pill" style="background:transparent;color:#C9A96E;box-shadow:inset 0 0 0 1px #A07D3E">Seed basket</span></div>
+      <div style="margin-top:12px;border-left:3px solid #C9A96E;padding-left:10px"><p class="kick">Skin in the game</p><p><b style="color:#C9A96E">$1,200</b> in. Hasn't sold.</p></div>
+      <p class="xs mut" style="margin-top:10px">One gold element per viewport is the target, two the maximum. Gold on burgundy (5.64:1) is reserved for share cards and milestones.</p>
+    </div>
+    <div class="frame" style="width:340px;border-radius:12px;padding:16px;position:relative">
+      <p class="kick">Glow behind the hero number</p>
+      <div style="position:relative;text-align:center;padding:22px 0">
+        <div style="position:absolute;left:50%;top:50%;width:300px;height:140px;transform:translate(-50%,-50%);background:radial-gradient(closest-side,rgba(109,0,26,.35),transparent)"></div>
+        <p class="num" style="position:relative">$342.18</p><p class="sm gain" style="position:relative">▲ $4.21 today</p>
+      </div>
+      <p class="xs mut">#6D001A at 35%, one per screen. It stays under the 0.25 value cut, so it doesn't count toward the 10%.</p>
+    </div>
+  </div>
+  <p class="cap" style="margin-top:22px">Jewel tones: colour comes from content (basket covers, duotone), never the chrome</p>
+  <div class="row" style="gap:12px">
+    <div style="width:200px;border-radius:12px;overflow:hidden;border:1px solid #26262A;background:#0A0A0A;color:#F2F0ED;font-size:12px">
+      <div style="height:96px;background:radial-gradient(120% 90% at 80% 10%,#B5304F59,transparent 60%),linear-gradient(160deg,#3A0010 0%,#0A0A0A 85%);position:relative">
+        <svg viewBox="0 0 200 96" width="200" height="96" style="position:absolute;inset:0;opacity:.35"><path d="M0,70 C50,40 90,95 140,60 C170,40 185,55 200,45" stroke="#B5304F" stroke-width="10" fill="none"/></svg>
+      </div>
+      <div style="padding:8px 10px"><b style="font-size:13px">Capitol Tech</b><p style="color:#9A9894">Burgundy</p><p style="color:#9A9894;margin-top:4px">deep #3A0010 · mid #B5304F</p></div></div><div style="width:200px;border-radius:12px;overflow:hidden;border:1px solid #26262A;background:#0A0A0A;color:#F2F0ED;font-size:12px">
+      <div style="height:96px;background:radial-gradient(120% 90% at 80% 10%,#2E8B6A59,transparent 60%),linear-gradient(160deg,#0F2E24 0%,#0A0A0A 85%);position:relative">
+        <svg viewBox="0 0 200 96" width="200" height="96" style="position:absolute;inset:0;opacity:.35"><path d="M0,70 C50,40 90,95 140,60 C170,40 185,55 200,45" stroke="#2E8B6A" stroke-width="10" fill="none"/></svg>
+      </div>
+      <div style="padding:8px 10px"><b style="font-size:13px">Green Grid</b><p style="color:#9A9894">Emerald</p><p style="color:#9A9894;margin-top:4px">deep #0F2E24 · mid #2E8B6A</p></div></div><div style="width:200px;border-radius:12px;overflow:hidden;border:1px solid #26262A;background:#0A0A0A;color:#F2F0ED;font-size:12px">
+      <div style="height:96px;background:radial-gradient(120% 90% at 80% 10%,#3E6FB859,transparent 60%),linear-gradient(160deg,#10223F 0%,#0A0A0A 85%);position:relative">
+        <svg viewBox="0 0 200 96" width="200" height="96" style="position:absolute;inset:0;opacity:.35"><path d="M0,70 C50,40 90,95 140,60 C170,40 185,55 200,45" stroke="#3E6FB8" stroke-width="10" fill="none"/></svg>
+      </div>
+      <div style="padding:8px 10px"><b style="font-size:13px">The AI Build-Out</b><p style="color:#9A9894">Sapphire</p><p style="color:#9A9894;margin-top:4px">deep #10223F · mid #3E6FB8</p></div></div><div style="width:200px;border-radius:12px;overflow:hidden;border:1px solid #26262A;background:#0A0A0A;color:#F2F0ED;font-size:12px">
+      <div style="height:96px;background:radial-gradient(120% 90% at 80% 10%,#C98A2E59,transparent 60%),linear-gradient(160deg,#3A2A08 0%,#0A0A0A 85%);position:relative">
+        <svg viewBox="0 0 200 96" width="200" height="96" style="position:absolute;inset:0;opacity:.35"><path d="M0,70 C50,40 90,95 140,60 C170,40 185,55 200,45" stroke="#C98A2E" stroke-width="10" fill="none"/></svg>
+      </div>
+      <div style="padding:8px 10px"><b style="font-size:13px">Picks &amp; Shovels</b><p style="color:#9A9894">Amber</p><p style="color:#9A9894;margin-top:4px">deep #3A2A08 · mid #C98A2E</p></div></div><div style="width:200px;border-radius:12px;overflow:hidden;border:1px solid #26262A;background:#0A0A0A;color:#F2F0ED;font-size:12px">
+      <div style="height:96px;background:radial-gradient(120% 90% at 80% 10%,#8E5BA659,transparent 60%),linear-gradient(160deg,#2A1433 0%,#0A0A0A 85%);position:relative">
+        <svg viewBox="0 0 200 96" width="200" height="96" style="position:absolute;inset:0;opacity:.35"><path d="M0,70 C50,40 90,95 140,60 C170,40 185,55 200,45" stroke="#8E5BA6" stroke-width="10" fill="none"/></svg>
+      </div>
+      <div style="padding:8px 10px"><b style="font-size:13px">Space Race</b><p style="color:#9A9894">Plum</p><p style="color:#9A9894;margin-top:4px">deep #2A1433 · mid #8E5BA6</p></div></div>
+  </div>
+  <div class="row" style="gap:12px;margin-top:12px">
+    <div class="frame" style="width:340px;border-radius:12px;padding:16px">
+      <p class="kick">Stock logos in full colour + jewel chart fill</p>
+      <div class="flex" style="margin-top:10px"><span style="width:24px;height:24px;border-radius:50%;background:#76B900"></span><span style="width:24px;height:24px;border-radius:50%;background:#00A4EF"></span><span style="width:24px;height:24px;border-radius:50%;background:#EA4335"></span><span style="width:24px;height:24px;border-radius:50%;background:#FF9900"></span><span class="xs mut">logo placeholders (brand colours)</span></div>
+      <svg viewBox="0 0 300 80" width="100%" height="80" style="margin-top:10px"><defs><linearGradient id="jf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3E6FB8" stop-opacity=".18"/><stop offset="1" stop-color="#3E6FB8" stop-opacity="0"/></linearGradient></defs><path d="M0,60 L40,55 L80,58 L120,42 L160,46 L200,30 L240,34 L300,16 L300,80 L0,80 Z" fill="url(#jf)"/><polyline points="0,60 40,55 80,58 120,42 160,46 200,30 240,34 300,16" fill="none" stroke="#F2F0ED" stroke-width="2"/></svg>
+      <p class="xs mut">The line stays off-white; the fill is the basket's jewel mid at 18% → 0%.</p>
+    </div>
+    <div class="notes" style="max-width:340px"><h4>Type discipline (TOKENS §11)</h4><ol>
+      <li>Anton once per screen: the single hero word or number.</li>
+      <li>At most 3 type sizes per screen; weight and colour do the rest.</li>
+      <li>No paragraphs in flows: one helper line, ≤ 12 words.</li>
+    </ol><p class="xs" style="margin-top:6px;color:#5C5C62">The frames below predate these rules and will be redone after the UX map review.</p></div>
   </div>
   <p class="cap" style="margin-top:22px">Type: Pairing A (recommended) Anton + Inter (tnum) + JetBrains Mono</p>
   <div class="col" style="gap:10px">

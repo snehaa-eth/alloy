@@ -15,7 +15,7 @@ Target: Base "Stocks Maxxing Season". Official deadline Sat **Dec 5, 2026**. We 
 |---|---|
 | Product | Creator-curated baskets of Coinbase B20 stocks on Base. Each basket is an ERC-20 vault token. Creators earn a fee. Followers are auto-rebalanced. |
 | Custody model | Shared vault + receipt token. **Not** per-user wallets: one-click rebalance for everyone needs a shared vault. |
-| Rebalance triggers | (a) **Drift trim**, no notice. (b) **Recipe change**, 24h notice. (c) AI proposal → creator approves → same as (b). |
+| Rebalance triggers | (a) **Drift trim**, no notice, max 1/day. (b) **Recipe change**, 24h notice; has its own timing, so a trim never delays it. (c) AI proposal → creator approves → same as (b). **Only Alloy's keeper executes trades.** Creators propose or cancel, with a reason. |
 | Strategy modes | Balanced (default) · Let Winners Run · Trend-aware. Modes are **parameters + keeper policy, not contract logic**. |
 | Trend-aware | Computed **off-chain by the keeper** (50-day MA). The on-chain MA proof was cut as unsound and unnecessary. |
 | Pricing | Mint/redeem are in-kind and oracle-free. Users trade USDC↔basket at real DEX prices with their own `minOut`, 24/7, with an off-hours warning. Chainlink is used **only** to guard rebalances and display NAV. |
@@ -113,7 +113,7 @@ mapping(address user => mapping(address token => uint)) owed;  // redeem never b
   - Runs before issue, redeem, and rebalance.
 - `proposeRecipe(uint16[] w, bytes32 reasonHash)`: creator only. Sets `executableAt = now + notice`.
   - Notice is ≥24h, or 10 min **only** for baskets flagged `demo` at creation; the flag is shown in the UI.
-- `executeRebalance(Trade[] t)`, where `Trade {uint8 from; uint8 to; uint amountIn}`. Callable by **creator or keeper only**, at most 1 per day.
+- `executeRebalance(Trade[] t)`, where `Trade {uint8 from; uint8 to; uint amountIn}`. Callable by the **keeper only** (`NotKeeper` otherwise; the creator cannot execute). Drift trims: at most 1 per day. A due recipe change executes independently of the trim cooldown.
   - The vault encodes the Aerodrome call itself: allow-listed pool, `recipient = this`, `minOut` from Chainlink × (1 − tol).
   - **No caller calldata, ever.**
 - `removeComponent(uint8 i)`: only when target = 0 and value < $1. Dust is swept to treasury.
@@ -161,7 +161,7 @@ mapping(address user => mapping(address token => uint)) owed;  // redeem never b
   3. seed through the router,
   4. lock dead shares (≈0.1% of the seed; minimum seed $10).
   - If `ts == DEAD` later, issue reverts until the basket is re-seeded.
-- **Hackathon TVL cap: $5k per basket.** Global pause covers issue and rebalance only. **Redeem can never be paused.**
+- **TVL cap: $5k per basket on mainnet; none on Base Sepolia.** Buy and sell read raw prices with no staleness check, so they work 24/7 (weekends too). Only keeper rebalances need fresh feeds. Global pause covers issue and rebalance only. **Redeem can never be paused.**
 
 ### 3.3 `AlloyRouter` (stateless)
 - `buy(basket, usdcIn, uint[] minOuts, uint minShares)`

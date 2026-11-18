@@ -42,4 +42,6 @@ interface IBasket {
     function componentValues() external view returns (uint256[] memory values);
     function previewIssue(uint256 shares) external view returns (uint256[] memory amts);
     function previewRedeem(uint256 shares) external view returns (uint256[] memory amts);
+    function pendingFee() external view returns (uint256 minted);
+    function nextTrimAt() external view returns (uint256);
 }

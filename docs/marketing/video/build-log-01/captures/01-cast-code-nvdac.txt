@@ -1,0 +1,6 @@
+$ cast code 0xb20000000000000000000078ee7ce2fE4908108C --rpc-url https://mainnet.base.org
+0xef
+$ cast call 0xb20000000000000000000078ee7ce2fE4908108C "symbol()(string)" --rpc-url https://mainnet.base.org
+"NVDAc"
+$ cast call 0xb20000000000000000000078ee7ce2fE4908108C "name()(string)" --rpc-url https://mainnet.base.org
+"NVIDIA Corporation"

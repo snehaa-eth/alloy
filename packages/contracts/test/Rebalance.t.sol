@@ -357,6 +357,100 @@ contract RebalanceTest is Fixture {
         assertEq(wt[2], 2500);
     }
 
+    function _proposeHalfQuarterQuarter() internal returns (IBasket.Trade[] memory t) {
+        uint16[] memory w = new uint16[](3);
+        w[0] = 5000;
+        w[1] = 2500;
+        w[2] = 2500;
+        vm.prank(creator);
+        b.proposeRecipe(w, keccak256("r"));
+        t = new IBasket.Trade[](2);
+        t[0] = IBasket.Trade({from: 1, to: 0, amountIn: 1e8});
+        t[1] = IBasket.Trade({from: 2, to: 0, amountIn: 0.25e8});
+    }
+
+    function test_trimThenDueRecipe_sameDay_executesAtExactCountdown() public {
+        IBasket.Trade[] memory t = _proposeHalfQuarterQuarter();
+        (, uint64 executableAt,) = b.pendingRecipe();
+        // a small in-band trim 1 minute before the recipe is due
+        _warp(24 hours - 1 minutes);
+        vm.prank(keeper);
+        b.executeRebalance(_trade(0, 1, 0.01e8));
+        uint256 trimAt = vm.getBlockTimestamp();
+        // exactly at executableAt the recipe executes despite the trim cooldown
+        vm.warp(executableAt);
+        _refreshFeeds();
+        // re-derive trades from current state (trim moved $1 AAA->BBB): BBB 301 -> 250, CCC 300 -> 250
+        t[0].amountIn = 1.02e8;
+        vm.prank(keeper);
+        b.executeRebalance(t);
+        assertEq(b.targets()[0], 5000);
+        assertEq(b.lastRecipeExecution(), executableAt);
+        assertEq(b.lastRebalance(), trimAt, "recipe must not reset trim cooldown");
+        assertEq(b.nextTrimAt(), trimAt + 1 days);
+    }
+
+    function test_recipeThenTrim_respectsTrimCooldown() public {
+        // trim at T, recipe executes at T+12h (allowed), next trim still gated at T+24h
+        _drift();
+        vm.prank(keeper);
+        b.executeRebalance(_trade(0, 1, 0.4e8)); // 45/30/25
+        uint256 trimAt = vm.getBlockTimestamp();
+        _setPrice(0, 100e8); // reset AAA to $100: AAA 360, BBB 360, CCC 300 (NAV 1020)
+        uint16[] memory w = new uint16[](3);
+        w[0] = 3530;
+        w[1] = 3530;
+        w[2] = 2940;
+        vm.prank(creator);
+        b.proposeRecipe(w, keccak256("match"));
+        // demo notice not set -> 24h; so instead check that a non-due trim is blocked inside the window
+        _warp(12 hours);
+        vm.prank(keeper);
+        vm.expectRevert(abi.encodeWithSelector(Basket.RebalanceCooldown.selector, trimAt + 1 days));
+        b.executeRebalance(new IBasket.Trade[](0));
+        // recipe due at trimAt+24h; executes; then a trim right after is still gated by the ORIGINAL trim clock
+        _warp(12 hours);
+        vm.prank(keeper);
+        b.executeRebalance(new IBasket.Trade[](0)); // recipe already matches current weights (in band)
+        assertEq(b.targets()[0], 3530);
+        assertEq(b.lastRebalance(), trimAt);
+        // the trim cooldown had expired at the same instant; a trim now is allowed exactly once
+        vm.prank(keeper);
+        b.executeRebalance(new IBasket.Trade[](0));
+        vm.prank(keeper);
+        vm.expectRevert(abi.encodeWithSelector(Basket.RebalanceCooldown.selector, vm.getBlockTimestamp() + 1 days));
+        b.executeRebalance(new IBasket.Trade[](0));
+    }
+
+    function test_demoRecipe_afterTrim_notBlocked() public {
+        IBasketFactory.BasketParams memory p = _params3();
+        p.demo = true;
+        p.salt = bytes32("demo2");
+        Basket d = _create(creator, p, 1000e6);
+        vm.prank(keeper);
+        d.executeRebalance(_trade(0, 1, 0.01e8)); // trim at T
+        uint256 trimAt = vm.getBlockTimestamp();
+        uint16[] memory w = new uint16[](3);
+        w[0] = 5000;
+        w[1] = 2500;
+        w[2] = 2500;
+        vm.prank(creator);
+        d.proposeRecipe(w, keccak256("demo"));
+        (, uint64 at,) = d.pendingRecipe();
+        assertEq(at, trimAt + 10 minutes);
+        vm.warp(at - 1);
+        IBasket.Trade[] memory t = new IBasket.Trade[](2);
+        t[0] = IBasket.Trade({from: 1, to: 0, amountIn: 1.02e8});
+        t[1] = IBasket.Trade({from: 2, to: 0, amountIn: 0.25e8});
+        vm.prank(keeper);
+        vm.expectRevert(abi.encodeWithSelector(Basket.RebalanceCooldown.selector, trimAt + 1 days));
+        d.executeRebalance(t); // 1s early: treated as a trim -> cooldown
+        vm.warp(at);
+        vm.prank(keeper);
+        d.executeRebalance(t); // countdown hit: executes 10 min after a trim
+        assertEq(d.targets()[0], 5000);
+    }
+
     function test_recipe_cancel() public {
         uint16[] memory w = new uint16[](3);
         w[0] = 5000;

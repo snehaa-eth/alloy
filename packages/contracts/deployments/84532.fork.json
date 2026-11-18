@@ -1,19 +1,19 @@
 {
-  "basketImplementation": "0x91f13fB711Bc5587eA5A1e33017fc9e79692079B",
+  "basketImplementation": "0xE92d7BF04B6eEC629c8be379BdCe1B0D8990b1f6",
   "chainId": 84532,
-  "defaultTvlCapUsd8": 500000000000,
-  "deployedAt": 1795032788,
-  "deployedAtBlock": 60554227,
+  "defaultTvlCapUsd8": 0,
+  "deployedAt": 1795032886,
+  "deployedAtBlock": 60554234,
   "deployer": "0xcBe600349CE4cF89842Bc371E4a4062140CDCCcD",
-  "factory": "0x6792A18550f13aa762a64f63E8d2b984610F7B90",
+  "factory": "0xBACEeF4c176d7dF71b1F171b1D59d785Eb1690d8",
   "feeTier": 500,
-  "feedGuard": "0x30283C7f2B085Ec5EbcDb60F990C9366E141eDE1",
+  "feedGuard": "0xd01ecD9B021F0ebB95400306381dc9367EC12469",
   "feedGuardKind": "SimpleFeedGuard(strictMultiplier=false)",
   "feedPauseRegistry": "0x75f378A2d00cBb56eB264d3F8B8a0B0007bc2128",
   "keeper": "0xcBe600349CE4cF89842Bc371E4a4062140CDCCcD",
   "network": "local-fork",
   "owner": "0xcBe600349CE4cF89842Bc371E4a4062140CDCCcD",
-  "router": "0xbC43351738164a13cC96c6a1Ab5Cf6DAe453632C",
+  "router": "0xced60c9f76abff92736EDF5EE9b4931c8B96768d",
   "stocks": {
     "tAAPLc": {
       "feed": "0xdFf983351F6015569ED98FeE98633933e0031B29",
@@ -48,6 +48,6 @@
   },
   "swapRouter02": "0x94cC0AaC535CCDB3C01d6787D6413C739ae12bc4",
   "treasury": "0xcBe600349CE4cF89842Bc371E4a4062140CDCCcD",
-  "uniswapV3Adapter": "0xb2b776c242913a57E15B677f0A8FC9b2740e0b0d",
+  "uniswapV3Adapter": "0xF118c6494eDA589786b130d7aE59e3680dB4DB7F",
   "usdc": "0xB2000000000000000000019BD357C9b797D5D1e7"
 }

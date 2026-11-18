@@ -83,10 +83,21 @@ frozen event ABI for the indexer, gas numbers, TODOs and open risks.
 7. **Router `sell` reverts with `RedeemIncomplete(mask)`** if any leg would be owed. Owed tokens must never get stuck
    on a stateless router. In-kind `redeem` remains the always-available exit.
 8. **The router's USDC split uses unguarded feed values** (`Basket.componentValues`). Safety comes only from the
-   user's `minOuts` and `minShares`. A bad split just produces leftovers, which are refunded in kind.
+   user's `minOuts` and `minShares`. A bad split just produces leftovers, handled as follows:
+   - **Buy leftovers** (whatever `issue` didn't need), per component, valued at the raw oracle price:
+     - worth < $0.05 (`DUST_USDC = 50_000`): **donated to the basket**, which benefits all holders;
+     - otherwise: swapped back to USDC/tUSDC with an oracle `minOut` (`swapTolBps`) and refunded as USDC;
+     - if that swap-back reverts, refunded in kind as a fallback (self-call + try/catch).
+   - Emits `BuyLeftovers(user, basket, usdcRefunded, dustDonated[], refundedInKind[])`.
+   - The router still ends every call with zero balances and zero allowances; tests and the invariant check this.
 9. **`issue` reads feeds** for the TVL cap, so it is not strictly oracle-free.
-   - The cap is $5k by default.
-   - Per-basket override: `type(uint256).max` means uncapped; `0` means use the default.
+   - The factory constructor default is $5k. `DeployAlloy` sets it from `TVL_CAP_USD8`, which defaults to **0 (=
+     unlimited) on 84532** and $5k elsewhere.
+   - Owner setters (USD, 8 dec):
+     - `setDefaultTvlCap(uint256 capUsd8)`, where 0 means unlimited;
+     - `setBasketTvlCap(address basket, uint256 capUsd8)`, where 0 means use the default and
+       `type(uint256).max` means uncapped for that basket.
+   - Effective cap: `tvlCapOf(address)`.
    - `redeem` reads no feeds.
 10. **No re-seed path yet.** `issue` reverts with `BasketEmpty` when `ts == deadShares`.
 11. **Recipe changes.**
@@ -95,7 +106,14 @@ frozen event ABI for the indexer, gas numbers, TODOs and open risks.
     - A due recipe is applied automatically at the start of the next `executeRebalance`, which emits
       `RecipeExecuted`. The band rule then applies to the new targets.
     - Adding new components through a recipe is out of scope.
-12. **Cooldown** is 24h, rolling, counted from the last successful rebalance.
+12. **Cooldown applies to drift trims only.**
+    - Trims: at most one per 24h (rolling), tracked by `lastRebalance`; `nextTrimAt()` exposes the next slot.
+    - A **due recipe change** (`now ≥ executableAt`) is never blocked by a recent trim, and it does not
+      reset the trim clock. It records `lastRecipeExecution` instead.
+    - So the user-facing countdown equals `executableAt` exactly.
+    - The recipe still needs the keeper and passes every guard: feeds, loss caps (incl. the weekly budget) and the
+      band rule.
+    - Recipe execution can't be spammed: each one needs a fresh proposal with full notice.
 13. **Loss budget.**
     - `lossUsedWad` (1e18 = 100%) decays linearly by 300 bps per 7 days.
     - Gains don't refill it.
@@ -138,6 +156,7 @@ frozen event ABI for the indexer, gas numbers, TODOs and open risks.
 | Basket | `FeeAccrued(uint256 creatorShares, uint256 protocolShares)` | `0xb2195cd5…f99d` |
 | Basket | `ComponentRemoved(address indexed token)` | `0xc605d0bf…63df` |
 | Basket (add.) | `RecipeExecuted(uint16[] w)` | `0xf07656fb…9b27` |
+| Router (add.) | `BuyLeftovers(address indexed user, address indexed basket, uint256 usdcRefunded, uint256[] dustDonated, uint256[] refundedInKind)` | `0x356dd502…2a6f` |
 | Basket (add.) | `OwedClaimed(address indexed user, address indexed token, address indexed to, uint256 amount)` | `0xfd7fff93…983e` |
 
 How to read these events:
@@ -155,7 +174,7 @@ From `base-forge test --gas-report`, with the B20 precompile gas as modelled by 
 | Function | Median gas | Max gas |
 |---|---|---|
 | `Factory.createBasket` | 863k | — |
-| `Router.buy` | 523k | 562k |
+| `Router.buy` (incl. leftover settle) | 538k | 679k |
 | `Router.sell` | 466k | — |
 | `Basket.issue` | 229k | — |
 | `Basket.redeem` | 55k | 194k |
@@ -166,6 +185,24 @@ From `base-forge test --gas-report`, with the B20 precompile gas as modelled by 
 | `claimOwed` | 22k | — |
 
 Per-test numbers are in `.gas-snapshot`.
+
+## Frontend quoting (exact pre-trade numbers)
+
+- **Buy, exact:** run `simulateContract(router.buy(basket, usdcIn, minOuts=0s, minShares=0))` from the user's
+  address after approving. It returns exactly the shares the transaction would give at the current block.
+  Equivalent, composable approach:
+  1. `router.splitUsdc(basket, usdcIn)` gives the USDC slice per leg;
+  2. Uniswap QuoterV2 `quoteExactInputSingle` (eth_call) per slice gives `got[i]`;
+  3. `router.sharesFor(basket, got)` gives `(shares, used[])`; leftovers are `got − used`.
+  - Then set `minOuts[i] = got[i]·(1−slip)` and `minShares = shares·(1−slip)`.
+- **Sell:**
+  1. `basket.previewRedeem(shares)` gives the component amounts (fee-accrual aware);
+  2. QuoterV2 per leg gives the USDC amounts;
+  3. set `minOuts` and `minUsdc` the same way. `simulateContract(router.sell)` also gives the exact figure.
+- **Display:**
+  - `nav()` and `navPerShare()` (USD 8 dec per 1e18 shares), `componentValues()`;
+  - `pendingRecipe()` (countdown = `executableAt`), `nextTrimAt()`, `lossBudgetUsed()`, `tvlCapOf(basket)`.
+- An on-chain `previewBuy` was skipped: QuoterV2 is not a view, so a pure view can't quote the DEX.
 
 ## Base Sepolia deploy + fork validation
 
@@ -181,6 +218,14 @@ Per-test numbers are in `.gas-snapshot`.
   public network.
 - That fork run's output is `deployments/84532.fork.json` (`"network": "local-fork"`; addresses are fork-only).
   **`deployments/84532.json` does not exist yet**; it is created by the real deploy.
+- Re-deploys are clean. Each run deploys a fresh set (new addresses) and overwrites `deployments/84532.json`.
+- The first real testnet deploy (factory `0x51cE…1D9D`, deployed with the $5k cap) is preserved as
+  `deployments/84532.v1.json`.
+- After the cooldown, dust and TVL changes, the script and demo were re-run on a fresh local fork:
+  - 7/7 txs succeeded and the deployed cap was 0;
+  - buy 50 tUSDC gave 49.993 shares; selling 30% gave 14.984848 tUSDC against 14.987581 at oracle prices;
+  - the user ended holding 0 stock tokens; the router held 0;
+  - the fork test passes.
 - `script/DemoBasket.s.sol` ran on the fork with a fresh address. All 7 txs had status 1:
   - It took the faucet drip, then created "Alloy Demo: Big Tech" (40/30/30 tGOOGLc/tMSFTc/tTSLAc, demo) with a
     100 tUSDC seed, giving 99.9 creator shares and NAV $99.944 (0.06% cost).

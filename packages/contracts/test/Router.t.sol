@@ -44,13 +44,66 @@ contract RouterTest is Fixture {
         _assertRouterClean();
     }
 
-    function test_buy_withSlippage_refundsLeftovers() public {
-        adapter.setTokenSlippage(address(stocks[1]), 100); // BBB fills 1% worse
+    function _stockBal(address who) internal view returns (uint256 t) {
+        for (uint256 i; i < 3; ++i) {
+            t += stocks[i].balanceOf(who);
+        }
+    }
+
+    function test_buy_leftoversSwappedBackToUsdc() public {
+        adapter.setTokenSlippage(address(stocks[1]), 100); // BBB fills 1% worse -> AAA/CCC leftovers ~$0.70
         uint256 shares = _buy(asha, b, 100e6);
         assertApproxEqRel(shares, 99e18, 0.001e18);
-        // leftovers of AAA/CCC refunded to the user, router clean
-        assertGt(stocks[0].balanceOf(asha) + stocks[2].balanceOf(asha), 0);
+        assertEq(_stockBal(asha), 0, "no stray stock tokens");
+        uint256 refund = usdc.balanceOf(asha);
+        assertApproxEqAbs(refund, 0.7e6, 0.01e6);
         _assertRouterClean();
+    }
+
+    function test_buy_dustDonatedToBasket() public {
+        adapter.setTokenSlippage(address(stocks[1]), 100); // leftovers ~$0.007 total -> dust
+        (, uint256[] memory before) = b.getBundle();
+        uint256[] memory slices = router.splitUsdc(address(b), 1e6);
+        uint256[] memory got = new uint256[](3);
+        for (uint256 i; i < 3; ++i) {
+            got[i] = adapter.quote(address(usdc), address(stocks[i]), slices[i]);
+        }
+        (uint256 expShares, uint256[] memory used) = router.sharesFor(address(b), got);
+        uint256[] memory dust = new uint256[](3);
+        for (uint256 i; i < 3; ++i) {
+            dust[i] = got[i] - used[i];
+        }
+        assertGt(dust[0], 0);
+        _mintUsdc(asha, 1e6);
+        vm.startPrank(asha);
+        usdc.approve(address(router), 1e6);
+        vm.expectEmit(address(router));
+        emit AlloyRouter.BuyLeftovers(asha, address(b), 0, dust, new uint256[](3));
+        uint256 shares = router.buy(address(b), 1e6, new uint256[](3), 0);
+        vm.stopPrank();
+        assertEq(shares, expShares, "sharesFor quote is exact");
+        assertEq(_stockBal(asha), 0);
+        assertEq(usdc.balanceOf(asha), 0);
+        (, uint256[] memory afterB) = b.getBundle();
+        for (uint256 i; i < 3; ++i) {
+            assertEq(afterB[i], before[i] + used[i] + dust[i]);
+        }
+        _assertRouterClean();
+    }
+
+    function test_buy_swapBackFails_refundsInKind() public {
+        adapter.setTokenSlippage(address(stocks[1]), 100);
+        adapter.setTokenSlippage(address(usdc), 500); // swap-back worse than oracle tolerance -> reverts -> in kind
+        uint256 shares = _buy(asha, b, 100e6);
+        assertGt(shares, 0);
+        assertGt(_stockBal(asha), 0);
+        assertEq(usdc.balanceOf(asha), 0);
+        _assertRouterClean();
+    }
+
+    function test_swapLeftover_onlySelf() public {
+        vm.expectRevert(AlloyRouter.OnlySelf.selector);
+        router.swapLeftoverToUsdc(address(stocks[0]), 1, 0);
     }
 
     function test_buy_afterDrift_and_fee() public {
@@ -170,7 +223,7 @@ contract RouterTest is Fixture {
         _setPrice(0, drift);
         uint256 shares = _buy(asha, b, usdcIn);
         uint256 refund = usdc.balanceOf(asha);
-        uint256 refundVal; // in-kind leftovers valued at oracle (USDC 6 dec)
+        uint256 refundVal; // in-kind leftovers valued at oracle (USDC 6 dec) - should be none now
         address[] memory comps = b.components();
         for (uint256 i; i < comps.length; ++i) {
             refundVal += IB20(comps[i]).balanceOf(asha) * adapter.priceOf(comps[i]) / 1e10;

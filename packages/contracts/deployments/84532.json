@@ -1,19 +1,19 @@
 {
-  "basketImplementation": "0x80013866285f19A409c0E3C2e8DB12E43E2dD962",
+  "basketImplementation": "0xF7E0400003C92e53b9123254447a10CeB0c39D59",
   "chainId": 84532,
-  "defaultTvlCapUsd8": 500000000000,
-  "deployedAt": 1795033107,
-  "deployedAtBlock": 60556194,
+  "defaultTvlCapUsd8": 0,
+  "deployedAt": 1795034058,
+  "deployedAtBlock": 60560950,
   "deployer": "0xcBe600349CE4cF89842Bc371E4a4062140CDCCcD",
-  "factory": "0x51cEFEE1e5451e8ce399cCE77077b96042731D9D",
+  "factory": "0x2AeA38fb99D411607201EE42058520Fe8B19785f",
   "feeTier": 500,
-  "feedGuard": "0x3c6c52314C6425b11E6e973045eC1c7B4B7fDAa0",
+  "feedGuard": "0xA84dDE15558398aAc06527E943D0E4cA39057B1C",
   "feedGuardKind": "SimpleFeedGuard(strictMultiplier=false)",
   "feedPauseRegistry": "0x75f378A2d00cBb56eB264d3F8B8a0B0007bc2128",
   "keeper": "0xcBe600349CE4cF89842Bc371E4a4062140CDCCcD",
   "network": "base-sepolia",
   "owner": "0xcBe600349CE4cF89842Bc371E4a4062140CDCCcD",
-  "router": "0x406b30A0E3d4CA4386eEF13C3871dE0b558F8A21",
+  "router": "0xC772347B96c75648B6bB8F9d2B78416F2E9aC03d",
   "stocks": {
     "tAAPLc": {
       "feed": "0xdFf983351F6015569ED98FeE98633933e0031B29",
@@ -48,6 +48,6 @@
   },
   "swapRouter02": "0x94cC0AaC535CCDB3C01d6787D6413C739ae12bc4",
   "treasury": "0xcBe600349CE4cF89842Bc371E4a4062140CDCCcD",
-  "uniswapV3Adapter": "0x8f2ed57058964F801639d766B10a836c2D432921",
+  "uniswapV3Adapter": "0xF66008b07B43716F0a07441cf2fE7DAC973b970F",
   "usdc": "0xB2000000000000000000019BD357C9b797D5D1e7"
 }

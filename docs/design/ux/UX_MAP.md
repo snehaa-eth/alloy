@@ -1,13 +1,27 @@
-# Alloy: UX map (v1, for discussion)
+# Alloy: UX map (v2, for discussion)
 
 2026-11-19. This is a **map, not a UI**. There are no wireframes here on purpose. It defines who we serve, what they are trying to get done, where things live, how each flow behaves in every state, and what we measure. New wireframes should be drawn from this document.
 
 - Visual companion: [`ux-map.html`](./ux-map.html) has the sitemap and every flow as diagrams.
-- Inputs: [ARCHITECTURE.md](../../ARCHITECTURE.md), [STAGES.md](../../STAGES.md), [RESEARCH.md](../RESEARCH.md), [COPY.md](../COPY.md), [OPEN_QUESTIONS.md](../OPEN_QUESTIONS.md), [wireframes.html](../wireframes.html) (treated as draft 1), `packages/testnet-env/README.md` (faucet facts).
-- Claims marked *(verify)* come from secondary sources or memory. Sources are listed in §11.
+- Review this version answers: [`REVIEW.md`](./REVIEW.md).
+- Inputs: [ARCHITECTURE.md](../../ARCHITECTURE.md), [STAGES.md](../../STAGES.md), [RESEARCH.md](../RESEARCH.md), [COPY.md](../COPY.md), [OPEN_QUESTIONS.md](../OPEN_QUESTIONS.md), [wireframes.html](../wireframes.html) (treated as draft 1), [X_PLAN.md](../../marketing/X_PLAN.md), `packages/testnet-env/README.md` (faucet facts).
+- Claims marked *(verify)* come from secondary sources or memory. Sources are in §11.
+
+## Changelog
+
+**v2 (2026-11-19, after REVIEW.md; founder: "fix all")**
+- **Scope = Dec 4 testnet launch driven by X.** Mainnet is a recorded proof only. Mainnet funding routes (exchange send, on-ramps, P2P) and wrong-network states moved to §12 Deferred.
+- **Feeds:** buy and sell do **not** need fresh feeds (router and `issue` read raw balances and pool prices). They work 24/7 including weekends. Only keeper rebalances pause on stale or paused feeds. Added the off-hours **DEX fill vs oracle value** gap (§0, §5.3, §5.9).
+- **Contract changes reflected:** a recipe change has its own timing, so a drift trim never delays a due change, and the countdown is the exact `executableAt`. Testnet has **no TVL cap** (mainnet keeps $5k). Buy leftovers: tiny dust is donated to the basket, larger leftovers are refunded as USDC, so there's no unexplained stock dust.
+- **Review fixes:** a replaced proposal sends a new notice with a diff and resets everyone's choice. Buy shows "≈ you get" from the real quote (not oracle value) and discloses pool fees and impact as "Cost ≈ $x". "Max" preset removed. Claim is one tap per token (caller-only). "Own companies" copy removed. Share and OG cards are watermarked TEST. One status strip instead of three bars. Fixed 1% slippage on testnet.
+- **Cuts:** mainnet funding, most notifications (kept: in-app Activity for everything, email only for recipe-change notices), Studio tab (creator tools now live in Me → Your baskets), Watch, AI suggestions, earnings calculator, mode simulation, single-stock sell, send-out, display currency, "Remind me at open", two-step confirm, corporate-action, sequencer and offline states.
+- **Additions:** one testnet host where every X link lands on a basket page, with UTM/`s`/`p` kept through sign-in. **Founding Follower #N / Founding Creator #N** badges plus a follower share card as the **primary** post-buy CTA. An "Open in browser" bar on basket pages inside in-app browsers, and email OTP as the default. Locale number formats (`Intl.NumberFormat`). Marketing hooks: BUILD LOG series and the Caesar-in-VR bust mascot on landing and share cards.
+- Kept: word budgets and colour moments (§0.1).
+
+**v1** (earlier 2026-11-19): first full map.
 
 **Contents**
-0. [Mechanics](#0-the-product-in-one-breath-the-mechanics-ux-must-respect) · [Core UX principles: say less, colour with purpose](#01-core-ux-principles-founder-feedback-2026-11-19)
+0. [Mechanics](#0-the-product-in-one-breath-the-mechanics-ux-must-respect) · [Core principles](#01-core-ux-principles)
 1. [Personas](#1-personas)
 2. [Jobs-to-be-done and value moments](#2-jobs-to-be-done-and-value-moments)
 3. [Information architecture](#3-information-architecture)
@@ -19,69 +33,72 @@
 9. [Success metrics and instrumentation](#9-success-metrics-and-instrumentation)
 10. [Open questions for the founder](#10-open-questions-for-the-founder)
 11. [Sources](#11-sources)
+12. [Deferred after Dec 4](#12-deferred-after-dec-4)
 
 ---
 
 ## 0. The product in one breath (the mechanics UX must respect)
 
-| Mechanic (ARCHITECTURE) | What it means for UX |
+| Mechanic | What it means for UX |
 |---|---|
-| A basket is a shared vault; you hold a **basket token** | One line per basket in Portfolio. No per-stock management. |
-| **Buy** = USDC in → router buys stocks → basket tokens out. **Sell** = reverse. Both at DEX prices, 24/7, with user `minOut` | Quotes can move. Slippage failures are possible. Off-hours prices are wider: warn, don't block. |
-| **Withdraw in-kind**: get the actual stock tokens. Can never be paused | This is the trust anchor, not an emergency hatch. Always reachable. |
-| **Owed claim**: if a stock token transfer is policy-blocked, it is credited to you to claim later | A partial-success state. Needs a "held for you" home and a claim action. |
-| **Drift trim**: executed only by Alloy's keeper, no notice, ≤1/day, guarded by feed health, loss caps and band rules | Explain after the fact. No user action. |
-| **Recipe change**: creator proposes with a required reason, **24h notice** (10 min on `demo` baskets), creator can cancel with a reason; executes at/after the time if market and feeds are OK | The one time we interrupt holders. Default is "do nothing = stay in". Exits must be one tap. |
-| Strategy modes: Balanced / Let Winners Run / Trend-aware | Fixed per basket. Shown in plain words; followers can't change it. |
-| Fee 1%/yr, minted as basket tokens, 80/20 creator/protocol | Never a USDC charge at buy time. Shown as "$ per month on your amount". |
-| Market hours / stale or paused feed | Rebalances wait. Buy/sell still work (with warning). Withdraw always works. |
-| TVL cap $5k per basket (hackathon) | "Full" state on cards and in Buy. |
-| Testnet: our own test stocks, tUSDC faucet 1,000/address/24h (`dripTo` lets a relayer pay gas) | Judges and new users can get money in one tap. Must be labelled as play money everywhere. |
-| Privy embedded wallet, email/phone login, gas sponsored | No seed phrase, no "wallet" vocabulary, no gas step. |
+| A basket is a shared vault; you hold a **basket token** | One line per basket in Portfolio. No per-stock management. Copy: "Your slice: 5 stocks", never "you own companies" (tokenized exposure, not shares). |
+| **Buy** = USDC → router swaps into the stocks → basket tokens out. **Sell** = reverse. User sets `minOut`. | Fills are at **pool (DEX) prices**, which include pool fees and price impact. Quotes can move. Slippage failures are possible. |
+| Buy and sell need **no fresh price feed** | They work **24/7, weekends included**. Off-hours the pools can drift from the last oracle price, so what you get can differ from the shown **Value**. Warn, never block. |
+| **Value** (oracle NAV per token) vs **fill** (DEX quote) | Basket hero shows Value. Buy and Exit show "≈ you get" from the live quote. If they differ by > 0.5%, show an amber chip ("Fills ~0.8% lower now"). |
+| Buy leftovers | Tiny dust is donated to the basket. Larger leftovers come back as USDC. Users never see stray stock dust. Success screen shows "Refunded $0.42" when it happens. |
+| **Withdraw in-kind** ("Get the stocks"): the actual stock tokens. Can never be paused | The trust anchor, always reachable. |
+| **Owed claim**: a policy-blocked token transfer is credited to you; `claimOwed` must be called **by you** | A partial-success state with one-tap, gas-sponsored claim per token. Rare on testnet; built last. |
+| **Drift trim**: keeper only, no notice, guarded by feed health and loss caps | Explained after the fact. No user action. **A trim never delays a due recipe change** (separate timing). |
+| **Recipe change**: creator proposes with a required reason; **24h notice** (10 min on `demo` baskets); creator can cancel with a reason; a new proposal **replaces** the pending one and **restarts the timer**; the keeper executes at `executableAt` if the market is open and feeds are healthy | The one time we interrupt holders. Default: do nothing = stay in. The countdown is the exact `executableAt`. Replacement = new notice with a diff, choices reset. |
+| Strategy modes: Balanced / Let Winners Run / Trend-aware | Fixed per basket. Shown as one chip with an explainer sheet. |
+| Fee 1%/yr, minted as basket tokens, 80/20 | No fee charged at buy, but **swap cost (pool fees + impact) is real** and shown as "Cost ≈ $0.03". |
+| TVL cap | **Testnet: none.** Mainnet proof: $5k per basket. |
+| Testnet: our own test stocks, tUSDC faucet 1,000/address/24h, `dripTo` lets a relayer pay | One tap (or automatic) test money. Labelled "test dollars". |
+| Privy embedded account, email OTP, gas sponsored | No seed phrase, no "wallet" words, no gas step. |
 
 ---
 
-## 0.1 Core UX principles (founder feedback, 2026-11-19)
+## 0.1 Core UX principles
 
 **P-1. Say less.** Premium apps feel intuitive because they say less. This is a core principle, not a copy-polish pass.
 - One idea per screen or sheet.
 - Numbers and visuals beat sentences: a big number, a chart, a donut, a chip, a logo row.
-- Progressive disclosure: everything that explains goes behind a tap ("i" tooltip, "See breakdown", a sheet, Details). Flows carry no paragraphs.
+- Progressive disclosure: anything that explains goes behind a tap ("i" tooltip, "See breakdown", a sheet, Details). No paragraphs in flows.
 - At most **one short helper line (≤ 8 words) per block**. Labels are 1–3 words. Buttons are verb + number ("Buy $25").
-- Legal lines are micro text, one line, linked to the full text, never a block in a flow. The exception is the US-person attestation, which must be read.
-- If a state needs more than one line to explain, it needs an icon + number + "Why?" link instead.
+- Legal is one micro line linked to the full text. The exception is the one-sentence US-person attestation.
+- If a state needs more than one line, use an icon + number + "Why?" link.
+- Numbers use the viewer's locale: `Intl.NumberFormat` with `en-IN` (lakh grouping), `pt-BR` (1.234,56), `id-ID`, etc. USD stays the currency. No text is baked into images.
 
-**Word budgets per screen type** (visible words in the default state, excluding numbers, tickers, nav and legal micro line):
+**Word budgets per screen type** (visible words in the default state, excluding numbers, tickers, nav and the legal micro line):
 
 | Screen / component | Budget | What carries the meaning instead |
 |---|---|---|
-| Basket card (Explore) | **≤ 12** | Cover colour/art, name, 3 stock logos, two PnL numbers with labels "Followers" / "Creator", creator avatar + stake $ |
-| Basket page, above the fold | **≤ 25** | Price, chart, range chips, PnL pair, stake chip |
-| Basket page section header + helper | ≤ 8 each | Charts, donut/bar for "What's inside" |
-| Buy sheet | **≤ 20** | Big amount, keypad, preset chips, logo row with $ per stock, "Fee $0.004/mo" chip |
-| Exit sheet | ≤ 20 | Segmented control "USDC / Stocks", slider, result number |
-| Success screen | ≤ 10 | Check animation, amount, logo row |
-| Change (recipe) sheet | ≤ 30 | Before→after bars, countdown, quoted reason (creator's words don't count) |
-| Activity item | ≤ 12 | Icon by type, before→after chips, $ cost |
-| Notification (push) | ≤ 15 | — |
-| Add money route row | ≤ 6 | Provider/exchange logos, method chips (UPI, PIX, QRIS) |
+| Basket card (Explore) | **≤ 12** | Cover colour/art, name, 3 stock logos, two PnL numbers ("Followers" / "Creator"), creator avatar + stake $ |
+| Basket page, above the fold | **≤ 25** | Value, chart, range chips, PnL pair, stake chip |
+| Basket page section header + helper | ≤ 8 each | Charts, donut/bars for "What's inside" |
+| Buy sheet | **≤ 20** | Big amount, keypad, preset chips, logo row with $ per stock, "≈ you get", "Cost ≈ $0.03" chip |
+| Exit sheet | ≤ 20 | USDC / Stocks toggle, slider, result number |
+| Success screen | ≤ 10 | Check in the basket colour, Founding #, logo row, share card |
+| Recipe-change sheet | ≤ 30 | Before→after bars, countdown, quoted reason (the creator's words don't count) |
+| Activity item | ≤ 12 | Type icon, before→after chips, $ cost |
+| Email (change notice) | ≤ 40 | One button |
 | Empty state | ≤ 10 + 1 CTA | Line illustration, one number |
 | Create step | ≤ 15 | Live share-card preview, stacked weight bar |
 | Error / edge state | ≤ 12 + 1 action | Icon + "Nothing was spent" pattern |
-| Landing hero | ≤ 20 | Headline, art, 3 proof numbers |
+| Landing hero | ≤ 20 | Headline, Caesar-in-VR art, 3 proof numbers |
 
-**P-2. Colour carries meaning and delight; black/white is the frame, not the picture.** The visual team owns the palette. This map only marks *where* colour should do work:
+**P-2. Colour carries meaning and delight; black and white is the frame, not the picture.** The visual team owns the palette. This map only marks *where* colour should do work:
 
 | Moment | Colour job | Where |
 |---|---|---|
-| Basket identity | Each basket gets an **identity colour + cover art** (generated from its theme or picked by the creator) used on its card, page header, share/OG card, Portfolio row and Activity items | Explore, Basket, Portfolio, share card |
-| Stocks | **Real stock logos** (or colour monograms) instead of ticker text; consistent per stock everywhere | Cards, What's inside, Buy logo row, Withdraw table |
-| Composition | Donut / stacked bar in stock colours for "What's inside", target vs now | Basket page, Create weights, Change before→after |
-| Performance | Gain/loss colours on numbers and chart lines only (always with ▲▼ sign); follower line vs creator line in two distinct hues | Charts, PnL pair |
-| Success | A brief colour moment on buy/create success (basket colour fills the check), no confetti | Buy, Create, Claim success |
-| Status | Market pill (open / closed), pending-change countdown, "held for you", test-mode ribbon each get their own consistent signal colour | Global |
-| Creator | Avatar ring in the creator's chosen colour; "Creator invested" badge | Card, Creator page |
-| Funding | Provider / exchange / payment-method logos (UPI, PIX, QRIS, Binance…) | Add money |
+| Basket identity | Each basket gets an **identity colour + cover art** used on its card, page header, share/OG card, Portfolio row and Activity items | Explore, Basket, Portfolio, share card |
+| Stocks | **Real stock logos** (or colour monograms) instead of ticker text, consistent everywhere | Cards, What's inside, Buy logo row, Withdraw table |
+| Composition | Donut / stacked bar in stock colours for target vs now | Basket page, Create weights, change before→after |
+| Performance | Gain/loss colours on numbers and chart lines only (always with ▲▼); follower vs creator lines in two distinct hues | Charts, PnL pair |
+| Success | Short colour moment on buy/create success (the basket colour fills the check); the Founding # badge is the hero; no confetti | Buy, Create |
+| Status | One status strip whose colour follows its state (open, closed, change pending, test) | Global |
+| Creator | Avatar ring in the creator's colour; "Creator invested" and "Founding Creator #N" badges | Card, profile |
+| Mascot | Caesar-in-VR bust on the landing page, share cards and BUILD LOG posts; never inside product flows | Landing, share/OG cards |
 | Empty states | One accent colour in the line illustration | Empty states |
 
 ---
@@ -92,65 +109,57 @@ Four personas. The first is the one we design for; the others must not be broken
 
 ### P1. Asha, first-time investor (primary)
 - **Who:** 26, Pune. Product analyst. Earns ~₹90k/month. Has a mutual-fund SIP via Groww and a little Nifty ETF. Has never bought a US stock. Has heard of USDT, never held it.
-- **Device and context:** Android mid-range (Redmi/Realme), Chrome. Good 4G at home, patchy on the commute. Uses the app in short bursts, mostly evenings (which is US market open: 20:00–02:30 IST).
-- **Money:** Wants to try with ₹500–₹2,000 ($6–$24). Will add monthly if it works. Uses UPI for everything.
+- **Device and context:** mid-range Android (Redmi/Realme), Chrome, low RAM (tabs get killed on app switch). Good 4G at home, patchy on the commute. Short bursts, mostly evenings (US open is 20:00–02:30 IST). Arrives from X, so she lands in **X's in-app browser**.
+- **Money:** On mainnet she'd start with ₹500–₹2,000 ($6–$24). On testnet she uses test dollars.
 - **Goals:** Own "the AI story" without picking tickers. Feel smart, not lucky. Something she can explain to a friend.
-- **Fears:** Losing money to a scam. Crypto tax rules (India taxes crypto/VDA gains at 30% plus 1% TDS [S11]) and "is this even legal for me?". Not being able to get money out. Hidden fees. Being sold to by an influencer who is dumping.
+- **Fears:** Scams. Crypto tax and "is this legal for me?" (India taxes crypto/VDA gains at 30% plus 1% TDS [S11]). Not getting money out. Hidden fees. An influencer dumping on her.
 - **Says:** "Who made this basket, and did the people who copied them actually make money?"
-- **Implication:** Trust signals (follower PnL, creator stake, "exit anytime") must be visible **before** sign-up. Getting USDC is her wall; we must give her a path that works with UPI/IMPS or say honestly that it doesn't.
+- **Implication:** Trust signals must be visible **before** sign-up. On testnet the money step must be one tap and clearly labelled as test dollars.
 
 ### P2. Tunde, crypto-native trader
-- **Who:** 31, Lagos. Freelance dev paid in USDC/USDT. Uses Binance P2P, Bybit, a Phantom and a MetaMask wallet. Trades memecoins on Base.
-- **Device:** iPhone + MacBook. Fast on-chain; impatient.
-- **Money:** Already holds $500–$5,000 in stablecoins. Naira is volatile, so dollar assets are a hedge.
-- **Goals:** Dollar-denominated stock exposure without a US broker. Composability: "can I take the stock tokens out?" Verify contracts.
-- **Fears:** Rugs, admin keys, hidden mint/fee logic, lockups, getting stuck in a vault. Wrong-network sends (USDT on Tron vs USDC on Base).
+- **Who:** 31, Lagos. Freelance dev paid in stablecoins. Uses Binance P2P, Bybit, Phantom, MetaMask. Trades memecoins on Base.
+- **Device:** iPhone + MacBook. Fast, impatient.
+- **Goals:** Dollar stock exposure without a US broker. "Can I take the stock tokens out?" Verify contracts.
+- **Fears:** Rugs, admin keys, hidden mint/fee logic, lockups, getting stuck in a vault.
 - **Says:** "Show me the contract, the oracle, and who can move my funds."
-- **Implication:** Simple by default, **Details on demand** (contract, roles, bands, feeds). Support "Send from another wallet" with exact network guardrails. Possibly connect an external wallet (open question).
+- **Implication:** Simple by default, **Details on demand** (contract, roles, bands, feeds, Value vs fill). Withdraw in-kind front and centre.
 
 ### P3. Kavya, creator / finfluencer
-- **Who:** 29, Bengaluru (or São Paulo). 40k followers on X and Instagram posting market threads. Monetises with a paid Telegram group today.
+- **Who:** 29, Bengaluru (or São Paulo). 40k followers posting market threads on X and Instagram. Monetises a paid Telegram group today.
 - **Device:** Phone for posting, laptop for research.
-- **Money:** Will seed $50–$500 to show conviction.
-- **Goals:** Turn a thesis into a product that followers can buy in one link. Earn recurring fee income. Look credible, not like a shill.
-- **Fears:** Followers losing money and blaming her. Looking like a pump. Regulatory heat (SEBI's finfluencer rules in India *(verify current scope)*). Doing a recipe change and getting backlash. Complicated creation.
-- **Says:** "Can I launch in five minutes and share a link that looks good on X?"
-- **Implication:** Create in one sitting, share card immediately, a proposal flow that forces a reason (protects her too), honest follower PnL (it is her proof), and creator earnings that are easy to read.
+- **Goals:** Turn a thesis into a product in one link. Earn a recurring fee. Look credible. Be one of the first 50 **Founding Creators**.
+- **Fears:** Followers losing money and blaming her. Looking like a pump. Regulatory heat (SEBI's finfluencer rules *(verify current scope)*). Backlash from a recipe change.
+- **Implication:** Create in one sitting, a share card immediately, a proposal flow that forces a reason, honest follower PnL.
 
 ### P4. Jordan, hackathon judge
-- **Who:** Base ecosystem reviewer evaluating 30+ Stocks Maxxing entries in a day.
-- **Device:** Laptop, Chrome, maybe a phone for a QR. Has a Base wallet but won't want to use it.
-- **Time:** 2–5 minutes per project before forming an opinion.
-- **Goals:** See it work end to end on-chain. Understand the novel bit (basket + creator + auto-rebalance with notice + in-kind exit) fast. Confirm it is really on Base.
-- **Fears (as a user):** Wasting time on sign-up, faucets, gas, broken testnet, a demo that only works in a video.
-- **Implication:** A dedicated **2-minute judge path** with one-tap test money, a pre-seeded basket with history, a 10-minute demo recipe change in progress, and a basescan link on every receipt.
+- **Who:** Base ecosystem reviewer going through 30+ entries in a day, possibly on a weekend.
+- **Device:** Laptop, Chrome.
+- **Time:** 2–5 minutes per project.
+- **Goals:** See the core loop work on-chain. Understand the novel bit fast. Confirm it's on Base.
+- **Fears:** Sign-up walls, faucets, gas, broken testnet, a demo that only works in a video.
+- **Implication:** A **2-minute judge path** (`/try`) with automatic test money, seeded history and one live demo change. Every receipt links to basescan.
 
 ---
 
 ## 2. Jobs-to-be-done and value moments
 
-### Jobs
-
 | Persona | Main job | Supporting jobs |
 |---|---|---|
-| Asha | "When I hear about a big theme (AI, space), help me put a small amount of money into it with someone credible, so I don't have to pick stocks." | Know if it's legit · get dollars in · see how I'm doing · get out when I want |
-| Tunde | "When I hold idle stablecoins, help me hold diversified US stock exposure that I can verify and exit on-chain." | Verify contracts · move funds in from my wallet · withdraw the underlying tokens |
+| Asha | "When I hear about a big theme, help me put a small amount into it with someone credible, so I don't have to pick stocks." | Know it's legit · see how I'm doing · get out when I want |
+| Tunde | "When I hold idle stablecoins, help me hold diversified US stock exposure that I can verify and exit on-chain." | Verify contracts · withdraw the underlying tokens |
 | Kavya | "When I have a market thesis, help me package it into something followers can buy and that pays me as it grows." | Launch fast · share well · explain changes · see earnings |
-| Jordan | "When I evaluate a hackathon entry, help me confirm in two minutes that the core loop works on-chain and is novel." | No setup · see proof (tx links) · see edge-case handling |
+| Jordan | "When I evaluate an entry, help me confirm in two minutes that the core loop works on-chain and is novel." | No setup · proof (tx links) · edge-case handling |
 
-### Value ("aha") moments
-
-| Persona | Aha moment | Where it happens | Design target |
+| Persona | Aha moment | Where | Target |
 |---|---|---|---|
 | Asha | **"Followers made money too, and the creator has real money in it."** | Basket page hero (before sign-up) | < 30 s from landing |
-| Asha | **"I own a slice of 5 AI companies for $5."** | Buy success → "What you own" breakdown in dollars | First buy within the first session |
-| Asha | **"It rebalanced itself, and told me why."** | First drift-trim notice in Activity | First week |
-| Asha | **"I can take my money out any time, even at night."** | Sell / Withdraw sheet, market-closed copy | First visit to Exit |
-| Tunde | "The stock tokens are real ERC-20s I can withdraw." | Details → contract; Withdraw in-kind success | First session |
-| Kavya | **"My basket is live and has a share card."** | Create success | < 5 min from start |
-| Kavya | "Someone followed me and I earned my first fee." | Studio / weekly email | First week |
-| Kavya | "Followers saw my reason and most stayed." | Proposal executed summary | First recipe change |
-| Jordan | **"Buy → drift trim → recipe-change notice → in-kind exit, all on-chain, in 2 minutes."** | Judge path | < 2 min |
+| Asha | **"I'm Founding Follower #212 with a slice of 5 stocks."** | Buy success | First session |
+| Asha | **"It rebalanced itself and told me why."** | First trim in Activity | First week |
+| Asha | **"I can get out any time, even on a Sunday."** | Exit sheet | First visit to Exit |
+| Tunde | "The stock tokens are real tokens I can withdraw." | Details; Get the stocks success | First session |
+| Kavya | **"My basket is live, I'm Founding Creator #07, and it has a share card."** | Create success | < 5 min |
+| Kavya | "Followers saw my reason and most stayed." | Change executed summary | First recipe change |
+| Jordan | **"Buy → change notice → in-kind exit, all on-chain, in 2 minutes."** | `/try` | < 2 min |
 
 ---
 
@@ -158,452 +167,363 @@ Four personas. The first is the one we design for; the others must not be broken
 
 ### 3.1 Nav model
 
-**Recommendation: four bottom tabs on mobile, same four as a top nav on desktop. Creator tools appear as a fifth tab ("Studio") only after you create a basket.**
+**Four bottom tabs on mobile, the same four as a top nav on desktop. No Studio tab for Dec 4: creator tools live in Me → Your baskets.**
 
 | Tab | Purpose | Default for |
 |---|---|---|
-| **Explore** | Discover baskets and creators. Search. Themes. | Logged-out users; logged-in users with no holdings |
-| **Portfolio** | What I own: baskets, loose stock tokens, cash (USDC), "held for you" (owed). Pending changes on my baskets. | Logged-in users with holdings or cash |
-| **Activity** | Inbox of things that happened or need a decision: recipe-change notices, trims, receipts, claims, market alerts. | Deep links from notifications |
-| **Me** | Account, add money, address, display currency, notifications, legal, help, sign out. Entry to "Build a basket". | — |
-| **Studio** (conditional) | My baskets as a creator: earnings, followers, propose/cancel changes, AI suggestions, share. | Creators after first basket |
+| **Explore** | Discover baskets and creators. Search. Themes. | Logged-out users; signed-in users with no holdings |
+| **Portfolio** | Baskets, withdrawn stock tokens, cash (test USDC), held-for-you claims. Pending changes on my baskets. | Signed-in users with any balance |
+| **Activity** | In-app inbox: recipe-change notices (Needs you), trims and executed/cancelled changes (Updates), receipts. | Links from change-notice emails |
+| **Me** | Profile with Founding badge(s), **Your baskets** (creator tools: overview, propose, pending, cancel, share), Build a basket, Add test money, help, legal, sign out. | — |
 
-Why not "Create" as a tab (as in wireframes round 1): it gives 25% of the nav to an action fewer than ~5% of users will take, and it is meaningless before you've invested. Creation stays one tap away from Explore's header ("Build a basket"), the landing page, the empty search state, and Me. Once you are a creator the tab earns its place.
+- Why not "Create" as a tab (round 1): it gives 25% of the nav to a rare action. Build a basket stays one tap away: landing, Explore header, empty search, Me.
+- Why Activity: Alloy's trust story is "we explain changes". The explanations need a home that lasts after an email is read.
+- Why no Studio tab yet: few creators before Dec 4; a Me section is enough. Promote it to a tab later (§12).
 
-Why an **Activity** tab: Alloy's whole trust story is "we explain changes". Those explanations need a home that persists after a push notification is swiped away. smallcase's pending-update inbox is the right instinct; we keep the inbox but drop the "you must apply it" chore [R1].
-
-### 3.2 Global elements (present on every screen)
-- **Market status pill** (US market open / closed · opens in 3h 12m, in local time). Tapping opens a sheet explaining what still works.
-- **Environment ribbon** on testnet: "Test mode · play money". Never absent on 84532.
-- **Pending-action banner** (one at a time, highest priority): recipe change on a basket you hold < 24h · something held for you to claim · cap/paused state on a basket you're viewing.
-- **Add money** sheet, callable from Buy, Portfolio > Cash, Me.
+### 3.2 Global elements
+- **One status strip** (top, one line, highest priority wins): recipe change < 24h on a basket you hold → held-for-you claim → market closed (US, local time). Tapping opens a sheet.
+- **Test mode**: a thin coloured edge on the frame plus "TEST" on every balance and on share/OG cards. Not a third banner.
+- **"Open in browser" bar** when the page runs inside an in-app browser (X, Instagram, Telegram), on every basket page, not just at sign-up.
+- **Add test money** sheet, callable from Buy, Portfolio > Cash and Me.
 
 ### 3.3 Sitemap
 
 ```
-Landing (web, logged-out only)  ──►  Explore
-│
+One testnet host (e.g. the existing Vercel app)
+
+Landing (logged out, direct visits)  ──►  Explore
+X links  ──►  /b/:addr?s=x&p={post}  (basket page; s/p/utm kept through sign-in)
+Judges   ──►  /try
+
 ├─ Explore
 │   ├─ Search (baskets · stocks · creators)
 │   ├─ Theme chips · Sort
-│   ├─ Basket page  /b/:address
-│   │   ├─ Hero: price + chart + range
+│   ├─ Basket page  /b/:addr
+│   │   ├─ Hero: Value + chart + range
 │   │   ├─ Did followers win? (follower vs creator PnL)
-│   │   ├─ Skin in the game (creator stake, sells)
+│   │   ├─ Skin in the game (creator stake, Founding Creator badge)
+│   │   ├─ Pending change card (if any)
 │   │   ├─ What's inside (target vs now)
-│   │   ├─ How it's looked after (mode, plain language)
-│   │   ├─ What changed and why (rebalance feed) + pending change card
-│   │   ├─ Details (contract, roles, bands, feeds, max rebalance, notice, cap)
-│   │   ├─ [sheet] Buy  ──► [sheet] Add money (if short)
-│   │   ├─ [sheet] Exit: Sell to USDC | Get the stocks (withdraw in-kind)
-│   │   └─ [sheet] Share
-│   ├─ Creator page  /c/:address (baskets, track record, stake)
-│   └─ Stock page (light: what it is, which baskets hold it)
-│
+│   │   ├─ Strategy chip → explainer sheet
+│   │   ├─ What changed and why (feed)
+│   │   ├─ Details (contract, roles, bands, feeds, Value vs fill)
+│   │   ├─ [sheet] Buy  ──► [sheet] Add test money (if short)
+│   │   ├─ [sheet] Exit: Get USDC | Get the stocks
+│   │   ├─ [sheet] Change (keep / sell / get the stocks)
+│   │   └─ [sheet] Share (TEST-watermarked card)
+│   └─ Creator profile  /c/:addr
 ├─ Portfolio
-│   ├─ Total (USD, optional local estimate) + chart
-│   ├─ Baskets (rows → basket page)
-│   ├─ Stocks (withdrawn tokens; Sell / Send)
-│   ├─ Cash (USDC: Add · Send out)
-│   └─ Held for you (owed: Claim)
-│
+│   ├─ Total + since you joined
+│   ├─ Baskets → basket page
+│   ├─ Stocks (withdrawn; view only, see §12)
+│   ├─ Cash (test USDC) · Add test money
+│   └─ Held for you → Claim (per token)
 ├─ Activity
-│   ├─ Needs you (recipe-change notices open, claims)
-│   ├─ Updates (trims done, recipe changes done/cancelled, market alerts)
-│   └─ Receipts (buy/sell/withdraw/claim with tx links)
-│
-├─ Me
-│   ├─ Add money (Faucet on testnet | Send from app/exchange | Buy with local money)
-│   ├─ Your account address (Base) · Send out
-│   ├─ Notifications (email, push, Telegram)
-│   ├─ Display currency
-│   ├─ Build a basket
-│   ├─ Help · How Alloy works · Fees · Legal · Not for US persons
-│   └─ Sign out
-│
-└─ Studio (creators only)
-    ├─ Overview (AUM, fees earned, followers)
-    ├─ Basket ▸ Propose change ▸ Pending (countdown · Cancel with reason)
-    ├─ Suggestions (AI, labelled)
-    └─ Share kit
+│   ├─ Needs you (open change notices, claims)
+│   ├─ Updates (trims, changes executed / cancelled / replaced)
+│   └─ Receipts (tx links)
+└─ Me
+    ├─ Profile + Founding Follower # / Founding Creator #
+    ├─ Your baskets (creators): overview · Propose change · Pending (countdown, Cancel with reason) · Share
+    ├─ Build a basket → Create flow
+    ├─ Add test money
+    ├─ Email for change notices
+    ├─ Help · How Alloy works · Fees · Legal · Not for US persons
+    └─ Sign out
 
 Create flow (full-screen, 5 steps): Idea → Stocks → Weights → Strategy & fee → Seed & launch → Share
-Judge path (testnet): /try → one-tap account → faucet → guided tour (§4.4)
+/try judge tour
 ```
 
 ### 3.4 What lives where, and why
 
 | Thing | Lives | Why |
 |---|---|---|
-| Follower vs creator PnL | Basket page hero + Explore card | It's the differentiator and the trust answer. Must be seen before sign-up. |
-| Creator stake | Basket page, card, creator page | Skin-in-the-game is the second trust answer. |
-| Pending recipe change | Basket page card, Explore card pill, Portfolio row badge, Activity "Needs you", banner | Nobody should buy blind into a change, and holders who never open the basket page must still see it. |
-| Drift trims | Basket feed + Activity "Updates" | No action needed; must be explainable later. |
-| Withdraw in-kind | Inside the **Exit** sheet as an equal option, plus Basket overflow | It's a feature, not an emergency. |
-| Owed / held for you | Portfolio section + Activity "Needs you" + banner | Partial success must not be lost. |
-| Add money | Inline in Buy when short; Portfolio > Cash; Me | Funding is part of buying, not a separate errand. |
-| Mechanics (bands, feeds, roles, contract) | Basket page "Details" | Simple by default (Pendle "Earn vs Trade" lesson [R24]). Tunde and judges open it. |
-| US-person attestation | First money action | Not at browse. Required before buy/create. |
-| Testnet labelling | Global ribbon + every amount reads "test $" in receipts | Avoid anyone thinking it's real money; avoid screenshots that mislead. |
+| Follower vs creator PnL | Basket hero + card | The differentiator; seen before sign-up |
+| Creator stake | Basket, card, profile | Skin in the game |
+| Pending recipe change | Basket card, card pill, Portfolio badge, Activity, status strip | Nobody buys blind into a change |
+| Trims | Basket feed + Activity Updates | No action needed; explainable later |
+| Get the stocks | Equal option in the Exit sheet | A feature, not an emergency |
+| Held for you | Portfolio + Activity + status strip | Partial success must not be lost |
+| Add test money | Inline in Buy, Portfolio, Me | Funding is part of buying |
+| Mechanics | Basket Details | Simple by default |
+| US-person attestation | First money action | Not at browse |
+| Founding # | Buy/Create success, profile, share card | The traction hook (X_PLAN §2) |
+| Creator tools | Me → Your baskets | Few creators; no tab yet |
 
-### 3.5 URL scheme (for sharing and deep links)
-`/` landing · `/explore` · `/b/:addr` basket (SSR + OG image) · `/b/:addr?buy=25` opens Buy prefilled · `/b/:addr/change` opens the pending change sheet (notification target) · `/c/:addr` creator · `/portfolio` · `/activity` · `/me` · `/me/add-money` · `/create` · `/studio` · `/try` judge path.
+### 3.5 URL scheme
+`/` landing · `/explore` · `/b/:addr` basket (SSR + OG image, TEST watermark) · `/b/:addr?buy=25` opens Buy prefilled (buy intent stays in the URL so a killed tab can recover it) · `/b/:addr/change` change sheet (email target) · `/c/:addr` profile · `/portfolio` · `/activity` · `/me` · `/create` · `/try`. **Attribution:** `s`, `p`, `ref` and `utm_*` are stored before sign-in and attached to `auth_success`, `buy_success` and `create_success`.
 
 ---
 
 ## 4. End-to-end journeys
 
-### 4.1 First-time follower (Asha)
+### 4.1 First-time follower (Asha), testnet
 
 | Stage | Doing | Thinking | Feeling | Pain | Opportunity |
 |---|---|---|---|---|---|
-| 1. Discover | Sees a creator's X post with a basket share card; taps the link on her phone | "Is this another crypto thing?" | Curious, wary | Lands on a crypto-looking page; slow load on 4G | SSR basket page with OG card; first paint < 2s; no wallet prompt; plain "US stocks, from $5" |
-| 2. Understand | Reads basket page: thesis, followers vs creator, stake, what's inside | "Did people like me make money? Is the creator in it?" | Reassured if numbers are honest | Jargon (NAV, drift, B20); USD-only numbers feel abstract | Plain labels with 6-word helpers; optional "≈ ₹" estimate; "How it works" 3-step sheet |
-| 3. Decide | Taps **Buy** | "OK, $5 is fine to try" | Hopeful | Fear of commitment; tokenized vs shares | "From $5 · Sell anytime · Even at night, you can take the stocks out" under the button |
-| 4. Sign up | Email or phone OTP (Privy), attest not-US | "Why do they need this?" | Mild friction | SMS OTP delays in India; Google sign-in unavailable in some webviews (in-app browsers from X/IG) | Email OTP default; detect in-app browser and offer "Open in Chrome"; one-line "why we ask" |
-| 5. Fund | Sees "You need USDC" | "What is USDC? How do I get it with UPI?" | **Anxious; highest drop-off** | No direct UPI → USDC on Base in most widgets (see §5.2); wrong-network sends; minimums above $5 on on-ramps | Region-aware Add money (§5.2); pre-flight checklist; live "waiting for your USDC" screen; testnet: one tap |
-| 6. Buy | Back in Buy with amount kept; confirms | "Is the price fair? Any fee?" | Tense → relieved | Quote refresh; slippage failure; market closed warning | Fee shown as "$0.004/month on $5"; one review; clear "Nothing was spent" on failure |
-| 7. Own | Success: "You own a slice of 5 companies" | "Cool, I actually own something" | Proud | Token amounts (2.30 AIB) mean nothing | Show dollars per stock; prompt to turn on notifications here (value moment) |
-| 8. First rebalance | Gets "The AI Build-Out was trimmed. NVDA ran ahead." | "Did I lose money? Did I need to do something?" | Mild alarm → trust if explained | Unexpected; cost not understood | "No action needed" first line; cost in $ for *her* holding; link to "why we trim" |
-| 9. Recipe change (maybe) | Gets 24h notice | "Should I leave?" | Uncertain | Pressure; time zones | Default keep; equal exits; countdown in local time; what changes for *her* ($ moved) |
-| 10. Sell | Sells 30% or all | "Will I get my money? How do I get it back to my bank?" | Relief if smooth | Off-ramp to INR is outside Alloy | Sell to USDC works; "Send to exchange" path documented honestly; say we don't off-ramp |
+| 1. Discover | Taps a basket link in a BUILD LOG post or a creator's post; opens in X's in-app browser | "Another crypto thing?" | Curious, wary | Slow page; webview limits | SSR basket page, first paint < 2s, ~150KB JS above the fold; "Open in browser" bar |
+| 2. Understand | Reads PnL pair, stake, what's inside | "Did people like me make money?" | Reassured if honest | Jargon | Numbers + "i"; ≤ 25 words above the fold |
+| 3. Decide | Taps **Buy** | "It's test money, fine" | Playful | "What is this money?" | Button helper: "Free test dollars" |
+| 4. Sign up | Email code (default), one-sentence attestation | "Why do they need this?" | Mild friction | App switch to mail can reload the page | Codes not magic links; amount + basket kept in URL |
+| 5. Fund | Test dollars added (automatic at sign-up, or one tap) | "Nice, that was it" | Relieved | — | Label: "1,000 test dollars. Not real money." |
+| 6. Buy | Preset $25 or $100 → Confirm | "What do I get?" | Tense → relieved | Quote moves; off-hours gap | "≈ you get" from the quote; "Cost ≈ $0.03" |
+| 7. Own | Success: **Founding Follower #212** + slice of 5 stocks | "Screenshot this" | Proud | Dead-end success | **Share card is the primary CTA** (TEST watermark, ref link) |
+| 8. First trim | Activity: "Trimmed NVDA. Your value unchanged except $0.06." | "Did I need to do something?" | Mild alarm → trust | Unexpected | "No action needed" first |
+| 9. Recipe change | Email + Activity: changes in 24h | "Should I leave?" | Uncertain | Pressure | Default keep; "≈ $14 of yours moves"; equal exits |
+| 10. Sell | Sells 30%, any day of the week | "Will I get it?" | Relief | Off-hours price gap | Amber chip if fill differs from Value |
 
 ### 4.2 Returning follower
 
 | Stage | Doing | Thinking | Feeling | Pain | Opportunity |
 |---|---|---|---|---|---|
-| 1. Trigger | Opens from a notification or habit (evening) | "How am I doing?" | Neutral | Session expired; re-login | Long Privy session; Portfolio is the logged-in home |
-| 2. Check | Portfolio total, today, each basket | "Why is it down today?" | Calm or anxious | Day-PnL tinting raises anxiety | Lead with "since you joined"; day change secondary; market status visible |
-| 3. Catch up | Activity: trims, notices | "What happened while I was away?" | Informed | Missed push | Unread dot on Activity; summary card "2 updates since Tue" |
-| 4. Act | Add more / sell some / decide on a notice | "Should I add more?" | Confident | Re-funding friction | "Buy more" with last amount; saved funding method |
-| 5. Explore more | Browses other baskets | "What else is good?" | Curious | Overlap between baskets unknown | "You already own NVDA via The AI Build-Out" hint on basket pages |
+| 1. Trigger | Opens from a change-notice email or habit | "How am I doing?" | Neutral | Session expired | Long Privy session; Portfolio is home |
+| 2. Check | Portfolio total, since you joined | "Why is it down today?" | Calm or anxious | Day-change anxiety | Since-joined first; day change secondary |
+| 3. Catch up | Activity | "What happened?" | Informed | — | Unread dot; "2 updates since Tue" |
+| 4. Act | Buy more / sell / decide on a notice | — | Confident | — | "Buy more" with last amount |
+| 5. Explore | Other baskets | "What else?" | Curious | Overlap | "You already hold NVDA via The AI Build-Out" |
 
-### 4.3 Creator (Kavya)
+### 4.3 Creator (Kavya), testnet
 
 | Stage | Doing | Thinking | Feeling | Pain | Opportunity |
 |---|---|---|---|---|---|
-| 1. Decide to create | Taps "Build a basket" from landing/Explore/Me | "Is this worth it? 1% of what?" | Curious | Unclear economics | Earnings calculator: "If 200 people put in $50 → ~$80/yr to you" (verify math in UI: 1% × $10k × 80%) |
-| 2. Name + thesis | Name, ticker, 280-char thesis, story toggle | "How do I make it sound good?" | Creative | Ticker collisions; story-basket legal lines | Live preview of the share card; auto "not affiliated" + date for story baskets |
-| 3. Pick + weight | Picks 2–10 of the universe; sets weights | "Why only 10 stocks?" | Constrained | Small universe looks broken; % math on phone | Say why the list is short; "Split evenly"; typed numbers; warn > 40% |
-| 4. Strategy + fee | Picks mode; sees fee fixed 1% | "What do these modes do?" | OK | Abstract modes | Mini simulation: "Last 3 months, this mode would have trimmed 2 times" (stretch) |
-| 5. Seed | Seeds ≥ $10 (more = more credible) | "How much should I put in?" | Committed | Needs USDC (same funding wall) | Same Add money flow; "Followers see your stake" |
-| 6. Launch + share | Success → Share on X / copy link | "Will anyone follow?" | Excited | Share card ugly; link opens slow | OG card with thesis, top 3, stake; prefilled post |
-| 7. Grow | Watches followers, AUM, fees | "Is this working?" | Motivated / anxious | Fees are basket tokens, not USDC | Show fees in $ with "paid as basket tokens" helper |
-| 8. Propose change | Edits weights, writes reason, sends 24h notice | "Will followers leave?" | Nervous | Can't see impact; cost estimate | Preview exactly what followers see; estimated cost; who's notified |
-| 9. Cancel (maybe) | Cancels with a reason before execution | "I made a mistake" | Embarrassed | Public cancellation | Cancel is normal; reason shown neutrally; followers notified once |
-| 10. Executed | Sees result, cost, followers who left vs stayed | "Did it go well?" | Relief | Execution delayed (market closed, feed paused) | Explicit "waiting for market open / healthy prices" state |
+| 1. Decide | "Build a basket" from landing, Explore, Me or a "reply with a story" link | "Worth it?" | Curious | Unclear economics | "1% a year · you keep 80%" chip; "Founding Creator spots: 31 of 50" (only if true) |
+| 2. Idea | Name, ticker, thesis, story toggle | "Make it sound good" | Creative | Ticker collisions | Live share-card preview |
+| 3. Stocks + weights | 2–10 stocks, typed % | "Why only 10?" | Constrained | % maths on a phone | "Split evenly"; stacked bar; warn > 40% |
+| 4. Strategy | Mode chip; fee fixed | "What do these do?" | OK | Abstract | One line each; explainer sheet |
+| 5. Seed | ≥ $10 test dollars | "How much?" | Committed | — | Same inline faucet; draft never lost on failure |
+| 6. Launch | Success: **Founding Creator #07** + share card | "Will anyone follow?" | Excited | — | Share on X is primary; "Propose a change" link for later |
+| 7. Grow | Me → Your baskets: AUM, followers, fees | "Working?" | Motivated | Fees are tokens | Fees in $, "paid as basket tokens" behind "i" |
+| 8. Propose | New weights, reason, preview, send | "Will they leave?" | Nervous | — | Preview exactly what followers see |
+| 9. Replace / cancel | Edits again or cancels with a reason | "I changed my mind" | Embarrassed | Timer restarts | Clear "This restarts the 24h notice" warning |
+| 10. Executed | Sees cost and stayed-vs-left | "Did it go well?" | Relief | Waiting for market | "Due · waiting for market open" state |
 
-### 4.4 Judge (Jordan): the 2-minute path on Base Sepolia
+### 4.4 Judge (Jordan): 2 minutes on Base Sepolia
 
-| t | Step | What they see | Proof shown |
+| t | Step | What they see | Proof |
 |---|---|---|---|
-| 0:00 | Opens link from submission → `/try` | "Try Alloy with test money. 2 minutes. Nothing real is at stake." One button: **Start** | Test-mode ribbon |
-| 0:10 | Email OTP (or "Continue as guest" if Privy guest accounts are enabled, *verify availability*) | Account created; **1,000 test dollars added** automatically via `dripTo` relayer | Faucet tx link |
-| 0:30 | Lands on pre-seeded basket "The AI Build-Out (test)" with 2 weeks of history, ≥ 1 trim and an open 10-min demo recipe change | Follower vs creator PnL, feed, pending change card | Contract link in Details |
-| 0:45 | Buys $100 | Receipt: what you own in dollars per stock | Buy tx |
-| 1:05 | Opens the pending change: "Changes in 6 min · TSLA → AMZN · reason" | Keep / Sell / Withdraw | `RecipeProposed` tx |
-| 1:20 | Taps **Get the stocks** for 30% (in-kind) | 5 stock tokens in Portfolio > Stocks | Withdraw tx |
-| 1:40 | Optional **Demo lab** (testnet only): "Move NVDA +20%" → keeper trims within ~1–2 min | Trim appears in feed with reason and cost | `Rebalanced` tx |
-| 2:00 | Tour end card: what they just saw + "Build your own basket" + repo/README | Summary of 4 on-chain actions | All tx links |
+| 0:00 | Submission link → `/try` | "Try Alloy with test money. 2 minutes." **Start** | Test edge + TEST on balances |
+| 0:10 | Email code (or Privy guest if enabled, *verify*) | 1,000 test dollars added automatically (`dripTo` relayer) | Faucet tx |
+| 0:30 | Lands on a **judge demo basket** (from a pool, one per judge): seeded history with ≥ 1 trim, plus an open 10-min demo recipe change | PnL pair, feed, countdown at exact `executableAt` | Contract in Details |
+| 0:45 | Buys $100 | Founding # + slice of 5 stocks | Buy tx |
+| 1:05 | Opens the pending change | Keep / Sell / Get the stocks | `RecipeProposed` tx |
+| 1:20 | Get the stocks, 30% | 5 tokens in Portfolio > Stocks | Withdraw tx |
+| 1:40 | (Optional) watches the change execute when the timer ends (market hours) or sees "Due · waiting for market open" | Feed item with cost | `Rebalanced` tx |
+| 2:00 | End card: the on-chain actions with links + "Build your own" + repo | — | All tx links |
 
-Edge cases specific to judges: faucet already used today (show remaining balance; we can top up via relayer since we control tUSDC mint); keeper rebalance limit (1/day per basket) means Demo lab must target a **fresh demo basket per judge or a pool of demo baskets** (see Open question 2); testnet RPC slow (optimistic UI with tx pending states); judge on desktop (fully supported, not a phone-only design).
+Edge cases: faucet already used today → we top up via the relayer (we control tUSDC); weekend → buy, sell and Get the stocks all work, the demo change shows "Due · waiting for market open" (honest, and itself a demo of the guard); RPC slow → pending state, no double submit. **The Demo lab with "move NVDA +20%" is cut**: it moved shared feeds for everyone and read as oracle control. Seeded history replaces it.
 
 ---
 
 ## 5. Task flows with all states
 
-Notation: **→** next step, **[state]** a screen state, **⟂** an exit/branch. Each flow lists triggers, happy path, every state, and edge cases. Diagrams for each are in `ux-map.html`.
+Diagrams for each are in `ux-map.html`.
 
 ### 5.1 Sign-up / login
 
-**Trigger:** first money action (Buy, Create, Add money, "Notify me", Studio) or "Sign in". Never on first open.
+**Trigger:** first money action (Buy, Create, Add test money) or "Sign in". Never on first open.
 
-**Happy path:** Buy tapped → [sheet: Make an account] email (default) / phone / Google / passkey → OTP → [attest: not a US person + allowed where I live] → return to the action that triggered it, with its state intact (amount, basket).
-
-| State | Behaviour |
-|---|---|
-| OTP sent | Resend after 30s; "Check spam"; switch method |
-| OTP wrong / expired | Inline error, keep the field; 5 tries then cooldown |
-| SMS not arriving (common on Indian DND numbers *(verify)*) | After 45s, offer email |
-| In-app browser (X, Instagram, Telegram) | Detect; Google OAuth often blocked in webviews *(verify per platform)* → hide Google, show "Open in Chrome/Safari" |
-| Attestation declined ("I am a US person") | Explain we can't serve them; allow browsing only; no funding UI |
-| Returning user, new device | Same email → same embedded account (Privy) |
-| Session expired mid-flow | Re-auth sheet over the current screen; resume the action |
-| Privy outage | "Sign-in is down. Browsing still works." Retry with backoff |
-| Account created but attestation not done | Any money action re-shows attestation |
-| Already signed in on testnet and mainnet | Separate environments; never mix balances (Decision D9) |
-
-**Never:** seed phrase, "connect wallet" as the first option, KYC forms.
-
-### 5.2 Funding ("Add money")
-
-The hardest real-world step. Three routes, ranked by environment and region. The sheet remembers the triggering amount ("You need $20.00 more for this buy").
-
-**Testnet (84532)**
-→ [Add test money] one button "Get 1,000 test dollars" → relayer calls `dripTo(user)` (no gas needed by user) → [pending ~2–5s] → [success: balance updated] → return to Buy.
+**Happy path:** Buy → [Make an account: **email code (default)** · Google (hidden in in-app browsers) · passkey] → code → [one sentence: "I'm not a US person, and this is allowed where I live."] → test dollars added automatically → back to the action with amount and basket kept (URL + stored attribution).
 
 | State | Behaviour |
 |---|---|
-| Already claimed today | "You've had today's 1,000 test dollars. Next refill in 7h 12m." If balance < $5, offer an admin top-up path for judges (relayer) |
-| Faucet daily cap hit (`maxDripsPerDay`) | "Test money is out for today." Show judge fallback contact; this must not happen during judging (ops alert) |
-| Relayer down | Fallback: user-paid `drip()` only works with sponsored gas; otherwise show an error and contact |
+| In-app browser (X, IG, Telegram) | "Open in browser" bar on the page; Google hidden (OAuth is blocked in webviews [B3]); email code works in place |
+| App switch to read the code reloads the page | Intent restored from URL (`?buy=25`); attribution from storage; code field re-shown |
+| Code wrong / expired | Inline; resend after 30s |
+| Phone login chosen, SMS slow (India DND/DLT) | After 45s offer email; email is default for IN locales |
+| Attestation declined | Browse only |
+| Session expired mid-flow | Re-auth sheet, then resume |
+| Privy outage | "Sign-in is down. Browsing still works." |
 
-**Mainnet (8453): route A, "Send from an exchange or app"** (recommended primary for P2 and many P1)
-→ [Choose where from: Binance · Coinbase · Bybit · OKX · other wallet] → [Instructions per source: **Asset USDC · Network Base** (big), address with copy + QR, minimum recommended $5] → [Waiting for your USDC… listening] → [Arrived: $X USDC] → return to Buy.
+### 5.2 Funding (testnet only for Dec 4)
 
-| State | Behaviour |
-|---|---|
-| Wrong token arrives (USDT, ETH on Base) | Detect; "We got USDT, not USDC. Swap it to USDC" (one-tap swap, stretch) or instructions |
-| Wrong network (USDC on Ethereum/Polygon/Tron/BSC) | We can't see it. Pre-flight checklist must prevent it: "Pick **Base** as network. Other networks can lose your money." Help article for recovery (same address works on EVM chains, Tron doesn't) |
-| Exchange doesn't support Base withdrawals | Per-source tip; suggest an alternative source |
-| Long wait (> 10 min) | "Still waiting. Exchanges can take up to 30 min." Leave and get notified on arrival |
-| Below $5 arrives | Credited; "Add $X more to buy" |
-
-**Mainnet: route B, "Buy with local money"** (on-ramp widget; region-aware)
-→ [Country detected, editable] → [Provider list: only providers that support that country + USDC on Base; show method (UPI/IMPS, bank transfer, PIX, QRIS, card), fee, minimum, KYC level] → widget (KYC happens in provider) → [Processing] → [Arrived].
-
-Research summary (route B coverage is uneven, and this is the core reason route A matters):
-- **Coinbase Onramp:** available where Coinbase operates; guest checkout (no Coinbase account) was limited to US/UK/CA and is being retired in the hosted widget [S1][S2]. Coinbase reopened in India in Dec 2025 and added IMPS rupee rails in 2026, not UPI [S9][S10] *(verify current state)*. Testnet: not available [S5].
-- **Transak:** India launch included UPI; tiered KYC (light ≈ up to $200 in ~30s, standard up to $25k in ~10 min) [S3][S4] *(verify India limits)*.
-- **MoonPay:** PIX for BRL in Brazil; India listed as restricted/prohibited; Nigeria contested [S6][S7] *(verify)*.
-- **Onramper (aggregator):** claims 130+ payment methods, 190+ countries; Nigeria P2P bank transfer via partners (Yellow Card, Wello); Brazil PIX; notes QRIS converts at 56% vs 3.6% for cards in Indonesia [S8].
-- **Privy funding:** can enable card / exchange / wallet transfer methods from the dashboard (providers include MoonPay, Stripe, etc.) [S5] *(verify which work for non-US cards)*.
+**Default:** test dollars are dripped automatically at first sign-in (relayer `dripTo`). **Elsewhere:** "Add test money" → **Get 1,000 test dollars** → ~2–5s → balance updated → back to the action.
 
 | State | Behaviour |
 |---|---|
-| No provider for the country | Say so plainly; offer route A and route C |
-| Provider minimum > the amount (e.g. $20–$30 minimums are common *(verify)*) | Show the minimum before opening the widget |
-| KYC failed / pending in provider | "Your payment provider is checking your ID. That's them, not us." Keep Alloy usable |
-| Payment done, USDC not arrived | Keep listening; show provider order status link |
-| Card declined (common for crypto MCCs in India/Nigeria *(verify)*) | Suggest local method or route A |
+| Already claimed today | "Next refill in 7h 12m." If balance < $5, relayer top-up (we mint tUSDC) |
+| Faucet daily cap (`maxDripsPerDay`) | Raise before launch; ops alert; message "Test money is out for today" |
+| Relayer down | Error + retry; ops alert |
+| Label | Always "test dollars · not real money" at the drip and on balances |
 
-**Mainnet: route C, "Other ways"** (guidance only, link-out): P2P on major exchanges (Nigeria/India users already use them; escrow model) [S12], with a safety checklist (only in-app escrow, never off-platform). We don't integrate P2P.
+Mainnet funding (exchange send, on-ramps, P2P, wrong-network recovery) is **deferred** (§12). The research behind it stays in §11 [S1–S12] for later.
 
 ### 5.3 Buy
 
-**Entry points:** Basket page sticky "Buy" · card quick-buy (no; one entry keeps it clear) · `?buy=` deep link · "Buy more" on Portfolio row.
+**Happy path:** [Buy sheet: amount keypad, presets **$10 · $25 · $100** (no "Max"), balance, logo row with $ per stock, **"≈ you get" from the live quote**, chips "Fee 1%/yr" and "**Cost ≈ $0.03**" (pool fees + impact)] → **Buy $25** (tap) → [Buying… ~5s] → [Success: **Founding Follower #N** (first buy only) + "Your slice: 5 stocks" + $ per stock + "Refunded $0.42" if any + **Share** (primary) + Done].
 
-**Happy path:** [Buy sheet: amount keypad, presets $5/$25/$100/Max, balance line, "what you'll own" in $ per stock, fee in $/month] → [Review inline: price, price impact, max slippage, fee "on us"] → **Confirm** → [Pending: "Buying 5 stocks… ~5s"] → [Success: "You own a slice of 5 companies" + per-stock $ + receipt link] → prompt notifications (first buy only).
-
-Under the hood: quote → simulate → USDC permit/approve exact → `router.buy(minOuts, minShares)` → receipt check → invalidate.
+Under the hood: quote → simulate → exact approve/permit → `router.buy(minOuts, minShares)` with fixed 1% slippage on testnet → receipt → invalidate. Tiny leftovers are donated to the basket; larger leftovers are refunded as USDC.
 
 | State | Behaviour |
 |---|---|
-| Not signed in | 5.1 then back here with amount |
-| Below $5 | Inline "Minimum is $5" |
-| Balance short | Inline "You have $3.20. Add $1.80" → 5.2 → return with amount |
-| Quote loading / stale (> 15s) | Skeleton; auto-refresh; never move the number while finger is on Confirm |
-| Price moved beyond tolerance before confirm | "Price moved. New estimate…" requires re-confirm |
-| Slippage revert | "Prices moved more than 0.5%. Nothing was spent." [Try again] [Edit slippage] |
-| Market closed | Allowed. Amber note: "US market closed. Prices can be wider until 8:00 PM." Show price impact prominently. Option "Remind me at open" |
-| Feed stale / paused (rebalance-only guard) | Buy works (router has no oracle dependency); note "Rebalances paused for this basket while a price source is checked" |
-| Basket at TVL cap | Buy disabled: "This basket is full for now ($5,000 beta limit)." [Watch] [See similar] |
-| Amount would exceed cap | Clamp: "Only $640 of room left. Buy $640?" |
-| Global pause (issue paused) | "New buys are paused while we check something. Selling and withdrawing always work." |
-| Pending recipe change on this basket | Inline card in sheet: "This basket changes in 14h: TSLA → AMZN" [See change]. Not a block |
-| Demo basket (10-min notice) | Badge "Demo basket: changes can happen with 10 minutes' notice" |
-| Policy-blocked transfer of a component to router/vault (`PolicyForbids` on simulate) | "One stock in this basket can't be bought right now." No tx sent |
-| Tx pending > 30s | "Still confirming. You can leave; we'll tell you." Activity receipt shows pending |
-| Tx failed (generic) | "That didn't go through. Your USDC is still in your account." |
-| Network/RPC error | Retry with fallback RPC; never double-submit (idempotent UI lock) |
-| User backgrounds app mid-tx | On return, poll receipt; show result |
-| First buy success | Notification opt-in prompt (value moment), share option secondary |
+| Not signed in | 5.1, then back with amount |
+| Below $5 | "Minimum $5" |
+| Short balance | "Add test money" inline → back |
+| Quote stale (> 15s) | Auto-refresh; never move the number under the user's finger |
+| Fill vs Value gap > 0.5% (common off-hours) | Amber chip "Fills ~0.8% lower now" (or higher); "Why?" sheet: "US market closed; pools move on their own" |
+| Market closed / weekend | **Allowed.** Status strip shows closed; gap chip only when the gap is real |
+| Pending recipe change on this basket | Inline chip "Changes in 14h" → Change sheet. Not a block |
+| Demo basket (10-min notice) | "Demo" badge |
+| Mainnet proof only: cap reached / partial room | "Full ($5k limit)" / clamp to room left. Not on testnet |
+| Global pause (issue paused) | "New buys paused. Selling and Get the stocks still work." |
+| Simulate reverts with `PolicyForbids` | "One stock can't be bought right now." Nothing sent |
+| Slippage revert | "Nothing spent." Try again |
+| Pending > 30s / unknown | Leave allowed; poll by tx hash; no second submit |
+| Generic fail | "Your USDC is still there." |
+| First-buy success | Founding #, share card primary; notification ask is cut |
 
-### 5.4 Sell % (to USDC)
+### 5.4 Exit → Get USDC (sell %)
 
-**Entry:** Basket page "Sell" (when you own it) → **Exit sheet** with segmented control: **Get USDC** (default) | **Get the stocks**.
-
-**Happy path:** slider 0–100% (stops 25/50/75/All) and/or $ field → live "≈ $37.92 USDC · You keep $88.48" → breakdown (price impact, slippage, no exit fee) → **Confirm** → pending → success "Sold. $37.88 USDC is in your account" + "Send to exchange" link.
+Exit sheet: segmented **Get USDC** (default) | **Get the stocks**. Slider 25/50/75/All → "≈ $37.92" from the quote · "You keep $88.48" · "Cost ≈ $0.05" → **Sell 30%** → success "$37.88 USDC added".
 
 | State | Behaviour |
 |---|---|
-| 0% | Confirm disabled |
-| Dust left after sell (< $0.50) | Suggest "Sell all" |
-| Market closed | Allowed with amber note; recommend "Get the stocks" for no price impact |
-| High price impact (> 1%) | Warn; suggest smaller amount or in-kind |
-| Slippage revert | "Nothing was sold." retry |
-| Component transfer blocked during redeem | Sell flow's router path: if a component can't be swapped/transferred, simulate fails → offer "Get the stocks" (which handles owed) |
-| Pending recipe change | Sheet header shows countdown; selling before is a supported choice |
-| Global pause | Never affects sell |
+| Any day, any hour | Works (no fresh feed needed) |
+| Fill vs Value gap > 0.5% | Amber chip; suggest Get the stocks (no price impact) |
+| Impact > 1% | Warn; suggest smaller or Get the stocks |
+| Dust left (< $0.50) | Suggest All |
+| Slippage revert | "Nothing sold." |
+| Pending change | Countdown in the sheet header |
+| Global pause | Never affects selling |
 
-### 5.5 Withdraw in-kind ("Get the stocks")
+### 5.5 Exit → Get the stocks (withdraw in-kind)
 
-**Happy path:** same slider → table of stock tokens you'll receive (amount + ≈$) → note "These stay in your account and won't be rebalanced" → **Confirm** → success "5 stock tokens are in Portfolio > Stocks".
-
-| State | Behaviour |
-|---|---|
-| Any market state, any pause | Always works (redeem can't be paused) |
-| One token transfer blocked (B20 policy) | **Partial success:** "4 of 5 came through. Your AMZNc is held for you." → 5.6 |
-| All tokens blocked | Same, "held for you" for all; explain likely cause and that claim is available later |
-| After withdrawal | Portfolio > Stocks: each token row has **Sell to USDC** (single-stock swap, stretch) and **Send** |
-| Corporate action pending on a component | Note: "TSLA has a split scheduled. Your token amount won't change; its price per token will." |
-
-### 5.6 Claim owed ("Held for you")
-
-**Trigger:** `Redeemed` event with non-zero `owedMask`.
-
-→ banner + Activity "Needs you" + Portfolio "Held for you" row → [Claim sheet: token, amount, ≈$, why held] → **Claim** → success, or still-blocked.
+Slider → logo table of tokens with ≈ $ → chip "Won't rebalance" → **Get the stocks** → "5 stock tokens in Portfolio > Stocks".
 
 | State | Behaviour |
 |---|---|
-| Claim succeeds | Row moves to Stocks |
-| Still blocked | "Still can't send this token to your account. We'll keep it for you; try again later." No penalty, no expiry |
-| Claim to a different address | Advanced: "Send to another address" (Tunde) |
-| Multiple tokens owed | "Claim all" (one tx per token if contract requires; show progress) |
+| Any market state, any pause | Always works |
+| One token's transfer blocked | "4 of 5 came through. AMZNc is held for you." → 5.6 |
+| After withdrawal | Portfolio > Stocks is **view-only** for Dec 4 (single-stock sell and send-out deferred). Say so: "To sell these, use a Base DEX. In-app selling is coming." |
 
-### 5.7 Recipe-change notice and the 24h window (follower side)
+### 5.6 Claim ("Held for you")
 
-**Trigger:** `RecipeProposed` on a basket the user holds (or watches).
+Banner + Activity + Portfolio row → Claim sheet (token, amount, ≈ $) → **Claim** (gas-sponsored; must be signed by the user because `claimOwed` is caller-only) → moved to Stocks, or "Still can't send; kept for you, no expiry". Several tokens = one tap each (no "Claim all" batch). Rare on testnet; build last.
 
-→ push/email/Telegram + Activity "Needs you" + banner + Portfolio badge → [Change sheet: before/after table, creator's reason (quoted), what moves for *your* $ ("About $14 of your $126 moves from TSLA to AMZN"), estimated cost, execution time in local time + "if the market's open, otherwise next open", countdown] → three equal choices:
+### 5.7 Recipe-change notice and window (follower)
 
-1. **Keep my basket** (default, also by doing nothing) → item marked "You're staying in" (lets us stop reminders).
-2. **Sell** → 5.4 prefilled 100%, editable.
-3. **Get the stocks** → 5.5 prefilled 100%.
+**Trigger:** `RecipeProposed` on a basket the user holds.
 
-| State | Behaviour |
-|---|---|
-| Reminder | One reminder at T−2h only if user hasn't chosen (opt-in setting; default on for holders) |
-| Creator cancels (`RecipeCancelled`) | "Kavya cancelled the change: '{reason}'. Nothing changes." Item resolved |
-| Time passes, market closed / feed unhealthy | "Due, waiting for the market to open / prices to be healthy." Keep exit options available |
-| Executed (`Rebalanced` after proposal) | "Done. Cost $6.10 (0.14%). Your $126 is now on the new recipe." Before/after recorded in feed |
-| User already exited | Item shows "You left before the change" (no further notifications) |
-| User buys during the window | Buy sheet shows the pending change (5.3) |
-| Demo basket (10-min) | Countdown in minutes; badge everywhere |
-| AI-originated proposal | Permanent "AI-suggested, approved by @kavya" label |
-| Multiple pending changes (shouldn't happen: one Pending slot) | N/A; a new proposal replaces? Contract has one `Pending`; UI shows only latest and a "replaced" note if it changed *(confirm contract behaviour)* |
-
-### 5.8 Drift trim notification
-
-**Trigger:** keeper `Rebalanced` without a pending proposal.
-
-→ Activity "Updates" + optional push (off by default; digest on) → item: "Trimmed: NVDA 41% → 40%. NVDA ran ahead. Cost $1.90 for the basket (≈ $0.06 for you)." → link "Why we trim" (mode explainer). No action.
+→ email + Activity "Needs you" + status strip + Portfolio badge → [Change sheet: before→after bars, quoted reason, "**≈ $14 of yours moves**", "Cost ≈ $6 for the basket", **countdown to the exact `executableAt`** in local time] → Keep (or do nothing) · Sell · Get the stocks.
 
 | State | Behaviour |
 |---|---|
-| Trim deferred (market closed, feed stale/paused, multiplier change pending, loss budget used) | Basket page "Details" shows "Rebalance waiting: {reason}". No user notification unless > 24h overdue (then one honest note) |
-| Trim partially done (chunked across days due to size/caps) | "Trimmed part of the way. More tomorrow." |
-| Let Winners Run (no drift trims) | Feed explains "This basket only trims above 40%" |
-| Trend-aware skipped a trim | Optional feed note "NVDA above its 50-day average; left alone" (only on the basket page, never pushed) |
+| Keep chosen | Marked "You're staying" |
+| **Replaced** (creator proposes again) | New email + Activity item "@kavya updated the change" with a **diff vs the previous version**; the timer restarts at the new `executableAt`; **every follower's choice resets** (a Keep on version A doesn't carry to B); the feed logs the replacement |
+| Cancelled | "Cancelled: '{reason}'. Nothing changes." |
+| Due, market open, feeds healthy | Keeper executes at `executableAt`. **A trim never delays it** (separate timing) |
+| Due, market closed or feed stale/paused | "Due · runs at market open" (or "when prices are healthy"). Exits stay open |
+| Executed over several days (large change, loss caps) | "Changing · day 1 of 2" |
+| Executed | "Done. Cost $6.10. Your $126 is on the new recipe." |
+| User already exited | "You left before the change." No more emails |
+| Demo basket | Minutes countdown; "Demo" badge |
 
-### 5.9 Market closed / stale price / paused feed / sequencer
+The T−2h reminder is cut (§12).
 
-| Condition | Buy | Sell | Withdraw | Rebalance | What the user sees |
+### 5.8 Drift trim
+
+**Trigger:** keeper `Rebalanced` with no pending change.
+→ Activity "Updates" only (no email) → "Trimmed NVDA 41→40%. Your value unchanged except $0.06 cost." → "Why?" → mode explainer.
+
+| State | Behaviour |
+|---|---|
+| Deferred (market closed, feed stale/paused, loss budget) | Basket Details: "Rebalance waiting: {reason}". No notification |
+| Partial (chunked) | "Trimmed part way. More tomorrow." |
+| Let Winners Run | Feed: "Only trims above 40%" |
+| A recipe change is due | Trim timing never blocks the change |
+
+### 5.9 Market and feed conditions
+
+| Condition | Buy | Sell | Get the stocks | Rebalance (trim or recipe) | User sees |
 |---|---|---|---|---|---|
-| US market open, feeds healthy | Yes | Yes | Yes | Yes | Green dot pill "Open · closes 2:30 AM" |
-| Market closed (night/weekend) | Yes (warn) | Yes (warn) | Yes | Waits | Amber pill with local opening time; chart flat-dashed since close |
-| Market holiday / half day | Yes (warn) | Yes (warn) | Yes | Waits | Explicit holiday copy |
-| One feed stale (> 25h) or paused | Yes | Yes | Yes | Blocked | Basket "Details" + feed: "Rebalances paused: price source for AMZN isn't updating." Only push if it blocks a due recipe change |
-| Corporate action pending (±1 day) | Yes | Yes | Yes | Blocked | "TSLA split scheduled for Fri. Rebalances wait until after." |
-| Global pause (admin) | **No** | Yes | Yes | No | Banner "New buys paused while we check something" |
-| Base sequencer down | Txs can't land | — | — | Blocked | "Base network is having trouble. Your money is safe; try again soon." |
-| Our API/indexer down | Fallback to chain reads for balances; disable quotes if needed | | | | "Some numbers may be out of date (last updated 12 min ago)" |
+| US market open, feeds healthy | Yes | Yes | Yes | Yes | Strip hidden or "Open" |
+| Market closed (nights, **weekends**, holidays) | **Yes** | **Yes** | Yes | Waits | Strip "Closed · opens 8:00 PM"; amber gap chip in Buy/Exit if fill differs from Value by > 0.5%; chart flat-dashed since close |
+| Feed stale (> 25h) or paused | **Yes** | **Yes** | Yes | Blocked | Details: "Rebalances paused: AMZN price source"; due change shows "waiting for healthy prices" |
+| Global pause (admin) | No | Yes | Yes | No | Strip "New buys paused" |
+
+Corporate-action, sequencer and offline states are deferred (§12). On testnet the price bot keeps mock feeds fresh (12h heartbeat), so weekends only differ by the market-closed rule.
 
 ### 5.10 Policy-blocked transfer (B20 `PolicyForbids`)
-- On **simulate** before any write: decode and explain which token, don't send the tx.
-- On **redeem** (withdraw): never blocks; partial → owed (5.6).
-- On **send-out** of a withdrawn token from Portfolio > Stocks: "This token can't be sent to that address right now." Suggest selling to USDC.
-- Copy rule: say "held for you" or "can't be sent right now", never "failed" or "frozen".
+- On simulate: name the token, send nothing.
+- On Get the stocks: never blocks; partial → held for you (5.6).
+- Copy: "held for you" or "can't be sent right now", never "failed" or "frozen".
 
-### 5.11 Failed transaction / slippage (generic rules for all writes)
-1. Simulate first; most failures should never reach a signed tx.
-2. On revert: say what happened, say that nothing was spent (if true), offer one fix.
-3. Never auto-raise slippage. "Edit max slippage" is behind "See breakdown", capped at 3% with a warning above 1%.
-4. Pending > 30s: allow leaving; receipt lands in Activity.
-5. Unknown outcome (RPC timeout): show "Checking…" and poll by tx hash; never invite a second submit until resolved.
+### 5.11 Failed transaction / slippage (all writes)
+1. Simulate first.
+2. On revert: what happened, "nothing was spent" (if true), one fix.
+3. Slippage is **fixed at 1% on testnet**, not editable.
+4. Pending > 30s: leaving is fine; the receipt lands in Activity.
+5. Unknown outcome: poll by hash; never invite a second submit.
 
-### 5.12 TVL cap reached
-- Explore card: progress bar appears at > 50% ("$3,100 of $5,000 filled"); at 100% badge "Full".
-- Basket page: Buy replaced by **Watch** ("Get told if room opens up"); sells by others free room → notify watchers (batched, max 1/day).
-- Partial room: clamp amount (5.3).
-- Creators: Studio shows cap usage and "Make another basket" suggestion.
+### 5.12 TVL cap
+**Testnet: no cap.** Mainnet proof: $5k per basket → "Full" badge and Buy disabled; partial room clamps the amount (computed on Value, which is what the contract checks). Watch/waitlist deferred.
 
-### 5.13 Creator flows
+### 5.13 Creator flows (in Me → Your baskets)
 
-**Create** (full-screen, 5 steps, back never loses input, draft autosaved locally):
-1. Idea: name, ticker (uniqueness check), thesis (280), story toggle → source + disclosure date required.
-2. Stocks: 2–10 from the universe; explain the list ("stocks with a price feed and enough liquidity").
-3. Weights: typed % with "Split evenly"; must total 100; warn > 40% single stock.
-4. Strategy + fee: three modes with plain lines; fee fixed 1% ("you keep 80%"); demo flag hidden in prod, visible on testnet ("10-min notice, shown to everyone as Demo").
-5. Seed: ≥ $10, presets; funding inline (5.2); summary; **Create basket** (one tx: clone + init + seed).
-→ Success: share card + "Share on X" + "Copy link" + "Go to basket".
+**Create** (5 steps; back never loses input; draft autosaved and **kept if the seed tx fails**):
+1. Idea: name, ticker (uniqueness check needs an API: or accept duplicates and show the address), thesis 280, story toggle → source + date required.
+2. Stocks: 2–10.
+3. Weights: typed %, Split evenly, total 100, warn > 40%.
+4. Strategy chip; fee "1%/yr · you keep 80%"; demo flag visible on testnet ("10-min notice, shown as Demo").
+5. Seed ≥ $10 test dollars (inline faucet) → **Create basket**.
+→ Success: **Founding Creator #N** (first 50) + share card (TEST watermark) + **Share on X** (primary) + "Go to basket" + "Propose a change later" link.
+
+**Propose** (Me → Your baskets → basket): New weights → reason (required, ≤ 140) → preview of what followers see (countdown, "≈ cost") → **Send 24h notice** → Pending card (countdown to `executableAt`) with **Cancel** (reason required) and **Edit** (warning: "This restarts the 24h notice and resets followers' choices").
 
 | State | Behaviour |
 |---|---|
-| Not attested / not signed in | 5.1 at step 5 (let them design first) |
-| Seed too low | Inline |
-| Seed swap slippage | Same failure pattern; nothing created |
-| Name/ticker offensive or impersonation (e.g. a politician's name) | Soft block with guidance (story baskets: "Name the source, not the person"; OPEN_QUESTIONS #15) |
-| Tx pending long | Keep the success screen ready; address shows when mined |
+| Change too large for one run | "May take 2–3 days at current liquidity" |
+| Due but waiting | "Due · runs at market open" |
+| Executed | Cost + "92% of followers stayed" |
 
-**Propose recipe change** (Studio → basket → Propose): editable New column → reason (required, ≤140) → preview "This is what followers will see" (notice text, timing in their time zones, est. cost) → **Send 24h notice** → Pending card with countdown + **Cancel change** (requires a reason) → executed by keeper at/after time.
+AI suggestions, earnings calculator and mode simulation are deferred.
 
-| State | Behaviour |
-|---|---|
-| Weights invalid | Inline |
-| Change too big for one day's rebalance (max size) | Warn: "May take 2–3 days to finish at current liquidity" |
-| Proposing while one is pending | Replace with warning "This replaces your pending change; followers get a new 24h notice" *(confirm contract)* |
-| Cancel | Reason required; followers notified once |
-| Execution waits (market/feeds) | Studio shows "Due, waiting for market open" |
-| AI suggestion | "Review and send notice" opens the same sheet prefilled; label persists |
-
-**Earn:** Studio shows fees in $ (paid as basket tokens), AUM, followers, follower vs creator PnL (same as public), weekly email summary.
-
-### 5.14 Empty states and first-run
+### 5.14 Empty states and first run
 
 | Context | State |
 |---|---|
-| First open, logged out | Landing (web) or Explore (if deep-linked). No onboarding carousel. A dismissible 3-line "How Alloy works" card on Explore |
-| Signed in, no money | Portfolio: "Nothing here yet. Most people start with $5 in one basket." [Add money] [Explore] |
-| Has cash, no baskets | "$212 ready. Pick a basket. You can sell anytime." |
-| No activity | "No updates yet. We'll tell you when your baskets change, and why." |
-| Basket with 0 followers | Hide follower PnL; show creator stake as the trust signal |
-| Basket < 7 days old | "New basket: 5 days of history. Too early to judge returns." Chart min range |
-| Search no results | "Build '{q}'" CTA |
-| Studio, no baskets | Not shown (tab appears after first basket) |
-| Offline | Cached last values with timestamp; disable writes |
-| Testnet first run | Ribbon + "Get 1,000 test dollars" as the first action in Portfolio |
+| First open from X | Basket page (not landing), "Open in browser" bar if in-app |
+| First open direct | Landing → Explore. No carousel |
+| Signed in, holds nothing | Portfolio: "Start with $25 of test money." [Explore] |
+| Has cash only | "$1,000 test dollars ready." [Explore] |
+| No activity | "Changes to your baskets show up here." |
+| Basket with 0 followers | Hide follower PnL; show creator stake + "Be Founding Follower #N" if spots remain |
+| Basket < 7 days old | "New · 5 days of history" |
+| Search no results | "Build '{q}'" |
+| Me → Your baskets, none | "Build a basket. Founding Creator spots: 31 of 50" (only if true) |
 
 ---
 
 ## 6. Notification and trust map
 
-Principles: notify on **changes to what you own**, never to nudge trading [R18b]. Default channel set for the hackathon: **in-app Activity + email**. Push (web push, after PWA install or explicit opt-in) and Telegram next. Ask permission at a value moment (after first buy, or when tapping "Watch"), with a pre-permission screen [S13]. Android/India opt-in tends to be higher than iOS; Chrome may auto-revoke web-push permission from low-engagement sites (installed web apps are exempt) [S14] *(verify)*.
+**Dec 4 channels: in-app Activity for everything; email only for recipe-change notices.** Push, Telegram, digests and creator emails are deferred. Email needs a provider (open question) and phone-only users get in-app only.
 
-| # | Trigger (event) | Who | Channel(s) | Timing | Message (short) | Action |
-|---|---|---|---|---|---|---|
-| N1 | `RecipeProposed` | Holders + watchers | In-app (Needs you) · email · push · TG | Immediately | "{Basket} changes in 24h. @kavya: '{reason}'. Stay in or leave first." | Open change sheet |
-| N2 | Reminder before execution | Holders who haven't chosen | Push · TG (not email) | T−2h, once | "{Basket} changes in 2h." | Open change sheet |
-| N3 | `RecipeCancelled` | Same as N1 | In-app · email (if N1 was emailed) · push | Immediately | "@kavya cancelled the change: '{reason}'." | None |
-| N4 | Recipe change executed (`Rebalanced` after proposal) | Holders | In-app · email · push | Immediately | "{Basket} is on its new recipe. Cost $6.10 (0.14%)." | View feed |
-| N5 | Recipe change due but waiting (market/feeds) | Holders | In-app only | When due | "Waiting for the US market to open." | None |
-| N6 | Drift trim (`Rebalanced`, no proposal) | Holders | In-app; **weekly email digest**; push off by default | Immediate in-app | "Trimmed NVDA 41→40%. Cost ≈ $0.06 for you." | Why we trim |
-| N7 | Rebalance overdue > 24h (feed/caps) | Holders | In-app | Once | "Rebalance waiting: AMZN price source isn't updating. Your money is fine." | Details |
-| N8 | Owed credited (`Redeemed` with owedMask) | That user | In-app (Needs you) · email | Immediately | "AMZNc is held for you. Claim anytime." | Claim |
-| N9 | Buy/Sell/Withdraw/Claim result | That user | In-app receipt · push only if user left during pending | On receipt | "You're in." / "Sold. $37.88 in your account." | Receipt |
-| N10 | USDC arrived (funding listener) | That user | In-app · push (if they left) | On arrival | "$50 USDC arrived. Finish your buy?" | Resume buy |
-| N11 | Creator sold ≥ 20% of stake | Holders | In-app · email | Immediately | "@kavya sold 40% of their stake." | Basket page |
-| N12 | Basket room opened (cap) | Watchers | Email · push | Batched, max 1/day | "The AI Build-Out has room again." | Buy |
-| N13 | Global pause / unpause | Holders | In-app banner · email if > 1h | Immediately | "New buys paused. Selling and withdrawing still work." | — |
-| N14 | Market opens and user has a deferred intent ("Remind me at open") | That user | Push · TG | At open | "US market's open." | Resume |
-| N15 | New follower(s) | Creator | In-app · daily digest | Daily | "3 new followers today." | Studio |
-| N16 | Fees earned | Creator | Weekly email | Weekly | "You earned $2.14 this week." | Studio |
-| N17 | AI suggestion ready | Creator | In-app · email | Daily max | "1 suggestion for The AI Build-Out. AI-generated, not advice." | Review |
-| N18 | Creator's change executed / waiting | Creator | In-app · email | On event | "Your change ran. 92% of followers stayed." | Studio |
+| # | Trigger | Who | Channel | Timing | Message |
+|---|---|---|---|---|---|
+| N1 | `RecipeProposed` | Holders | **Email** + Activity (Needs you) | Immediately | "{Basket} changes in 24h. @kavya: '{reason}'. Stay in or leave first." |
+| N1r | Proposal replaced | Holders | **Email** + Activity | Immediately | "@kavya updated the change. New time: {local time}. See what's different." |
+| N3 | `RecipeCancelled` | Holders | **Email** (if N1 was sent) + Activity | Immediately | "@kavya cancelled the change: '{reason}'." |
+| N4 | Change executed | Holders | Activity | On event | "{Basket} is on its new recipe. Cost $6.10." |
+| N5 | Change due, waiting | Holders | Activity | When due | "Runs at market open." |
+| N6 | Trim | Holders | Activity | On event | "Trimmed NVDA 41→40%. ≈ $0.06 for you." |
+| N8 | Held for you | User | Activity + status strip | On event | "AMZNc is held for you. Claim." |
+| N9 | Tx receipts | User | Activity | On receipt | — |
+| N10 | Creator: change executed | Creator | Activity | On event | "Your change ran. 92% stayed." |
 
-**Never send:** price-movement nudges, "you haven't checked in", leaderboard rank changes, "others are buying", streaks, confetti.
+**Never send:** price nudges, "others are buying", streaks, rank changes, confetti.
 
-**Trust surfaces (what we show, where, to answer which fear)**
+**Trust surfaces**
 
-| Fear | Trust surface | Where |
+| Fear | Surface | Where |
 |---|---|---|
-| "Leaders win, followers lose" | Follower vs creator PnL, same chart | Basket hero, card, Studio |
-| "Creator will dump on me" | Creator stake + sell alerts (N11) | Basket, card, notifications |
-| "I can't get out" | Exit sheet always on; "Get the stocks" works 24/7 even when paused | Basket, landing, market-closed copy |
-| "They'll change it behind my back" | 24h notice, reason, cancel reason, permanent feed | Feed, Activity, N1–N4 |
-| "Hidden fees" | Fee in $/month on your amount; trim costs in $ for you | Buy sheet, feed |
-| "Is this real / on-chain?" | Contract, roles, oracle status, tx links on every receipt | Details, receipts |
-| "Is this legal / am I covered?" | Plain legal lines; tokenized exposure, not shares; not for US persons; we don't do tax | Footer, attestation, Help |
+| "Leaders win, followers lose" | Follower vs creator PnL | Basket hero, card |
+| "Creator will dump" | Creator stake (and sells in the feed) | Basket, card |
+| "I can't get out" | Exit always on, 24/7; Get the stocks even when paused | Basket, landing |
+| "They'll change it behind my back" | 24h notice, reason, diff on replace, cancel reason, permanent feed | Feed, Activity, email |
+| "Hidden fees" | "Cost ≈ $x" on every buy/sell; trim cost for you | Buy, Exit, feed |
+| "Price looks wrong at night" | Value vs fill chip with "Why?" | Buy, Exit |
+| "Is this real / on-chain?" | Contract, roles, tx links | Details, receipts |
+| "Is this real money?" | TEST on balances, share and OG cards | Everywhere on testnet |
 
 ---
 
@@ -611,152 +531,172 @@ Principles: notify on **changes to what you own**, never to nudge trading [R18b]
 
 | # | Decision | Options | Recommendation | Rationale |
 |---|---|---|---|---|
-| D1 | When to ask for sign-up | (a) On open (b) At first money action (c) After N screens | **(b)** | Trust signals must be seen first; Robinhood/feel.cash browse-first [R]; smallcase also lets you browse before broker connect [S15] |
-| D2 | Primary nav | (a) Explore/Portfolio/Create/Me (round 1) (b) Explore/Portfolio/Activity/Me + conditional Studio (c) No tabs, single feed | **(b)** | Activity is where our "explain, don't ask" promise lives; Create is a rare action |
-| D3 | Funding inside Buy vs separate | (a) Separate "Deposit" first (b) Inline when short, return to Buy with amount | **(b)** | Funding is the biggest drop-off; keeping intent alive across it is the main lever [S16] |
-| D4 | Mainnet funding routes | (a) On-ramp widget only (b) Send-from-exchange only (c) Both + P2P guidance, region-aware | **(c) with route A first for the hackathon** | On-ramp coverage for IN/NG is patchy and contested [S1–S8]; users there already hold USDT/USDC on exchanges |
-| D5 | Testnet funding | (a) User calls `drip()` (b) Relayer `dripTo` automatically on first sign-in (c) Button "Get 1,000 test dollars" via relayer | **(b) for /try, (c) elsewhere** | Zero-step for judges; button keeps it understandable for others; avoids needing Sepolia ETH |
-| D6 | Confirm gesture | (a) Hold-to-confirm (round 1) (b) Tap with amount in button (c) Swipe | **(b)** | The sheet already is the review. Long-press in mobile web conflicts with text selection/context menu and is hard for screen readers; hold discoverability risk was already flagged (OQ #8). Use a 2-step only for > $500 or "Sell all" |
-| D7 | Exit UX | (a) Separate Sell and Withdraw sheets (b) One **Exit** sheet: Get USDC / Get the stocks | **(b)** | Users choose *how* to leave in one place; puts in-kind on equal footing (eToro's "Close all vs Keep all" is the same idea [S17]) |
-| D8 | Recipe-change response | (a) Must acknowledge (b) Do nothing = stay, optional explicit "Keep" | **(b)** | Avoid smallcase's chore [R1]; explicit Keep only silences reminders |
-| D9 | Testnet vs mainnet in one app | (a) Network toggle (b) Separate hostnames/environments with a ribbon | **(b)** | Mixing play and real money is a trust and support hazard |
-| D10 | Basket-level vs stock-level vocabulary | "Follow", "Buy", "Watch" | **Buy** = put money in; **Followers** = holders (count); **Watch** = free alerts | "Follow" with no money confuses copy-trading semantics; watchers feed N12 and give Asha a no-money step |
-| D11 | Default home when signed in | Explore vs Portfolio | **Portfolio if any balance, else Explore** | Returning users want "how am I doing"; new users need discovery |
-| D12 | Performance framing | Day change vs since-joined | **Since you joined** primary, day change secondary | Reduces anxiety and trading nudges; matches long-hold product |
-| D13 | Local currency | Off / estimate / priced | **Estimate in grey, on by locale** (keep OQ #7) | Asha thinks in rupees; never price in local currency |
-| D14 | Demo lab for judges | (a) None (b) Testnet-only scenario buttons | **(b)** behind `/try`, rate-limited | Shows drift trims and guards live in 2 min; we control the testnet world |
-| D15 | Notification channels v1 | In-app, email, web push, Telegram | **In-app + email now; Telegram + push next** | Matches OQ #9; push permission asked at value moment |
-| D16 | Creator tab | Always vs conditional | **Conditional "Studio"** | Progressive disclosure |
-| D17 | "Details" for mechanics | Always visible vs toggle | **Toggle / section at bottom** | Simple by default; Tunde and judges know to look |
-| D18 | Market-closed trading | Block vs warn | **Warn** (architecture allows 24/7) + "Remind me at open" | Honest, keeps control with the user, nudges in-kind for exits |
-| D19 | Text density | Explain inline vs progressive disclosure | **Word budgets per screen (§0.1) + "i"/sheets for explanations** | Founder feedback; premium apps say less; also faster on 4G and easier to localise |
-| D20 | Basket identity | Text-only cards vs identity colour + cover + stock logos | **Identity colour + cover + logos** | Founder feedback; makes "stories, not symbols" visual; carries across share cards and Portfolio |
+| D1 | When to ask for sign-up | On open / at first money action | **First money action** | Trust signals first |
+| D2 | Primary nav | Explore/Portfolio/Create/Me · Explore/Portfolio/Activity/Me | **Explore · Portfolio · Activity · Me**; creator tools in Me | Activity holds "explain, don't ask"; creators are few before Dec 4 |
+| D3 | Funding inside Buy | Separate / inline | **Inline, return with amount** | Keeps intent alive |
+| D4 | Funding scope Dec 4 | Mainnet routes / testnet only | **Testnet faucet only** | Mainnet is a recorded proof |
+| D5 | Test money | Manual drip / auto at sign-in | **Auto at sign-in**, button elsewhere | 2 fewer taps; no Sepolia ETH |
+| D6 | Confirm gesture | Hold / tap / swipe / two-step | **Tap with amount in the button**, no two-step | The sheet is the review; long-press conflicts with mobile-web selection |
+| D7 | Exit UX | Two sheets / one Exit sheet | **One Exit sheet: Get USDC · Get the stocks** | Equal footing for in-kind (cf. eToro Close all / Keep all [S17]) |
+| D8 | Recipe-change response | Must acknowledge / do nothing = stay | **Do nothing = stay**; choices reset on replace | No smallcase chore [R1]; no silent carry-over |
+| D9 | Hosts | Several entry points / one testnet host | **One testnet host**; X links → `/b/:addr`; `/try` for judges | Fewer front doors, clean attribution |
+| D10 | Price shown | Oracle only / quote only / both | **Value (oracle) in hero; "≈ you get" from the quote in sheets; gap chip > 0.5%** | Honest off-hours |
+| D11 | Fees shown | "No fee today" / cost shown | **"Cost ≈ $x"** next to the 1%/yr chip | Pool fees + impact are real |
+| D12 | Presets | $5/$25/$100/Max | **$10 · $25 · $100**, no Max | Max empties test balances into one basket and isn't safe |
+| D13 | Default home | Explore vs Portfolio | **Portfolio if any balance** | Returning users |
+| D14 | Performance framing | Day vs since joined | **Since you joined** | Long-hold product |
+| D15 | Notifications | Many channels / minimal | **In-app + email for change notices only** | Scope; only the 24h window is time-critical |
+| D16 | Traction hook | Notifications ask / share | **Founding # + share card as primary success CTA** | X_PLAN §2; screenshotable |
+| D17 | In-app browsers | Ignore / Open-in-browser bar + email code | **Bar on basket pages + email code default** | Webviews block Google OAuth [B3] |
+| D18 | Market-closed trading | Block / warn | **Allow; warn only on a real gap** | Buy/sell need no fresh feeds |
+| D19 | Text density | Inline / progressive | **Word budgets (§0.1)** | Founder feedback |
+| D20 | Basket identity | Text cards / colour + cover + logos | **Colour + cover + logos** | Founder feedback; "stories, not symbols" |
+| D21 | Judge demo | Shared Demo lab / per-judge seeded basket | **Pool of demo baskets with seeded history + one live 10-min change** | No shared-feed manipulation; honest |
+| D22 | Testnet labelling | Ribbon / edge + TEST marks | **Thin edge + TEST on balances, share and OG cards** | One status strip at 360px; screenshots stay honest |
 
 ---
 
 ## 8. Critique of wireframes round 1
 
-Mapped to the flows above. "Keep" means carry into the redo.
+### 8.1 By section
 
 | Wireframe section | Keep | Change | Flow |
 |---|---|---|---|
-| 1 Landing | Story-first headline; follower-first live cards; plain legal | Add a **"Try with test money"** CTA on testnet (judge path); add "Exit anytime, even at night" as a proof stat; the bust/headset art is costly and slow on 4G: make it optional/lazy | 4.1, 4.4 |
-| 2 Sign-up | Triggered at first Buy; no "wallet"; attestation never pre-ticked | **Google first is risky in in-app browsers** (X/IG links are our main acquisition): email first + "Open in browser". Add-money sheet is generic: needs region-aware routes, network guardrails, waiting/arrived states, and return-to-buy. The "Add $25" button implies we can charge a card, which we may not | 5.1, 5.2 |
-| 3 Explore | Theme chips; follower-first card; stake; "Changing in 14h" pill; story disclosure on card | Default sort "Best for followers (1M)" conflicts with OQ #3's own recommendation (Most followed): pick one. Add cap progress / "Full". Card has no quick way to Watch | 5.12 |
-| 4 Basket detail | Order: what → how → did followers win → who → inside → changes; Details toggle | Add **Exit** entry with equal options; a pending-change card near the top (not only in the feed); "since you joined" for holders; new-basket state | 5.3–5.7 |
-| 5 Buy | Keypad + presets; breakdown collapsed; fee "nothing today" | Replace hold with tap (D6); inline short-balance → Add money → return; cap clamp; pending-change notice inside sheet; per-stock $ in success | 5.3 |
-| 6 Sell | % slider with stops; "you'll keep" line; link to withdraw | Merge with Withdraw into Exit sheet (D7); high-impact warning; dust → Sell all | 5.4 |
-| 7 Withdraw | "Take your stocks out" as a feature; "held for you" partial | Needs a home for withdrawn tokens' next actions (sell single stock / send) and the claim flow screens | 5.5, 5.6 |
-| 8 Recipe change + feed | Countdown banner; three equal choices; AI label persists; per-change cost | Show impact **for me** in $; add cancelled / waiting-for-market / executed states; add reminder rule; Activity inbox as the persistent home | 5.7, 6 |
-| 9 Create | One thing per screen; story toggle; typed weights; share card | Ask sign-in at step 5, not before; funding inline at seed; earnings calculator; demo flag visible on testnet; impersonation guidance | 5.13 |
-| 10 Creator dashboard | Fees in $ explained as tokens; reason required; preview what followers see | Becomes conditional **Studio** tab; add cancel-with-reason flow; execution-waiting states; followers stayed vs left after a change | 5.13 |
-| 11 Portfolio | Baskets / Stocks / Cash tabs; local estimate in grey; pending changes on rows | Add **Held for you**; empty/cash-only states; "since you joined" | 5.6, 5.14 |
-| 12 Market closed | Honest, amber not red; local time; withdraw = no price impact | Extend into the full condition matrix (stale/paused/corporate action/sequencer/pause) | 5.9 |
-| 13 Empty states | One next step + one number | Add testnet first-run, offline, new-basket, Activity empty | 5.14 |
-| Missing entirely | — | **Activity inbox**, **judge path / Demo lab**, **funding waiting/arrived**, **claim owed**, **creator cancel**, **notification settings & permission priming**, **error/pending receipts**, **desktop layouts beyond landing/basket** | 3, 4.4, 5, 6 |
+| 1 Landing | Story-first headline; follower-first live cards; plain legal | Caesar-in-VR bust as the recurring mascot (lazy-loaded); 3 proof numbers; live basket cards; "Founding Creator spots: N of 50" only if real; email capture for non-testers | 4.1 |
+| 2 Sign-up | At first Buy; no "wallet"; attestation never pre-ticked | Email code first; Google hidden in webviews; one-sentence attestation; auto test dollars instead of the generic Add money sheet | 5.1, 5.2 |
+| 3 Explore | Theme chips; follower-first card; stake; pending pill | Card to ≤ 12 words; logos instead of ticker text; pick one default sort (OQ #3 says Most followed) | §0.1 |
+| 4 Basket detail | Order; Details toggle | "Value" not "price"; pending-change card near top; Exit entry; Open-in-browser bar | 5.3–5.7 |
+| 5 Buy | Keypad, presets, collapsed breakdown | Tap not hold; no Max; "≈ you get" from quote; "Cost ≈ $x"; gap chip; Founding # + share as success | 5.3 |
+| 6 Sell | Slider with stops; "you keep" | Merge into the Exit sheet; gap chip | 5.4 |
+| 7 Withdraw | "Take your stocks out" as a feature; held-for-you | Rename "Get the stocks"; Stocks tab view-only with honest note | 5.5 |
+| 8 Recipe change + feed | Countdown, three equal choices, cost | Exact `executableAt`; "≈ $14 of yours"; replaced/diff state; due-waiting; multi-day | 5.7 |
+| 9 Create | One thing per screen; story toggle; share card | Sign-in at step 5; draft survives failure; Founding Creator #; TEST watermark | 5.13 |
+| 10 Creator dashboard | Reason required; preview | Becomes Me → Your baskets; no AI cards; Edit = restart warning | 5.13 |
+| 11 Portfolio | Baskets/Stocks/Cash | Add Held for you; Stocks view-only; no display currency | 5.5, 5.6 |
+| 12 Market closed | Honest, amber, local time | Buy/sell 24/7 incl. weekends; gap chip only when real | 5.9 |
+| 13 Empty states | One step + one number | Testnet first-run, Founding spots | 5.14 |
+| Missing | — | Activity, `/try`, held-for-you claim, replaced proposal, Founding #, Open-in-browser bar | 3, 4.4, 5 |
 
 ### 8.2 Text-heavy places in round 1 and what replaces them (P-1)
 
 | Where (round 1) | Problem | Replace with |
 |---|---|---|
-| Landing: subhead + 3-step "How it works" + 4-item "No black boxes" + creator section paragraphs | ~150 words before any product | Headline + 3 proof numbers ($5 · 24h · anytime) + live basket cards. "How it works" becomes 3 icons with 2-word labels; trust items become 4 icon chips that open a sheet |
-| Landing legal paragraph | Block of text | One micro line + "Legal" link |
-| Sign-up 2a body + micro line | Two explanatory sentences | Title "Make an account" + method buttons; "No seed phrase" as a small chip |
-| Sign-up 2b attestation | Long sentence + checkbox sentence | Keep (must be read), but one sentence; "Why we ask" as a link |
-| Add money 2c | Each route has a sentence; "USDC is a digital dollar" line | Logo rows (UPI, PIX, Binance…) + 1–2 word route names; USDC explainer behind "i" |
-| Explore card | Thesis line + holdings text "NVDA 35 · MSFT 25…" + stats text + creator line + badge text (≈ 25–30 words) | Cover colour, name, 3 stock logos, two numbers, avatar + "$1.2k in". Thesis moves to the basket page |
-| Explore story-basket disclosure on card | Full sentence on the card | "Story" chip; disclosure date + "not affiliated" on tap and on the basket page (still visible before buying) |
-| Basket detail: PnL caption, tooltip text, stake sentence, stats grid helpers, "What's inside" helper, strategy one-liner | Every block has a sentence | Numbers + labels; one "i" per block; strategy as a chip ("Balanced") that opens the explainer sheet; stake as a chip "$1.2k in · 28%" |
-| Basket feed items (date + type + changes + reason + cost) | 3 lines each | Icon + before→after chips + $ cost; reason only for recipe changes (creator's words), trims get a 3-word reason |
-| Buy sheet breakdown (6 rows) | Already collapsed; good. Default state still has balance line + micro legal + inside-the-basket text | Amount, presets, logo row with $; "Fee $0.004/mo" chip; everything else under "See breakdown" |
-| Buy states copy ("Prices moved more than 0.5% while buying…") | Sentences | Icon + "Nothing spent" + one action |
-| Sell sheet "After line", breakdown, market-closed note, withdraw link | Four text lines | Slider + result number + "You keep $88" chip; market note as amber pill; Exit sheet's segmented control replaces the link |
-| Withdraw: body paragraph + note | Two explanatory sentences | Title "Get the stocks" + logo table; "Won't rebalance" chip |
-| Recipe-change sheet: timing line, cost, choice copy paragraph | ~60 words | Countdown + before→after bars + "≈ $14 of yours moves" + three buttons. Timing rule behind "i" |
-| Create steps: helper paragraphs (why 10 stocks, fee explanation, notice line) | Text per step | Live share-card preview, stacked weight bar, fee as "1% / yr · you keep 80%" chip; explanations behind "i" |
-| Creator dashboard: fee helper, AI card "Why" paragraph | Paragraphs | Numbers with sparkline; AI card shows chips (TSLA ↓ 15→8%) + one-line reason |
-| Portfolio: Stocks tab helper, owed row text | Sentences | Chips: "Not rebalanced", "Held for you · Claim" |
-| Market-closed copy (several sentences) | Repeated on many screens | One global pill "Closed · opens 8:00 PM"; tap opens a sheet with what still works |
-| Empty states | Mostly fine (one line + CTA) | Keep; add accent illustration |
+| Landing: subhead + 3-step "How it works" + 4-item "No black boxes" + creator paragraphs | ~150 words before any product | Headline + 3 proof numbers ($5 · 24h · anytime) + live basket cards. "How it works" = 3 icons with 2-word labels; trust items = 4 icon chips that open a sheet |
+| Landing legal paragraph | Block | One micro line + "Legal" link |
+| Sign-up 2a body + micro line | Two sentences | Title + method buttons; "No seed phrase" chip |
+| Sign-up 2b attestation | Long sentence + checkbox sentence | One sentence; "Why we ask" link |
+| Add money 2c | A sentence per route + USDC explainer | Gone for Dec 4: auto test dollars with a one-line label |
+| Explore card | Thesis + holdings text + stats text + creator line + badges (≈ 25–30 words) | Cover colour, name, 3 logos, two numbers, avatar + "$1.2k in". Thesis moves to the basket page |
+| Explore story disclosure | Full sentence on the card | "Story" chip; date + "not affiliated" on tap and on the basket page |
+| Basket detail: PnL caption, tooltip, stake sentence, stat helpers, inside helper, strategy line | A sentence per block | Numbers + labels; one "i" per block; strategy chip; stake chip "$1.2k in · 28%" |
+| Feed items | 3 lines each | Icon + before→after chips + $ cost; reason only for recipe changes |
+| Buy sheet | Balance line + micro legal + inside-the-basket text | Amount, presets, logo row with $, "≈ you get", "Cost ≈ $x" chip; rest under "See breakdown" |
+| Buy failure copy | Sentences | Icon + "Nothing spent" + one action |
+| Sell sheet | Four text lines | Slider + result number + "You keep $88" chip; gap chip; segmented control replaces the link |
+| Withdraw | Body + note | "Get the stocks" + logo table + "Won't rebalance" chip |
+| Recipe-change sheet | ~60 words | Countdown + before→after bars + "≈ $14 of yours moves" + 3 buttons; timing rule behind "i" |
+| Create helpers | Text per step | Live share-card preview, weight bar, "1%/yr · you keep 80%" chip; "i" for the rest |
+| Creator dashboard | Fee helper, AI "Why" paragraph | Numbers + sparkline; AI cut |
+| Portfolio helpers | Sentences | Chips: "Not rebalanced", "Held for you · Claim" |
+| Market-closed copy | Repeated on many screens | One status strip; tap for a sheet |
 
 ### 8.3 Too much black and white (P-2)
-Round 1 is deliberately greyscale with burgundy only for primary actions and a black landing. That reads austere on product screens. Mark these for the visual team: basket identity colours and cover art (biggest single change), stock logos everywhere tickers appear, composition donut/bars in stock colours, two-hue follower vs creator chart lines, a colour moment on success screens, and logos in Add money. Keep signal colours (gain/loss/warn) reserved for meaning so the added colour doesn't compete with them.
+Round 1 is greyscale with burgundy only for primary actions. That reads austere on product screens. For the visual team: basket identity colours and cover art (biggest single change), stock logos wherever tickers appear, composition donut/bars in stock colours, two-hue follower vs creator lines, a colour moment and the Founding # on success, the Caesar mascot on share cards. Keep gain/loss/amber reserved for meaning.
+
+### 8.4 Share cards and marketing hooks
+- **Follower share card** (primary post-buy CTA): basket cover colour, name, 3 logos, "Founding Follower #212", **TEST** watermark, link `/b/:addr?ref={user}&s=x`.
+- **Creator launch card**: name, recipe bar, stake, "Founding Creator #07", Caesar-in-VR bust as a small recurring mark, TEST watermark.
+- **BUILD LOG 01, 02, …** is the faceless build-in-public series (no day counts). Every BUILD LOG post links to a basket page, not the landing. The bust is the recurring visual; it never appears inside product flows.
+- "Reply with a story" → a prefilled `/create?name=…` link.
+- A live counter on landing ("214 baskets bought today") only if true.
 
 ---
 
 ## 9. Success metrics and instrumentation
 
-### 9.1 North-star and activation
-- **Activation:** signed-up user makes a first buy ≥ $5 within 7 days.
-- **North star (hackathon):** number of distinct addresses holding a basket token after 7 days (testnet and mainnet reported separately).
-- **Creator activation:** created basket gets ≥ 1 non-creator buyer within 7 days.
+### 9.1 North star and activation
+- **Activation:** signed-in user makes a first buy within the first session (testnet).
+- **North star (Dec 4):** distinct addresses holding a basket token; Founding Followers claimed (of 500) and Founding Creators (of 50).
+- **Creator activation:** a created basket gets ≥ 1 non-creator buyer within 7 days.
+- **Virality:** share-card taps per buy; buys attributed to `ref` links.
 
 ### 9.2 Per-flow metrics
 
-| Flow | Primary metric | Target (initial guess, to calibrate) | Drop-off points to watch |
+| Flow | Primary metric | Initial target | Drop-off points |
 |---|---|---|---|
-| Discover → basket page | Basket-page views per landing visit; scroll depth to "Did followers win?" | > 60% reach the PnL card | Slow SSR; in-app browser issues |
-| Sign-up | Buy-tap → account created | > 70% | OTP not received; Google in webview; attestation decline |
-| Funding (mainnet) | Account → funded (≥ $5) within 24h; median time-to-fund | > 30% *(fintech funding drop-offs of ~60% are reported [S16], so expect this to be the worst step)* | Route chosen → never arrived; wrong-network help views; provider KYC |
-| Funding (testnet) | Account → faucet success | > 95%, < 10s | Relayer failures; daily cap |
-| Buy | Buy sheet open → success | > 80% | Quote stale; slippage reverts; cap; confirm abandon |
-| Time to first buy | Median from first visit to first buy | testnet < 3 min; mainnet < 20 min (same session) | — |
-| Recipe change | % holders who opened N1; % who chose keep/sell/withdraw; % exits | Opened > 50% | Panic exits right after notice (compare with trims) |
-| Drift trim | % holders who viewed explanation; support tickets per trim | Low tickets | "Did I lose money?" confusion |
-| Exit | Exit open → success; in-kind share of exits; owed claims completed | — | High-impact sells off-hours |
-| Creator | Create start → live; time to live; share rate; proposals with cancel rate | Start → live > 50%; median < 5 min | Weights step; seed funding |
-| Judge path | `/try` start → tour end; median duration | > 80%; < 2:30 | Faucet, RPC latency, demo-lab rate limit |
-| Notifications | Pre-prompt shown → accepted → OS granted (separately) [S13]; N1 open rate | — | Prompt at the wrong time |
+| X → basket page | Basket views per X click (by `p`); PnL card seen | > 60% see PnL | Webview load; slow SSR |
+| In-app browser | "Open in browser" taps; sign-in success in vs out of webview | — | Google in webview; reload after app switch |
+| Sign-up | Buy tap → signed in | > 70% | Code not received; attestation |
+| Test money | Signed in → dripped | > 95%, < 10s | Relayer, cap |
+| Buy | Sheet open → success | > 80% | Quote stale; slippage; confirm abandon |
+| Time to first buy | Landing → first buy | < 3 min median | — |
+| Share | Success → share tap | > 25% | Share secondary or ugly |
+| Recipe change | Email open; keep/sell/stocks split | Opened > 50% | Panic exits |
+| Exit | Open → success; in-kind share | — | Off-hours gap |
+| Create | Start → live; median time | > 50%; < 5 min | Weights; seed |
+| Judge `/try` | Start → end card; duration | > 80%; < 2:30 | Faucet, RPC |
 
-### 9.3 Events to instrument (names are proposals)
+### 9.3 Events (proposed names)
 
-`landing_view`, `basket_view{basket, source, is_holder}`, `pnl_card_seen`, `details_opened`, `buy_tap`, `auth_start{method, in_app_browser}`, `auth_otp_sent`, `auth_success`, `attest_shown`, `attest_accepted|declined`, `add_money_open{trigger, short_by}`, `funding_route_selected{route, country, provider}`, `funding_instructions_copied`, `funding_waiting_start`, `funding_arrived{amount, token, network_ok}`, `funding_wrong_token`, `faucet_request|success|fail{reason}`, `buy_sheet_open`, `quote_received{impact_bps, market_open}`, `buy_confirm`, `tx_submitted{kind}`, `tx_success|revert{kind, reason}`, `exit_open{mode}`, `sell_confirm{pct}`, `withdraw_confirm{pct}`, `owed_credited`, `claim_success|fail`, `notice_open{source}`, `notice_choice{keep|sell|withdraw}`, `trim_explainer_open`, `watch_tap`, `notif_preprompt_shown|accepted`, `notif_os_granted|denied`, `create_step{n}`, `create_success`, `share_tap{target}`, `propose_sent`, `propose_cancelled`, `try_start`, `try_step{n}`, `demo_lab_action{scenario}`, `try_complete`.
+`landing_view`, `basket_view{basket, source, s, p, ref, in_app_browser}`, `open_in_browser_tap`, `pnl_card_seen`, `details_opened`, `buy_tap`, `auth_start{method, in_app_browser}`, `auth_code_sent`, `auth_success{s, p, ref, utm}`, `attest_accepted|declined`, `faucet_auto|request|success|fail{reason}`, `buy_sheet_open`, `quote_received{impact_bps, gap_bps, market_open}`, `buy_confirm{preset}`, `tx_submitted{kind}`, `tx_success|revert{kind, reason}`, `buy_refund{usd}`, `founding_assigned{kind, n}`, `share_tap{target, kind}`, `exit_open{mode}`, `sell_confirm{pct}`, `withdraw_confirm{pct}`, `owed_credited`, `claim_success|fail`, `notice_open{source}`, `notice_choice{keep|sell|withdraw, version}`, `notice_replaced_seen`, `trim_explainer_open`, `create_step{n}`, `create_success{s, p}`, `propose_sent`, `propose_replaced`, `propose_cancelled`, `try_start`, `try_step{n}`, `try_complete`.
 
-Properties on every event: environment (84532/8453), market_open, country (coarse), device class, logged_in, has_balance. Join with chain data (Ponder) on address for funnel truth; never send wallet addresses or emails to analytics in clear (hash).
+Properties on every event: environment, market_open, coarse country, locale, device class, logged_in, has_balance. Join with Ponder on address for funnel truth; hash addresses and emails in analytics.
 
 ---
 
 ## 10. Open questions for the founder
 
-Prioritised by how much they block the redo. Each has a recommendation so "yes" is enough.
+Prioritised. Each has a recommendation so "yes" is enough.
 
-1. **Which market do we design funding for first: India, Nigeria, Brazil or Indonesia?** Coverage differs completely (UPI/IMPS vs naira P2P vs PIX vs QRIS). **Rec:** for the hackathon, testnet faucet + mainnet route A ("send USDC on Base from an exchange") only, with Nigeria and India instructions written; add an aggregator (Onramper or Transak) after the hackathon once we've checked live coverage per country.
-2. **Judge path: OK to ship `/try` with automatic test money and a Demo lab (testnet-only scenario buttons)?** The keeper can rebalance a basket at most once a day, so the lab needs a pool of fresh demo baskets or a per-judge demo basket. **Rec:** yes; pre-create ~20 demo baskets with history and hand them out round-robin.
-3. **Replace "Create" tab with "Activity" and a conditional "Studio"?** **Rec:** yes (D2, D16).
-4. **Tap-to-confirm instead of hold-to-confirm?** **Rec:** tap with the amount in the button; 2-step only above $500 or for "Sell all" (D6). Supersedes OQ #8.
-5. **Merge Sell and Withdraw into one Exit sheet?** **Rec:** yes (D7).
-6. **Testnet and mainnet: separate URLs?** **Rec:** yes, e.g. `try.` for testnet with a permanent ribbon, and the main app on mainnet (D9).
-7. **Do we allow connecting an external wallet (Tunde) or only Privy embedded?** **Rec:** embedded only for v2; "Send from another wallet" covers funding. Revisit after the hackathon.
-8. **"Watch" (free alerts) as a first-class action?** **Rec:** yes; it's the no-money step for Asha and the waitlist for full baskets.
-9. **Notification channels for launch:** **Rec:** in-app + email now; Telegram bot next; web push only with a pre-prompt after first buy (D15).
-10. **India legal/tax posture:** Do we say anything about Indian residents' tax (VDA 30% + 1% TDS) or remittance rules? **Rec:** a neutral Help article ("We don't give tax advice; here's what to ask an accountant"), no in-flow claims. Needs a lawyer before mainnet marketing in India.
-11. **Execution timing copy:** "at the time if the market is open, otherwise next open". Confirm the keeper's rule so the countdown is truthful, and whether a new proposal can replace a pending one (contract has one Pending slot).
-12. **Owed claims:** can anyone call `claimOwed` for a user (so we can retry for them), or only the user? **Rec:** if contract allows `to` = user only, let a relayer retry; otherwise one-tap claim.
+1. **Email for change notices:** which provider (Resend / Postmark / SendGrid), and phone-only users? **Rec:** Resend; phone-only users get in-app only plus a "Add email for change notices" prompt on first buy.
+2. **Founding # badges: on-chain or off-chain?** **Rec:** off-chain, ordered by Ponder (first `Bought` per address; first `BasketCreated` per creator), shown on profile and cards. Cosmetic only, no token or airdrop (X_PLAN §2).
+3. **Privy guest login for `/try`?** **Rec:** enable it if available, so judges skip the email code; otherwise email code.
+4. **Judge demo-basket pool:** how many, and who resets them? **Rec:** ~20 baskets with seeded history and a 10-min demo change re-proposed by a script every hour; hand them out round-robin.
+5. **Default Explore sort:** Most followed (OQ #3) vs Best for followers (round 1). **Rec:** Most followed until there are 20+ baskets with 30+ days.
+6. **Ticker uniqueness:** enforce via API or allow duplicates? **Rec:** allow duplicates, show creator + short address; block exact name+ticker duplicates from the same creator.
+7. **Stocks tab after Get the stocks** is view-only for Dec 4. OK to ship with "use a Base DEX" note? **Rec:** yes.
+8. **India legal/tax posture:** **Rec:** a neutral Help article; no in-flow claims; lawyer before mainnet marketing in India.
+
+Resolved by the lead/contracts (2026-11-19): buy/sell need no fresh feeds; recipe timing is independent of trims; testnet has no cap; leftover dust is donated or refunded; replacements restart the timer; `claimOwed` is caller-only; Dec 4 public app is testnet-only.
 
 ---
 
 ## 11. Sources
 
-Prior research is cited as [R#], pointing to [RESEARCH.md §5](../RESEARCH.md#5-citations) (e.g. R1 smallcase rebalance chore, R18b Robinhood gamification, R24 Pendle).
+Prior research is cited as [R#] → [RESEARCH.md §5](../RESEARCH.md#5-citations). Review sources [B#] → [REVIEW.md](./REVIEW.md).
 
-New for this map (fetched 2026-11-19 via search; *(verify)* where marked in the text):
-
-- [S1] Coinbase Onramp FAQ (guest checkout limits/deprecation): https://docs.cdp.coinbase.com/onramp/additional-resources/faq
+- [S1] Coinbase Onramp FAQ: https://docs.cdp.coinbase.com/onramp/additional-resources/faq
 - [S2] Coinbase Onramp countries and payment methods: https://docs.cdp.coinbase.com/onramp-&-offramp/onramp-apis/countries-&-currencies · https://docs.cdp.coinbase.com/onramp/additional-resources/payment-methods
 - [S3] Transak KYC levels: https://docs.transak.com/guides/transak-different-kyc-levels
-- [S4] Transak India / UPI: https://yourstory.com/the-decrypting-story/transak-india-crypto-payment-gateway-fiat-on-ramp · https://transak.com/blog/transak-expands-in-india-to-empower-web3-developers-to-onboard-the-next-billion-users
-- [S5] Privy account funding: https://docs.privy.io/recipes/account-funding/overview · https://privy.io/blog/introducing-global-fiat-onramps (testnet non-availability of card/Coinbase funding is from a third-party guide, *verify*)
+- [S4] Transak India / UPI: https://yourstory.com/the-decrypting-story/transak-india-crypto-payment-gateway-fiat-on-ramp
+- [S5] Privy account funding: https://docs.privy.io/recipes/account-funding/overview
 - [S6] MoonPay country coverage: https://dev.moonpay.com/docs/country-coverage · https://support.moonpay.com/customers/docs/moonpays-supported-countries
-- [S7] MoonPay payment methods (PIX): https://support.moonpay.com/customers/docs/all-supported-payment-methods
-- [S8] Onramper (Nigeria coverage, QRIS stat, Yellow Card): https://www.onramper.com/country-coverage/NG · https://www.onramper.com/blog/unlocking-high-conversions · https://onramper.com/blog/yellow-card-partners-with-onramper-to-enhance-crypto-onboarding-in-africa
+- [S7] MoonPay payment methods: https://support.moonpay.com/customers/docs/all-supported-payment-methods
+- [S8] Onramper: https://www.onramper.com/country-coverage/NG · https://www.onramper.com/blog/unlocking-high-conversions
 - [S9] Coinbase reopens India: https://www.theblock.co/news/business/2025-12-07-coinbase-resumes-user-onboarding-india-381644
-- [S10] Coinbase India rupee rails (IMPS): https://coin360.com/news/coinbase-india-direct-inr-rails · https://lcx.com/en/cryptonews/coinbase-launches-rupee-bank-rails-in-india-after-fiu-nod
-- [S11] India crypto tax 30% + 1% TDS (reported in coverage above, e.g. https://coinmarketcap.com/academy/article/coinbase-reopens-india-app-after-two-year-regulatory-break) *(verify with a tax source)*
-- [S12] Nigeria P2P escrow mechanics (secondary, low quality): https://thecondia.com/buy-stablecoins-safely-nigeria/ · https://stablecoininsider.org/usdt-to-naira/ *(verify; Binance naira status contested)*
-- [S13] Push permission priming/timing: https://doc.batch.com/guides-and-best-practices/orchestration/how-to-improve-the-push-opt-in-rate · https://appmaster.io/blog/push-notification-permission-ux (vendor sources)
-- [S14] Push in India / web push: https://business.adobe.com/blog/the-latest/mobile-push-impressions-in-india-the-opportunity-ahead · https://www.mobiloud.com/blog/pwa-push-notifications
-- [S15] smallcase onboarding (browse before broker): https://www.smallcase.com/learn/how-to-invest-in-smallcase/ · Upstox login: https://upstox.com/help-center/how-do-i-login-into-a-smallcase-with-upstox-248819
-- [S16] Funding-step drop-off (vendor/consultancy data): https://www.pedowitzgroup.com/what-causes-high-abandonment-at-the-funding-step-and-how-to-reduce-it · https://formo.so/blog/defi-onboarding-first-activation · https://www.transfi.com/blog/reducing-abandonment-rates-in-crypto-onboarding-with-transfi-a-ux-success-story
-- [S17] eToro stop copy (Close all vs Keep all, pause): https://www.etoro.com/copytrader/how-it-works/ · https://goodmoneyguide.com/news/etoro-stop-copy-keep/ · https://etoro.com/blog/product-updates/20052014/pauseresume-copy-graceful-exit
+- [S10] Coinbase India IMPS rails: https://coin360.com/news/coinbase-india-direct-inr-rails
+- [S11] India crypto tax 30% + 1% TDS (reported in https://coinmarketcap.com/academy/article/coinbase-reopens-india-app-after-two-year-regulatory-break) *(verify)*
+- [S12] Nigeria P2P (secondary, low quality): https://thecondia.com/buy-stablecoins-safely-nigeria/ *(verify)*
+- [S13] Push permission priming: https://doc.batch.com/guides-and-best-practices/orchestration/how-to-improve-the-push-opt-in-rate
+- [S14] Push in India: https://business.adobe.com/blog/the-latest/mobile-push-impressions-in-india-the-opportunity-ahead
+- [S15] smallcase onboarding: https://www.smallcase.com/learn/how-to-invest-in-smallcase/
+- [S16] Funding-step drop-off (vendor data): https://www.pedowitzgroup.com/what-causes-high-abandonment-at-the-funding-step-and-how-to-reduce-it · https://formo.so/blog/defi-onboarding-first-activation
+- [S17] eToro stop copy: https://www.etoro.com/copytrader/how-it-works/ · https://goodmoneyguide.com/news/etoro-stop-copy-keep/
 
-Not researched live (from product knowledge, *verify* before quoting): Revolut and Cash App stock onboarding (in-app balance funds stock buys directly, fractional from $1), Phantom's embedded onboarding and "Buy" on-ramp aggregation, Robinhood's $1 fractional minimum and instant deposits.
+---
+
+## 12. Deferred after Dec 4
+
+| Item | Why deferred | Notes for later |
+|---|---|---|
+| Mainnet funding: send from exchange (USDC on Base), on-ramp aggregator (UPI/IMPS, PIX, QRIS), P2P guidance, wrong-network recovery | Mainnet is a recorded proof | Research in [S1–S12]: coverage for India/Nigeria is patchy and contested; send-from-exchange first |
+| Push, Telegram, digests, T−2h reminder, creator emails, creator-sold alerts | Scope | Ask push permission after first buy with a pre-prompt [S13] |
+| Studio tab | Few creators | Promote from Me when creators > ~50 |
+| Watch / waitlist for full baskets | No cap on testnet | Needed with mainnet caps |
+| AI suggestions, earnings calculator, mode simulation | Scope | Keep the "AI-suggested" label rule |
+| Single-stock sell, send-out of withdrawn tokens | Scope | Stocks tab is view-only until then |
+| Display currency (≈ ₹) | Scope | Locale number formats ship now |
+| "Remind me at open" | Scope | — |
+| Corporate-action, sequencer-down, offline states | Rare on testnet | Spec in v1 of this map |
+| Two-step confirm for large amounts | Test money | Revisit on mainnet |
+| External wallet connect | Embedded only | — |

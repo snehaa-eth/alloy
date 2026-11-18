@@ -1,0 +1,85 @@
+$ forge --version
+forge Version: 1.1.0-stable
+Commit SHA: d484a00089d789a19e2e43e63bbb3f1500eb2cbf
+Build Timestamp: 2025-04-30T13:50:49.971365000Z (1746021049)
+Build Profile: maxperf
+
+$ forge test
+Warning: Found unknown config section in foundry.toml: [lint]
+This notation for profiles has been deprecated and may result in the profile not being registered in future versions.
+Please use [profile.lint] instead or run `forge config --fix`.
+Compiling 1 files with Solc 0.8.30
+Solc 0.8.30 finished in 7.22s
+Compiler run successful!
+
+Ran 1 test for test/Smoke.t.sol:SmokeTest
+[FAIL: EvmError: Revert] test_b20_precompile_smoke() (gas: 6141)
+Suite result: FAILED. 0 passed; 1 failed; 0 skipped; finished in 1.32ms (319.58µs CPU time)
+
+Ran 1 test for test/Guards.t.sol:GuardsTest
+[FAIL: EvmError: Revert] setUp() (gas: 0)
+Suite result: FAILED. 0 passed; 1 failed; 0 skipped; finished in 2.04ms (0.00ns CPU time)
+
+Ran 1 test for test/Scenario.t.sol:ScenarioTest
+[FAIL: EvmError: Revert] setUp() (gas: 0)
+Suite result: FAILED. 0 passed; 1 failed; 0 skipped; finished in 1.74ms (0.00ns CPU time)
+
+Ran 1 test for test/invariant/BasketInvariant.t.sol:BasketInvariantTest
+[FAIL: EvmError: Revert] setUp() (gas: 0)
+Suite result: FAILED. 0 passed; 1 failed; 0 skipped; finished in 2.23ms (0.00ns CPU time)
+
+Ran 1 test for test/Adapters.t.sol:AdaptersTest
+[FAIL: EvmError: Revert] setUp() (gas: 0)
+Suite result: FAILED. 0 passed; 1 failed; 0 skipped; finished in 2.25ms (0.00ns CPU time)
+
+Ran 1 test for test/Factory.t.sol:FactoryTest
+[FAIL: EvmError: Revert] setUp() (gas: 0)
+Suite result: FAILED. 0 passed; 1 failed; 0 skipped; finished in 2.25ms (0.00ns CPU time)
+
+Ran 1 test for test/Rebalance.t.sol:RebalanceTest
+[FAIL: EvmError: Revert] setUp() (gas: 0)
+Suite result: FAILED. 0 passed; 1 failed; 0 skipped; finished in 2.36ms (0.00ns CPU time)
+
+Ran 1 test for test/Basket.t.sol:BasketTest
+[FAIL: EvmError: Revert] setUp() (gas: 0)
+Suite result: FAILED. 0 passed; 1 failed; 0 skipped; finished in 2.36ms (0.00ns CPU time)
+
+Ran 1 test for test/Router.t.sol:RouterTest
+[FAIL: EvmError: Revert] setUp() (gas: 0)
+Suite result: FAILED. 0 passed; 1 failed; 0 skipped; finished in 2.70ms (0.00ns CPU time)
+
+Ran 1 test for test/fork/UniswapFork.t.sol:UniswapForkTest
+[SKIP] test_fork_createBuySellRebalance_realUniswap() (gas: 0)
+Suite result: ok. 0 passed; 0 failed; 1 skipped; finished in 2.82ms (240.08µs CPU time)
+
+Ran 10 test suites in 194.00ms (22.07ms CPU time): 0 tests passed, 9 failed, 1 skipped (10 total tests)
+
+Failing tests:
+Encountered 1 failing test in test/Adapters.t.sol:AdaptersTest
+[FAIL: EvmError: Revert] setUp() (gas: 0)
+
+Encountered 1 failing test in test/Basket.t.sol:BasketTest
+[FAIL: EvmError: Revert] setUp() (gas: 0)
+
+Encountered 1 failing test in test/Factory.t.sol:FactoryTest
+[FAIL: EvmError: Revert] setUp() (gas: 0)
+
+Encountered 1 failing test in test/Guards.t.sol:GuardsTest
+[FAIL: EvmError: Revert] setUp() (gas: 0)
+
+Encountered 1 failing test in test/Rebalance.t.sol:RebalanceTest
+[FAIL: EvmError: Revert] setUp() (gas: 0)
+
+Encountered 1 failing test in test/Router.t.sol:RouterTest
+[FAIL: EvmError: Revert] setUp() (gas: 0)
+
+Encountered 1 failing test in test/Scenario.t.sol:ScenarioTest
+[FAIL: EvmError: Revert] setUp() (gas: 0)
+
+Encountered 1 failing test in test/Smoke.t.sol:SmokeTest
+[FAIL: EvmError: Revert] test_b20_precompile_smoke() (gas: 6141)
+
+Encountered 1 failing test in test/invariant/BasketInvariant.t.sol:BasketInvariantTest
+[FAIL: EvmError: Revert] setUp() (gas: 0)
+
+Encountered a total of 9 failing tests, 0 tests succeeded

@@ -16,7 +16,8 @@ import {SimpleFeedGuard} from "../src/guards/SimpleFeedGuard.sol";
 ///     base-forge script script/DeployAlloy.s.sol --rpc-url local_fork --broadcast --unlocked --sender <DEPLOYER>
 ///
 ///   For fork runs set OUT_JSON=deployments/84532.fork.json NETWORK_LABEL=local-fork so the real file is untouched.
-///   Env: KEEPER_ADDRESS (default: deployer), MAX_FEED_AGE (default 25h),
+///   Re-running deploys a fresh set (new addresses) and overwrites OUT_JSON; v1 is kept in deployments/84532.v1.json.
+///   Env: TVL_CAP_USD8 (default 0 = unlimited on 84532, 5_000e8 elsewhere), KEEPER_ADDRESS (default: deployer), MAX_FEED_AGE (default 25h),
 ///        TESTNET_ENV_JSON (default ../testnet-env/deployments/84532.json), OUT_JSON (default deployments/84532.json)
 contract DeployAlloy is Script {
     using stdJson for string;
@@ -41,6 +42,8 @@ contract DeployAlloy is Script {
         address deployer = msg.sender;
         address keeper = vm.envOr("KEEPER_ADDRESS", deployer);
         uint256 maxAge = vm.envOr("MAX_FEED_AGE", uint256(25 hours));
+        // TVL cap (USD, 8 dec): testnet default 0 = unlimited; mainnet keeps the factory default ($5k).
+        uint256 tvlCap = vm.envOr("TVL_CAP_USD8", block.chainid == 84532 ? uint256(0) : uint256(5_000e8));
 
         vm.startBroadcast();
         d.guard = address(new SimpleFeedGuard(deployer, maxAge, pauseRegistry));
@@ -48,6 +51,7 @@ contract DeployAlloy is Script {
         BasketFactory factory = new BasketFactory(deployer, usdc, keeper, deployer, d.guard);
         d.factory = address(factory);
         d.router = address(new AlloyRouter(d.factory));
+        if (tvlCap != factory.defaultTvlCapUsd()) factory.setDefaultTvlCap(tvlCap);
         for (uint256 i; i < syms.length; ++i) {
             string memory k = string.concat(".stocks.", syms[i]);
             factory.allow(

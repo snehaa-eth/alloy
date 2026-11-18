@@ -76,7 +76,8 @@ contract Basket is IBasket, ERC20, ReentrancyGuardTransient {
     uint16 public capBps;
     uint16 public feeBps;
     uint64 public lastAccrual;
-    uint64 public lastRebalance;
+    uint64 public lastRebalance; // last DRIFT TRIM (cooldown clock); recipe executions don't touch it
+    uint64 public lastRecipeExecution;
     uint64 public lossTs;
     uint128 public lossUsedWad; // decaying weekly loss budget usage, 1e18 = 100%
     uint256 public deadShares;
@@ -321,7 +322,10 @@ contract Basket is IBasket, ERC20, ReentrancyGuardTransient {
     function executeRebalance(Trade[] calldata trades) external nonReentrant onlyKeeper {
         IBasketFactory f = IBasketFactory(factory);
         if (f.paused()) revert ProtocolPaused();
-        if (lastRebalance != 0 && block.timestamp < uint256(lastRebalance) + REBALANCE_COOLDOWN) {
+        // A due recipe change is executable exactly at `executableAt`, regardless of a recent drift trim, and does
+        // not consume the trim cooldown. Plain drift trims are limited to 1 per REBALANCE_COOLDOWN.
+        bool recipeDue = _pending.executableAt != 0 && block.timestamp >= _pending.executableAt;
+        if (!recipeDue && lastRebalance != 0 && block.timestamp < uint256(lastRebalance) + REBALANCE_COOLDOWN) {
             revert RebalanceCooldown(uint256(lastRebalance) + REBALANCE_COOLDOWN);
         }
         _accrueFee();
@@ -329,7 +333,7 @@ contract Basket is IBasket, ERC20, ReentrancyGuardTransient {
         if (ts <= deadShares) revert BasketEmpty();
 
         // Recipe change: replace target first, then the same band rule applies.
-        if (_pending.executableAt != 0 && block.timestamp >= _pending.executableAt) {
+        if (recipeDue) {
             uint16[] memory w = _pending.w;
             _targetBps = w;
             delete _pending;
@@ -363,7 +367,8 @@ contract Basket is IBasket, ERC20, ReentrancyGuardTransient {
         uint256 lossWad = _checkLoss(navBefore, navAfter);
         _checkBands(vBefore, navBefore, vAfter, navAfter);
 
-        lastRebalance = uint64(block.timestamp);
+        if (recipeDue) lastRecipeExecution = uint64(block.timestamp);
+        else lastRebalance = uint64(block.timestamp);
         emit Rebalanced(navBefore, navAfter, lossWad / BPS_TO_WAD, msg.sender); // display: floor bps
     }
 
@@ -512,6 +517,11 @@ contract Basket is IBasket, ERC20, ReentrancyGuardTransient {
 
     function pendingRecipe() external view returns (uint16[] memory w, uint64 executableAt, bytes32 reasonHash) {
         return (_pending.w, _pending.executableAt, _pending.reasonHash);
+    }
+
+    /// @notice Earliest time the keeper may run the next DRIFT TRIM (a due recipe ignores this).
+    function nextTrimAt() external view returns (uint256) {
+        return lastRebalance == 0 ? 0 : uint256(lastRebalance) + REBALANCE_COOLDOWN;
     }
 
     function notice() external view returns (uint64) {

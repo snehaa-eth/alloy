@@ -62,7 +62,8 @@ contract DemoBasket is Script {
         }
 
         vm.startBroadcast();
-        IFaucet(envJson.readAddress(".faucet")).drip();
+        // The faucet allows one drip per address per 24h, so only drip when the balance is too low.
+        if (IERC20Min(usdc).balanceOf(msg.sender) < SEED + BUY) IFaucet(envJson.readAddress(".faucet")).drip();
         IERC20Min(usdc).approve(address(factory), SEED);
         Basket b = Basket(factory.createBasket(p, SEED, seedMins));
         console2.log("basket", address(b));
