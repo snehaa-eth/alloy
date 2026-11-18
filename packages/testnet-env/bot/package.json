@@ -1,0 +1,25 @@
+{
+  "name": "@alloy/testnet-bot",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Alloy Base Sepolia testnet world: price fetcher, price-sync + arbitrage bot, scenario CLI",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "prices": "tsx src/fetch-prices.ts",
+    "bot": "tsx src/run.ts",
+    "once": "tsx src/run.ts --once",
+    "scenario": "tsx src/scenario.ts",
+    "status": "tsx src/scenario.ts status",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test src/*.test.ts"
+  },
+  "dependencies": {
+    "viem": "2.38.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "tsx": "4.19.2",
+    "typescript": "5.7.2"
+  }
+}

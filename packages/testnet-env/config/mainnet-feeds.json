@@ -1,0 +1,11 @@
+{
+  "note": "Optional. Base-mainnet Chainlink AggregatorV3 feeds keyed by underlying ticker, used when PRICE_SOURCE=chainlink. Fill from docs.base.org and verify with base-cast before use; missing tickers fall back to the Coinbase API.",
+  "feeds": {
+    "NVDA": "",
+    "GOOGL": "",
+    "MSFT": "",
+    "TSLA": "",
+    "AAPL": "",
+    "AMZN": ""
+  }
+}
