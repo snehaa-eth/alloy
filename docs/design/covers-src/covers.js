@@ -125,8 +125,12 @@ function capitol(ctx) {
   ctx.fillRect(dL, 276, 400, 76);
   ctx.restore();
 
-  // silhouette body
+  // silhouette body + directional rim (bright only on edges facing the light, upper right)
   ctx.fillStyle = L(8); ctx.fill(bld);
+  ctx.save(); ctx.clip(bld);
+  ctx.fillStyle = radial(ctx, LX + 330, 120, 760, 230, 0.9); ctx.fill(bld);
+  ctx.translate(-2.2, 2.6); ctx.fillStyle = L(8); ctx.fill(bld);
+  ctx.restore();
   // dome ribs + shading (very subtle)
   ctx.save(); ctx.clip(bld);
   ctx.fillStyle = radial(ctx, cx + 170, 120, 260, 120, 0.35);
@@ -144,9 +148,7 @@ function capitol(ctx) {
   }
   ctx.restore();
   // rim from the light behind/above right
-  rim(ctx, bld, radial(ctx, LX + 330, 140, 620, 255, 1), 2.0);
-  rim(ctx, bld, radial(ctx, LX + 330, 140, 1000, 255, 0.35), 1.0);
-  rim(ctx, bld, radial(ctx, LX + 60, 520, 360, 255, 0.5), 1.4);
+  rim(ctx, bld, radial(ctx, LX + 60, 540, 300, 255, 0.35), 1.0);
 
   // ground plane + fog bank at the foot of the steps
   const gg = ctx.createLinearGradient(0, 666, 0, H);
@@ -182,36 +184,47 @@ function capitol(ctx) {
 
   // foreground: stacks of paper filings, slightly defocused
   const fg = layer(), f = fg.getContext('2d');
-  function stack(x, y, w, d, n, seed) {
+  function stack(x, y, w, d, n, seed, loose = 0) {
     const r = mulberry32(seed);
-    const dx = d * 0.62, dy = -d * 0.30, th = 3.2;
-    for (let k = 0; k < n; k++) {
-      const yy = y - k * th, jx = (r() - 0.5) * 6, jd = (r() - 0.5) * 4;
-      const X = x + jx, A = [X, yy - th], B = [X + w, yy - th + jd * 0.2], C = [B[0] + dx, B[1] + dy], D = [X + dx, yy - th + dy];
-      // front edge (sheet thickness) + right side
-      f.fillStyle = L(30 + r() * 26);
-      f.beginPath(); f.moveTo(...A); f.lineTo(...B); f.lineTo(B[0], B[1] + th); f.lineTo(A[0], A[1] + th); f.fill();
-      f.fillStyle = L(60 + r() * 60);
-      f.beginPath(); f.moveTo(...B); f.lineTo(...C); f.lineTo(C[0], C[1] + th); f.lineTo(B[0], B[1] + th); f.fill();
-      if (k === n - 1) {
-        const tp = new Path2D(); tp.moveTo(...A); tp.lineTo(...B); tp.lineTo(...C); tp.lineTo(...D); tp.closePath();
-        const tg = f.createLinearGradient(A[0], A[1], C[0], C[1]);
-        tg.addColorStop(0, L(44)); tg.addColorStop(1, L(92));
-        f.fillStyle = tg; f.fill(tp);
-        // illegible typeset lines, mapped onto the sheet
-        f.save(); f.setTransform((B[0] - A[0]) / 100, (B[1] - A[1]) / 100, (D[0] - A[0]) / 100, (D[1] - A[1]) / 100, A[0], A[1]);
-        f.fillStyle = L(0, 0.28);
-        f.fillRect(10, 82, 36, 4);
-        for (let li = 0; li < 11; li++) f.fillRect(10, 70 - li * 5.4, 40 + r() * 44, 1.7);
+    const th = 2.6;
+    const S = (u, v, k) => [x + u + v * 0.62, y - k * th - v * 0.30];
+    let drift = 0;
+    for (let k = 0; k < n + loose; k++) {
+      const isLoose = k >= n;
+      drift += (r() - 0.5) * 5;
+      const ang = (r() - 0.5) * (isLoose ? 0.6 : 0.09);
+      const ox = drift + (r() - 0.5) * (isLoose ? 50 : 15), ov = (r() - 0.5) * (isLoose ? 40 : 9);
+      const ca = Math.cos(ang), sa = Math.sin(ang);
+      const pt = (u, v) => { u -= w / 2; v -= d / 2; return S(u * ca - v * sa + w / 2 + ox, u * sa + v * ca + d / 2 + ov, isLoose ? n + (k - n) * 1.5 : k); };
+      // a sheet may sag slightly: bow the near edge
+      const A = pt(0, 0), B = pt(w, 0), C = pt(w, d), D = pt(0, d);
+      const sag = (r() - 0.3) * 3;
+      // thickness edge
+      f.fillStyle = L(r() < 0.5 ? 75 + r() * 40 : 22 + r() * 20);
+      f.beginPath(); f.moveTo(...A); f.quadraticCurveTo((A[0] + B[0]) / 2, (A[1] + B[1]) / 2 + sag, ...B);
+      f.lineTo(B[0], B[1] + th); f.quadraticCurveTo((A[0] + B[0]) / 2, (A[1] + B[1]) / 2 + sag + th, A[0], A[1] + th); f.fill();
+      const tp = new Path2D(); tp.moveTo(...A); tp.quadraticCurveTo((A[0] + B[0]) / 2, (A[1] + B[1]) / 2 + sag, ...B);
+      tp.lineTo(...C); tp.lineTo(...D); tp.closePath();
+      const tg = f.createLinearGradient(A[0], A[1], C[0], C[1]);
+      const top = k === n + loose - 1 || isLoose;
+      tg.addColorStop(0, L(top ? 40 : 30)); tg.addColorStop(1, L(top ? 88 : 60));
+      f.fillStyle = tg; f.fill(tp);
+      if (top) {
+        f.save(); f.clip(tp);
+        f.setTransform((B[0] - A[0]) / 100, (B[1] - A[1]) / 100, (D[0] - A[0]) / 100, (D[1] - A[1]) / 100, A[0], A[1]);
+        f.fillStyle = L(0, 0.26);
+        f.fillRect(10, 84, 30, 4);
+        for (let li = 0; li < 12; li++) f.fillRect(10, 74 - li * 5.4, 36 + r() * 46, 1.6);
         f.restore();
-        f.strokeStyle = L(230, 0.9); f.lineWidth = 1.6;
-        f.beginPath(); f.moveTo(...D); f.lineTo(...C); f.lineTo(...B); f.stroke();
       }
+      // light catches the far and right edges, softly
+      f.strokeStyle = L(200 + r() * 40, top ? 0.75 : 0.22 + r() * 0.25); f.lineWidth = top ? 1.3 : 0.9;
+      f.beginPath(); f.moveTo(...D); f.lineTo(...C); f.lineTo(...B); f.stroke();
     }
   }
-  stack(940, 905, 240, 170, 12, 7);
-  stack(1215, 890, 225, 165, 30, 8);
-  stack(1470, 915, 250, 185, 11, 9);
+  stack(930, 880, 240, 170, 16, 7, 2);
+  stack(1215, 868, 225, 165, 30, 8, 1);
+  stack(1475, 895, 250, 185, 12, 9, 3);
   // a single loose sheet
   const fb = layer(), fbc = fb.getContext('2d'); fbc.filter = 'blur(1.2px)'; fbc.drawImage(fg, 0, 0);
   ctx.drawImage(fb, 0, 0);
@@ -598,8 +611,189 @@ function space(ctx) {
   glow(ctx, 640, 990, 380, 120, 0.18);
 }
 
+
+// Night side of the planet: after bloom, pull the unlit hemisphere back toward black.
+function spaceNight(ctx) {
+  const PX = 1440, PY = 400, R = 300;
+  ctx.save();
+  ctx.beginPath(); ctx.arc(PX, PY, R + 1, 0, 7); ctx.clip();
+  ctx.globalCompositeOperation = 'multiply';
+  const g = ctx.createRadialGradient(PX + R * 0.6, PY + R * 0.3, R * 0.05, PX + R * 0.45, PY + R * 0.22, R * 1.12);
+  g.addColorStop(0, 'rgb(14,14,14)'); g.addColorStop(0.5, 'rgb(40,40,40)'); g.addColorStop(0.8, 'rgb(150,150,150)'); g.addColorStop(1, 'rgb(255,255,255)');
+  ctx.fillStyle = g; ctx.fillRect(PX - R, PY - R, 2 * R, 2 * R);
+  ctx.restore();
+}
+
+// ---------- scene 5: ai-build-out (sapphire) ----------
+function chip(ctx) {
+  const rnd = mulberry32(5505), nz = makeNoise(55);
+  // background: the server aisle, defocused and dimmed (data-centre depth)
+  const bg = layer(), bc = bg.getContext('2d', { willReadFrequently: true });
+  servers(bc);
+  ctx.fillStyle = L(6); ctx.fillRect(0, 0, W, H);
+  ctx.save(); ctx.filter = 'blur(9px) brightness(0.55)'; ctx.globalAlpha = 1;
+  ctx.drawImage(bg, 0, 0, W, H, -60, -260, W * 1.1, H * 1.1); ctx.restore();
+
+  // circuit board plane in perspective
+  const VX = 1060, VY = 140, F = 820, HC = 2.1;
+  const P = (X, Z) => [VX + F * X / Z, VY + F * HC / Z];
+  const fogK = z => 1 - Math.exp(-z / 9);
+  const board = new Path2D();
+  { const a = P(-12, 1.0), b = P(12, 1.0), c = P(12, 40), d = P(-12, 40);
+    board.moveTo(...a); board.lineTo(...b); board.lineTo(...c); board.lineTo(...d); board.closePath(); }
+  const bgd = ctx.createLinearGradient(0, VY + 20, 0, H);
+  bgd.addColorStop(0, L(10, 0)); bgd.addColorStop(0.3, L(10, 0.9)); bgd.addColorStop(1, L(7, 1));
+  ctx.fillStyle = bgd; ctx.fill(board);
+  // faint fibreglass weave texture on the board
+  ctx.save(); ctx.clip(board); ctx.globalCompositeOperation = 'lighter';
+  for (let z = 1.2; z < 30; z += 0.08) {
+    const a = P(-12, z), b = P(12, z);
+    ctx.strokeStyle = L(255, 0.012 * (1 - fogK(z))); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke();
+  }
+  ctx.restore();
+
+  const CXw = 0.5, CZ = 5.0, CS = 1.0, CH = 0.16; // chip centre/half-size/height in world units
+  // traces: manhattan routes with 45-degree jogs leaving each side of the chip
+  const tl = layer(), t = tl.getContext('2d'); t.lineCap = 'round'; t.lineJoin = 'round';
+  const vias = [];
+  function route(pts, bright) {
+    const sp = pts.map(([X, Z]) => P(X, Z));
+    // segment-wise to fade with depth and keep the left third calm
+    for (let i = 0; i < sp.length - 1; i++) {
+      const [X0, Z0] = pts[i];
+      const zf = 1 - fogK(Math.max(Z0, 1.2)) * 0.6;
+      const calm = smooth(200, 650, Math.min(sp[i][0], sp[i + 1][0]));
+      t.strokeStyle = L(255, bright * zf * (0.15 + 0.85 * calm));
+      t.lineWidth = Math.max(0.8, F * 0.012 / Math.max(Z0, 1.2));
+      t.beginPath(); t.moveTo(...sp[i]); t.lineTo(...sp[i + 1]); t.stroke();
+    }
+  }
+  const N = 14;
+  for (let side = 0; side < 4; side++) {
+    for (let i = 0; i < N; i++) {
+      const f = (i + 0.5) / N * 2 - 1; // -1..1 along the edge
+      const along = f * CS * 0.86;
+      const bright = 0.25 + Math.pow(rnd(), 2) * 0.75;
+      const out = 0.25 + rnd() * 0.5, jog = (0.2 + rnd() * 0.6) * Math.sign(f || 0.1), far = 30;
+      let pts;
+      if (side === 0) { // near edge -> toward camera
+        const x = CXw + along, z = CZ - CS;
+        pts = [[x, z], [x, z - out], [x + jog * 0.5, z - out - Math.abs(jog) * 0.5], [x + jog * 0.5 + f * 2.2, 1.0]];
+      } else if (side === 1) { // far edge -> into the distance
+        const x = CXw + along, z = CZ + CS;
+        pts = [[x, z], [x, z + out], [x + jog, z + out + Math.abs(jog)], [x + jog + f * 3, far]];
+      } else { // left / right edges -> sideways out of frame
+        const s = side === 2 ? -1 : 1;
+        const z = CZ + along, x = CXw + s * CS;
+        pts = [[x, z], [x + s * out, z], [x + s * (out + Math.abs(jog)), z + jog], [x + s * 14, z + jog + f * 1.5]];
+      }
+      route(pts, bright);
+      vias.push([...pts[1], bright]);
+      if (rnd() < 0.3) vias.push([...pts[2], bright]);
+    }
+  }
+  // a few long bus lines running past the chip
+  for (let k = 0; k < 6; k++) {
+    const z = 2.2 + k * 0.18; route([[-0.2, z], [1.0, z], [1.4, z - 0.4], [12, z - 0.4]], 0.3);
+  }
+  for (const [X, Z, b] of vias) {
+    const [x, y] = P(X, Z), r = Math.max(1, F * 0.022 / Z);
+    t.fillStyle = L(255, b * 0.9 * smooth(200, 650, x)); t.beginPath(); t.ellipse(x, y, r, r * 0.45, 0, 0, 7); t.fill();
+  }
+  // signal pulses travelling along some traces
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  ctx.drawImage(tl, 0, 0);
+  ctx.filter = 'blur(6px)'; ctx.globalAlpha = 0.9; ctx.drawImage(tl, 0, 0);
+  ctx.filter = 'blur(22px)'; ctx.globalAlpha = 0.6; ctx.drawImage(tl, 0, 0);
+  ctx.restore();
+
+  // small SMD parts scattered near the chip
+  for (let i = 0; i < 40; i++) {
+    const X = CXw + (rnd() - 0.5) * 5, Z = CZ + (rnd() - 0.5) * 5;
+    if (Math.abs(X - CXw) < CS * 1.4 && Math.abs(Z - CZ) < CS * 1.4) continue;
+    if (Z < 1.6) continue;
+    const w = 0.05 + rnd() * 0.06, d = 0.025 + rnd() * 0.03;
+    const q = [P(X - w, Z - d), P(X + w, Z - d), P(X + w, Z + d), P(X - w, Z + d)];
+    const hgt = F * 0.03 / Z;
+    const p = new Path2D(); p.moveTo(q[0][0], q[0][1] - hgt); p.lineTo(q[1][0], q[1][1] - hgt); p.lineTo(q[2][0], q[2][1] - hgt); p.lineTo(q[3][0], q[3][1] - hgt); p.closePath();
+    ctx.fillStyle = L(10); ctx.fillRect(q[0][0], q[0][1] - hgt, q[1][0] - q[0][0], hgt);
+    ctx.fillStyle = L(22); ctx.fill(p);
+    ctx.strokeStyle = L(200, 0.5 * (1 - fogK(Z)) * smooth(200, 650, q[0][0])); ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.moveTo(q[3][0], q[3][1] - hgt); ctx.lineTo(q[2][0], q[2][1] - hgt); ctx.lineTo(q[1][0], q[1][1] - hgt); ctx.stroke();
+  }
+
+  // the chip: package with height, die, pins, one rim light from back-right
+  const lift = (pt, h, Z = CZ) => [pt[0], pt[1] - F * h / Z];
+  const c00 = P(CXw - CS, CZ - CS), c10 = P(CXw + CS, CZ - CS), c11 = P(CXw + CS, CZ + CS), c01 = P(CXw - CS, CZ + CS);
+  const t00 = lift(c00, CH, CZ - CS), t10 = lift(c10, CH, CZ - CS), t11 = lift(c11, CH, CZ + CS), t01 = lift(c01, CH, CZ + CS);
+  // contact shadow + glow pool under the chip
+  glow(ctx, (c00[0] + c11[0]) / 2, (c00[1] + c11[1]) / 2 + 10, 380, 120, 0.25);
+  // pins along the near and side edges
+  for (let i = 0; i < 22; i++) {
+    const f = (i + 0.5) / 22 * 2 - 1;
+    for (const [a, b, bri] of [[[CXw + f * CS * 0.92, CZ - CS], [CXw + f * CS * 0.92, CZ - CS - 0.09], 0.5],
+                               [[CXw + CS, CZ + f * CS * 0.92], [CXw + CS + 0.09, CZ + f * CS * 0.92], 0.9],
+                               [[CXw - CS, CZ + f * CS * 0.92], [CXw - CS - 0.09, CZ + f * CS * 0.92], 0.25]]) {
+      const pa = P(...a), pb = P(...b);
+      ctx.strokeStyle = L(210, bri); ctx.lineWidth = Math.max(1, F * 0.016 / a[1]);
+      ctx.beginPath(); ctx.moveTo(pa[0], pa[1] - 2); ctx.lineTo(...pb); ctx.stroke();
+    }
+  }
+  // sides
+  const front = new Path2D(); front.moveTo(...c00); front.lineTo(...c10); front.lineTo(...t10); front.lineTo(...t00); front.closePath();
+  const right = new Path2D(); right.moveTo(...c10); right.lineTo(...c11); right.lineTo(...t11); right.lineTo(...t10); right.closePath();
+  ctx.fillStyle = L(14); ctx.fill(front);
+  const rg = ctx.createLinearGradient(c10[0], 0, c11[0], 0); rg.addColorStop(0, L(30)); rg.addColorStop(1, L(70));
+  ctx.fillStyle = rg; ctx.fill(right);
+  // top face
+  const topF = new Path2D(); topF.moveTo(...t00); topF.lineTo(...t10); topF.lineTo(...t11); topF.lineTo(...t01); topF.closePath();
+  const tg = ctx.createLinearGradient(t00[0], t00[1], t11[0], t11[1]);
+  tg.addColorStop(0, L(14)); tg.addColorStop(0.7, L(26)); tg.addColorStop(1, L(60));
+  ctx.fillStyle = tg; ctx.fill(topF);
+  // die (inset, slightly raised, with a specular sweep)
+  const di = 0.58, DH = CH + 0.03;
+  const d00 = lift(P(CXw - di, CZ - di), DH, CZ - di), d10 = lift(P(CXw + di, CZ - di), DH, CZ - di), d11 = lift(P(CXw + di, CZ + di), DH, CZ + di), d01 = lift(P(CXw - di, CZ + di), DH, CZ + di);
+  const die = new Path2D(); die.moveTo(...d00); die.lineTo(...d10); die.lineTo(...d11); die.lineTo(...d01); die.closePath();
+  ctx.fillStyle = L(18); ctx.fill(die);
+  ctx.save(); ctx.clip(die);
+  // die microstructure grid
+  ctx.setTransform((d10[0] - d00[0]) / 100, (d10[1] - d00[1]) / 100, (d01[0] - d00[0]) / 100, (d01[1] - d00[1]) / 100, d00[0], d00[1]);
+  for (let gx = 0; gx < 100; gx += 12.5) for (let gy = 0; gy < 100; gy += 12.5) {
+    ctx.fillStyle = L(60 + rnd() * 50, 0.35); ctx.fillRect(gx + 1.2, gy + 1.2, 10, 10);
+  }
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  const sp = ctx.createLinearGradient(d01[0], d01[1], d10[0], d10[1]);
+  sp.addColorStop(0, L(255, 0)); sp.addColorStop(0.55, L(255, 0)); sp.addColorStop(0.75, L(255, 0.35)); sp.addColorStop(0.85, L(255, 0)); sp.addColorStop(1, L(255, 0));
+  ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = sp; ctx.fill(die);
+  ctx.restore();
+  // rim light: far + right edges of package and die
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+  ctx.strokeStyle = L(255, 0.95); ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(...t01); ctx.lineTo(...t11); ctx.lineTo(...t10); ctx.stroke();
+  ctx.strokeStyle = L(255, 0.6); ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.moveTo(...d01); ctx.lineTo(...d11); ctx.lineTo(...d10); ctx.stroke();
+  ctx.strokeStyle = L(255, 0.25); ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(...t00); ctx.lineTo(...t10); ctx.stroke();
+  ctx.restore();
+  // rim light source glow behind, upper right
+  glow(ctx, t11[0] + 60, t11[1] - 40, 300, 255, 0.18);
+
+  // shallow depth of field: blur the near foreground band slightly
+  const snap = layer(); snap.getContext('2d').drawImage(ctx.canvas, 0, 0);
+  const near = layer(), nc = near.getContext('2d'); nc.filter = 'blur(3px)'; nc.drawImage(snap, 0, 0);
+  nc.filter = 'none'; nc.globalCompositeOperation = 'destination-in';
+  const ng = nc.createLinearGradient(0, 720, 0, H); ng.addColorStop(0, L(255, 0)); ng.addColorStop(1, L(255, 1));
+  nc.fillStyle = ng; nc.fillRect(0, 0, W, H);
+  ctx.drawImage(near, 0, 0);
+  // left-third calm
+  const dk = ctx.createLinearGradient(0, 0, 620, 0);
+  dk.addColorStop(0, 'rgba(0,0,0,0.5)'); dk.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = dk; ctx.fillRect(0, 0, 620, H);
+}
+
 // ---------- post: bloom, duotone LUT, grain, vignette ----------
-function finish(ctx, tone, seed, bloom = [0.45, 0.22]) {
+function finish(ctx, tone, seed, bloom = [0.45, 0.22], post = null) {
   const src = ctx.canvas;
   const b1 = layer(), c1 = b1.getContext('2d');
   c1.filter = 'contrast(2.4) brightness(0.9) blur(14px)'; c1.drawImage(src, 0, 0);
@@ -609,6 +803,7 @@ function finish(ctx, tone, seed, bloom = [0.45, 0.22]) {
   ctx.globalAlpha = bloom[0]; ctx.drawImage(b1, 0, 0);
   ctx.globalAlpha = bloom[1]; ctx.drawImage(b2, 0, 0);
   ctx.restore();
+  if (post) post(ctx);
 
   const deep = hex(TONES[tone].deep), midc = hex(TONES[tone].mid), paper = hex(PAPER);
   const stops = [
@@ -650,11 +845,12 @@ const SCENES = {
   'capitol-tech':  { fn: capitol, tone: 'burgundy', seed: 1 },
   'big-tech':      { fn: servers, tone: 'emerald', seed: 2 },
   'picks-shovels': { fn: tools,   tone: 'amber',   seed: 3 },
-  'space-race':    { fn: space,   tone: 'plum',    seed: 4, bloom: [0.3, 0.18] },
+  'space-race':    { fn: space,   tone: 'plum',    seed: 4, bloom: [0.3, 0.12], post: spaceNight },
+  'ai-build-out':  { fn: chip,    tone: 'sapphire', seed: 5, bloom: [0.5, 0.2] },
 };
 const slug = (location.hash || '#capitol-tech').slice(1);
 const sc = SCENES[slug];
 const ctx = document.getElementById('c').getContext('2d', { willReadFrequently: true });
 sc.fn(ctx);
-finish(ctx, sc.tone, sc.seed, sc.bloom);
+finish(ctx, sc.tone, sc.seed, sc.bloom, sc.post);
 document.title = 'done';
