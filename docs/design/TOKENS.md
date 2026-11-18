@@ -1,4 +1,6 @@
-# Alloy: design tokens (v0.2)
+# Alloy: design tokens (v0.3)
+
+**v0.3 (2026-11-19)** adds a champagne-gold metal accent, jewel tones that come from content, and type discipline (§9–§11).
 
 **v0.2 (2026-11-19) applies the founder's palette decisions:**
 - dark mode is the default,
@@ -33,7 +35,9 @@ Contrast ratios are WCAG 2.x relative-luminance ratios, computed by a script (`t
 5. **Burgundy is the brand, never a signal.**
    - Gain is **jade** and loss is **vermilion**, both hue-separated from burgundy.
    - Every gain/loss number carries a sign and an arrow (▲ +4.2% / ▼ −1.8%), so colour is never the only cue.
-6. **No pink accent.**
+6. **Colour budget per screen: burgundy ≤ 10%, gold ≤ 3%.** Chrome (nav, buttons, inputs) stays neutral. Colour comes from **content**: basket covers, stock logos, chart fills (§10).
+7. **Type discipline.** Anton is used for one hero word or number per screen, at most 3 type sizes per screen, and no paragraphs inside flows (§11).
+8. **No pink accent.**
    - Links on dark are off-white and underlined.
    - Links on light are burgundy #6D001A and underlined.
 
@@ -172,6 +176,8 @@ Contrast ratios are WCAG 2.x relative-luminance ratios, computed by a script (`t
 
 ## 5. Typography
 
+> **v0.3 rule (§11):** on product screens, Anton is used once (the hero word or number), with at most 3 sizes per screen. The scale below is the menu; §11 sets how much of it a single screen may use.
+
 ### Pairing A (recommended): **Anton + Inter**
 - **Display: Anton** (Google Fonts, 400). Heavy, condensed, all caps. It is the closest free match to the moodboard's vertical type.
   - Uppercase only, letter-spacing +0.5%.
@@ -226,7 +232,7 @@ Minimum body size on mobile is 15px. Legal text is never smaller than 11px.
   - The period change chip carries the gain/loss colour.
   - This keeps the screen from flipping colour daily and keeps burgundy in charge.
 - Creator vs follower lines: creator is dashed `ink-400`, follower is solid `text`.
-- Area fill is 8% of the line colour. The gridlines are `border`.
+- Area fill uses the basket's jewel mid tone, 18% → 0% (§10.4). The gridlines are `border`.
 - Rebalance markers sit on the chart as small accent (#C41A42) ticks with a tooltip showing the reason.
 - Every chart carries "Past performance isn't a promise." in `micro`.
 
@@ -238,3 +244,134 @@ Minimum body size on mobile is 15px. Legal text is never smaller than 11px.
 - **Counts as burgundy:** hue 325–360° or 0–6°, HSV saturation ≥ 0.6, value ≥ 0.25. This catches #6D001A, #C41A42 and their mid shades.
 - **Doesn't count:** near-black shadows and pale tints. Loss vermilion (hue ~14°) is excluded.
 - **Threshold:** ≤ 10% of the frame. Results are listed in the round-2 report.
+
+
+---
+
+## 9. Gold: the "alloy" metal accent
+
+Champagne-gold or bronze ties to the name (mixed metals). It is **rare**: it marks premium or earned moments, never function.
+
+| Token | Hex | Use |
+|---|---|---|
+| `gold-200` | `#E3CC9C` | Highlight stop in metal gradients (dark) |
+| **`gold-400`** | **`#C9A96E`** | **Dark-mode gold**: badge text and icons, stake edge, milestone numerals |
+| `gold-600` | `#A07D3E` | Metal edge and shadow stop; 1px ring on badges (non-text, 5.18:1) |
+| **`gold-700`** | **`#7A5C26`** | **Light-mode gold** (AA on white and smoke) |
+| `gold-900` | `#5C4520` | Deep shadow stop in gradients only |
+| `metal` (gradient) | `linear-gradient(135deg, #E3CC9C 0%, #C9A96E 45%, #A07D3E 100%)` | Badge fills and the creator-ring stroke, **max 24px** objects |
+
+**Use gold only for:**
+- the creator badge (ring around the avatar plus the "Creator" mark),
+- the **"Skin in the game"** stake line (gold left rule and amount),
+- milestones ("100 followers", "1 year live"),
+- the **Verified** and **Seed basket** badges,
+- the success check ring after buy, sell or create (replacing the accent ring).
+
+**Never use gold for:**
+- gain or loss, prices, PnL,
+- primary or secondary buttons,
+- links, focus, progress, selected states (those use the accent).
+
+**How gold and burgundy coexist:**
+- **Gold ≤ 3% of a screen, burgundy ≤ 10%.** Both are measured with the §8 pixel script (gold: hue 30–48°, saturation 0.3–0.7, value ≥ 0.45).
+- **One gold element per viewport** is the target; two is the maximum.
+- Gold on a burgundy surface is the "premium" pairing: the share card and creator milestones (5.64:1). Burgundy text on gold is never used.
+- Gold and the accent (#C41A42) don't touch: keep at least 16px between them, so neither reads as a state of the other.
+- Keep amber jewel covers (§10) away from gold badges. Seed and verified badges sit on the cover's neutral footer, not on amber art.
+
+---
+
+## 10. Hints of colour: colour comes from content, not chrome
+
+The chrome stays near-black and off-white. Colour enters only through **content**.
+
+### 10.1 Jewel tones (basket identity)
+Each basket gets **one of five** jewel tones. The creator picks it at create time (default: hashed from the basket address). Each tone has a **deep** stop (cover base) and a **mid** stop (art and glow only, never text or UI).
+
+| Tone | Deep (cover base) | Mid (art/glow only) | Note |
+|---|---|---|---|
+| Burgundy | `#3A0010` | `#B5304F` | Counts toward the 10% burgundy budget only where it's above value 0.25 (the mid). The deep base doesn't count. |
+| Emerald | `#0F2E24` | `#2E8B6A` | Never place gain numbers in emerald art; numbers on covers are always paper. |
+| Sapphire | `#10223F` | `#3E6FB8` | |
+| Amber | `#3A2A08` | `#C98A2E` | Not near gold badges or warn pills (§9). |
+| Plum | `#2A1433` | `#8E5BA6` | |
+
+### 10.2 Cover art (duotone)
+- Background: `linear-gradient(160deg, <deep> 0%, #0A0A0A 85%)`.
+- The art is a duotone (deep → mid) of a texture from the moodboard family: marble, silk, smoke, circuit, statue fragment. The mid stop is at most 35% opacity.
+- Text on covers is paper `#F2F0ED` (≥12:1 on every deep stop) and text-2 `#9A9894` (≥4.8:1).
+- **Sizes:**
+  - card cover 16:9 on Explore,
+  - a 64px tile in lists,
+  - the hero band on the basket page (max 30% of viewport height).
+- Jewel art never appears behind buttons or inputs.
+
+### 10.3 Stock logos
+- Logos appear in **full colour** inside a 24px (lists) or 32px (detail) circle on `surface-2`.
+- These are the main "hint of colour" on product screens.
+- Use the company's official mark. Show the ticker initials on surface-2 when no mark is available.
+
+### 10.4 Chart fills
+- The NAV line stays paper.
+- The area fill is a vertical gradient from the basket's **mid** tone at 18% opacity to 0% at the baseline.
+- The creator dashed line stays `ink-400`.
+
+### 10.5 Glow behind hero numbers
+- `radial-gradient(closest-side, rgba(109,0,26,.35), transparent)` sits behind the hero number (portfolio total, basket price), about 2.5× the number's width.
+- Composited over #0A0A0A it peaks around #2C0611, below the 0.25 value cut, so it doesn't count toward the 10%.
+- Use one glow per screen. In light mode, use a 10% `burgundy-100` tint instead.
+
+### 10.6 Silk and smoke success moments
+- After a buy, sell, withdraw or create: a one-shot silk/smoke illustration (static SVG, or the MOTION.md §5.10 fade) tinted with the basket's jewel tone, plus a gold check ring (§9).
+- It covers 40% of the screen at most, and never covers the receipt facts.
+
+### 10.7 Contrast (script output)
+
+| Pair | Fg | Bg | Ratio | Needs | Result |
+|---|---|---|---|---|---|
+| gold-200 highlight on bg (dark) | `#E3CC9C` | `#0A0A0A` | 12.62 | 4.5 | **pass** |
+| **gold-400 (dark main)** on bg | `#C9A96E` | `#0A0A0A` | 8.85 | 4.5 | **pass** |
+| gold-400 on surface-1 | `#C9A96E` | `#141416` | 8.22 | 4.5 | **pass** |
+| gold-400 on surface-2 | `#C9A96E` | `#1C1C1F` | 7.60 | 4.5 | **pass** |
+| gold-400 on brand burgundy (share card, milestone) | `#C9A96E` | `#6D001A` | 5.64 | 4.5 | **pass** |
+| gold-400 on burgundy-950 | `#C9A96E` | `#2A000A` | 8.51 | 4.5 | **pass** |
+| ink on gold-400 fill (badge text) | `#0A0A0A` | `#C9A96E` | 8.85 | 4.5 | **pass** |
+| gold-600 metal edge on bg (non-text) | `#A07D3E` | `#0A0A0A` | 5.18 | 3 | **pass** |
+| **gold-700 (light main)** on surface-1 | `#7A5C26` | `#FFFFFF` | 6.20 | 4.5 | **pass** |
+| gold-700 on light bg | `#7A5C26` | `#F6F5F3` | 5.69 | 4.5 | **pass** |
+| gold-900 shadow (decorative) | `#5C4520` | `#0A0A0A` | 2.19 | - | art / decorative only |
+| paper on burgundy cover (deep) | `#F2F0ED` | `#3A0010` | 15.55 | 4.5 | **pass** |
+| text-2 on burgundy cover | `#9A9894` | `#3A0010` | 6.14 | 4.5 | **pass** |
+| paper on emerald cover | `#F2F0ED` | `#0F2E24` | 12.85 | 4.5 | **pass** |
+| text-2 on emerald cover | `#9A9894` | `#0F2E24` | 5.08 | 4.5 | **pass** |
+| paper on sapphire cover | `#F2F0ED` | `#10223F` | 13.96 | 4.5 | **pass** |
+| text-2 on sapphire cover | `#9A9894` | `#10223F` | 5.51 | 4.5 | **pass** |
+| paper on amber cover | `#F2F0ED` | `#3A2A08` | 12.19 | 4.5 | **pass** |
+| text-2 on amber cover | `#9A9894` | `#3A2A08` | 4.82 | 4.5 | **pass** |
+| paper on plum cover | `#F2F0ED` | `#2A1433` | 14.81 | 4.5 | **pass** |
+| text-2 on plum cover | `#9A9894` | `#2A1433` | 5.85 | 4.5 | **pass** |
+| gain on emerald cover | `#3DBE8B` | `#0F2E24` | 6.22 | 4.5 | **pass** |
+| loss on burgundy cover | `#FF6A3D` | `#3A0010` | 6.22 | 4.5 | **pass** |
+| gold on amber cover | `#C9A96E` | `#3A2A08` | 6.20 | 4.5 | **pass** |
+| emerald mid (art only) on bg | `#2E8B6A` | `#0A0A0A` | 4.73 | - | art / decorative only |
+| sapphire mid (art only) on bg | `#3E6FB8` | `#0A0A0A` | 3.93 | - | art / decorative only |
+| amber mid (art only) on bg | `#C98A2E` | `#0A0A0A` | 6.75 | - | art / decorative only |
+| plum mid (art only) on bg | `#8E5BA6` | `#0A0A0A` | 3.96 | - | art / decorative only |
+| burgundy mid (art only) on bg | `#B5304F` | `#0A0A0A` | 3.30 | - | art / decorative only |
+
+
+---
+
+## 11. Type discipline: premium means fewer words
+
+1. **Anton appears once per screen**, for the single hero word or number: the basket name on its page, "$50" on the seed step, "YOU'RE IN." on success.
+   - Everything else is Inter, including section titles. These replace the earlier `display-l`/`display-m` uses inside product screens; the landing page may use Anton for its headline only.
+2. **At most 3 type sizes per screen**, picked from: hero (Anton or `num-xl`), `title`/`body` (one of them), `label`/`micro` (one of them).
+   - Weight and colour (text vs text-2) do the rest of the hierarchy.
+3. **No paragraphs in flows** (onboarding, buy, sell, withdraw, create, propose change):
+   - one line of helper text per block, ≤ 12 words;
+   - legal lines go to one `micro` line plus a "Details" link.
+4. **Basket thesis**: ≤ 140 characters, shown as 2 lines collapsed with "More".
+5. **Stat labels**: 1–3 words ("In basket", "Followers", "Fee"). No explanatory sub-labels by default; explanations live in an ⓘ sheet.
+6. **Section titles**: at most 4 words ("Did followers win?", "What's inside", "Changes").

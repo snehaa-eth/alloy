@@ -227,36 +227,40 @@ flowchart TD
 <section id="funding">
   <h2>4 · Funding: testnet faucet vs mainnet routes</h2>
   <p class="lede">Opened inline from Buy when short (keeps the amount), or from Portfolio/Me. Route A (send USDC on Base from an exchange) is primary on mainnet because on-ramp coverage for India and Nigeria is patchy.</p>
+  <h3 style="font-size:15px;margin:10px 0 0">4a · Testnet (Base Sepolia)</h3>
   <div class="diagram"><pre class="mermaid">
-flowchart TD
-  A(["Add money: you need $X more"]) --> ENV{"Environment?"}
-  ENV -- "Base Sepolia (test)" --> F["Get 1,000 test dollars"]
+flowchart LR
+  A(["Add test money"]) --> F["Get 1,000 test dollars"]
   F --> FR["Relayer calls dripTo(you): no gas for you"]
   FR --> FQ{"Result"}
-  FQ -- ok --> DONE
+  FQ -- ok --> DONE(["Balance updated → back to Buy, amount kept"])
   FQ -- "already today" --> F1["Next refill in 7h; top-up path for judges"]:::edge
   FQ -- "daily cap / relayer down" --> F2["Test money out; ops alert"]:::edge
-  ENV -- "Base mainnet" --> RT{"Pick a route (region-aware)"}
-  RT -- "A: Send from exchange or app" --> SA["Pick source: Binance, Coinbase, Bybit, OKX, wallet"]
-  SA --> SB["Asset USDC · Network BASE · address + QR · copy"]
-  SB --> W["Waiting for your USDC (live listener)"]
+  classDef edge fill:#f3f3f0,stroke:#3a3a40,stroke-dasharray:5 4,color:#1d1d1f;
+  </pre></div>
+  <h3 style="font-size:15px;margin:10px 0 0">4b · Mainnet (Base)</h3>
+  <div class="diagram"><pre class="mermaid">
+flowchart TD
+  A(["Add money: you need $X more"]) --> RT{"Pick a route (region-aware)"}
+  RT -- "A: Send from exchange or app" --> SA["Source: Binance, Coinbase, Bybit, OKX, wallet"]
+  SA --> SB["USDC · network BASE · address + QR"]
+  SB --> W["Waiting for your USDC (live)"]
+  SB -. "wrong network" .-> W4["Not visible to us; recovery help"]:::edge
   W --> WQ{"What arrived?"}
-  WQ -- "USDC on Base" --> DONE
-  WQ -- "USDT or ETH on Base" --> W1["We got USDT, not USDC: swap or instructions"]:::edge
-  WQ -- "nothing after 10 min" --> W2["Still waiting; leave and get notified"]:::edge
-  WQ -- "below needed" --> W3["Credited; add $Y more"]:::edge
-  SB -. "sent on wrong network" .-> W4["Not visible to us; recovery help article"]:::edge
-  RT -- "B: Buy with local money" --> OR["Country → providers that support it: UPI/IMPS, bank, PIX, QRIS, card"]
-  OR --> ORQ{"Provider available?"}
-  ORQ -- no --> O1["Say so plainly; offer A or C"]:::edge
-  ORQ -- yes --> OM["Show fee, minimum, KYC level before opening"]
-  OM --> OW["Provider widget (KYC in provider)"]
+  WQ -- "USDC on Base" --> DONE(["Balance updated → back to Buy, amount kept"])
+  WQ -- "USDT / ETH" --> W1["Not USDC: swap or instructions"]:::edge
+  WQ -- "nothing in 10 min" --> W2["Still waiting; notify on arrival"]:::edge
+  WQ -- "too little" --> W3["Credited; add $Y more"]:::edge
+  RT -- "B: Buy with local money" --> OR["Country → providers: UPI/IMPS, bank, PIX, QRIS, card"]
+  OR --> ORQ{"Provider for country?"}
+  ORQ -- no --> O1["Say so; offer A or C"]:::edge
+  ORQ -- yes --> OM["Fee, minimum, KYC level shown first"]
+  OM --> OW["Provider widget (their KYC)"]
   OW --> OQ{"Outcome"}
   OQ -- paid --> W
-  OQ -- "KYC failed or pending" --> O2["That's the provider, not us; keep app usable"]:::edge
-  OQ -- "card declined" --> O3["Suggest local method or route A"]:::edge
-  RT -- "C: Other ways" --> P2P["P2P guidance link-out with safety checklist"]
-  DONE(["Balance updated → back to Buy with amount kept"])
+  OQ -- "KYC fail / pending" --> O2["Provider's check, not ours"]:::edge
+  OQ -- "card declined" --> O3["Try local method or A"]:::edge
+  RT -- "C: Other ways" --> P2P["P2P guidance link-out + safety checklist"]
   classDef edge fill:#f3f3f0,stroke:#3a3a40,stroke-dasharray:5 4,color:#1d1d1f;
   </pre></div>
 </section>

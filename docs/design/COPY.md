@@ -28,6 +28,30 @@ All copy for the key screens, written to match the wireframes in `wireframes.htm
 | stock tokens | B20 precompile tokens |
 | basket token | vault share, receipt token |
 
+### Word budgets (v0.3: fewer words reads as premium)
+The founder's call: the screens feel cluttered. Premium means fewer words. These budgets override longer strings elsewhere in this file. The wireframe redo will trim to them.
+
+| Element | Budget |
+|---|---|
+| Screen or sheet title | ≤ 4 words |
+| Helper line inside a flow (buy, sell, withdraw, create, onboarding) | 1 line, ≤ 12 words; **no paragraphs** |
+| Button | Verb + object, ≤ 3 words ("Buy $25", "Withdraw stocks") |
+| Stat label | 1–3 words, no sub-label (explain in an ⓘ sheet) |
+| Basket thesis | ≤ 140 characters, 2 lines collapsed |
+| Rebalance reason | ≤ 80 characters |
+| Legal line | 1 `micro` line + "Details" link; the full text lives in the sheet |
+| Empty state | Title ≤ 4 words + 1 line ≤ 10 words + 1 button |
+
+Example trims:
+- "Takes about 15 seconds. No seed phrase, no app to install." → "15 seconds. No seed phrase."
+- "Followers trail by 0.6% since launch. That's the fee plus timing." → "Followers −0.6% vs creator." (the ⓘ explains why)
+- "Swap your basket token for the actual stock tokens inside it. No selling, no price impact. Works 24/7." → "Get the stock tokens. No selling, no price impact."
+
+Typography goes with this (TOKENS §11):
+- one Anton word or number per screen,
+- at most 3 sizes,
+- everything else Inter.
+
 ### Hard-banned words and phrases
 unlock · seamless(ly) · empower · revolutionize · elevate · dive in / deep dive · harness · leverage (as a verb) · in today's world · whether you're X or Y · journey · game-changer · next-gen · cutting-edge · democratize · supercharge · effortless · world-class · best-in-class · robust · synergy · "the future of" · "we're excited to" · "say goodbye to" · "look no further"
 
