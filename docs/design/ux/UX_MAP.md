@@ -15,7 +15,7 @@
 - **Contract changes reflected:** a recipe change has its own timing, so a drift trim never delays a due change, and the countdown is the exact `executableAt`. Testnet has **no TVL cap** (mainnet keeps $5k). Buy leftovers: tiny dust is donated to the basket, larger leftovers are refunded as USDC, so there's no unexplained stock dust.
 - **Review fixes:** a replaced proposal sends a new notice with a diff and resets everyone's choice. Buy shows "≈ you get" from the real quote (not oracle value) and discloses pool fees and impact as "Cost ≈ $x". "Max" preset removed. Claim is one tap per token (caller-only). "Own companies" copy removed. Share and OG cards are watermarked TEST. One status strip instead of three bars. Fixed 1% slippage on testnet.
 - **Cuts:** mainnet funding, most notifications (kept: in-app Activity for everything, email only for recipe-change notices), Studio tab (creator tools now live in Me → Your baskets), Watch, AI suggestions, earnings calculator, mode simulation, single-stock sell, send-out, display currency, "Remind me at open", two-step confirm, corporate-action, sequencer and offline states.
-- **Additions:** one testnet host where every X link lands on a basket page, with UTM/`s`/`p` kept through sign-in. **Founding Follower #N / Founding Creator #N** badges plus a follower share card as the **primary** post-buy CTA. An "Open in browser" bar on basket pages inside in-app browsers, and email OTP as the default. Locale number formats (`Intl.NumberFormat`). Marketing hooks: BUILD LOG series and the Caesar-in-VR bust mascot on landing and share cards.
+- **Additions:** one testnet host where every X link lands on a basket page, with UTM/`s`/`p` kept through sign-in. **Founding Follower #N / Founding Creator #N** badges plus a follower share card as the **primary** post-buy CTA. An "Open in browser" bar on basket pages inside in-app browsers, and email OTP as the default. Locale number formats (`Intl.NumberFormat`). Marketing hooks: BUILD LOG series. No mascot (dropped 2026-11-19).
 - Kept: word budgets and colour moments (§0.1).
 
 **v1** (earlier 2026-11-19): first full map.
@@ -85,7 +85,7 @@
 | Empty state | ≤ 10 + 1 CTA | Line illustration, one number |
 | Create step | ≤ 15 | Live share-card preview, stacked weight bar |
 | Error / edge state | ≤ 12 + 1 action | Icon + "Nothing was spent" pattern |
-| Landing hero | ≤ 20 | Headline, Caesar-in-VR art, 3 proof numbers |
+| Landing hero | ≤ 20 | Headline over silk/smoke, 3 basket covers, 3 proof numbers |
 
 **P-2. Colour carries meaning and delight; black and white is the frame, not the picture.** The visual team owns the palette. This map only marks *where* colour should do work:
 
@@ -98,7 +98,7 @@
 | Success | Short colour moment on buy/create success (the basket colour fills the check); the Founding # badge is the hero; no confetti | Buy, Create |
 | Status | One status strip whose colour follows its state (open, closed, change pending, test) | Global |
 | Creator | Avatar ring in the creator's colour; "Creator invested" and "Founding Creator #N" badges | Card, profile |
-| Mascot | Caesar-in-VR bust on the landing page, share cards and BUILD LOG posts; never inside product flows | Landing, share/OG cards |
+| Brand mark | ALLOY wordmark; silk/smoke textures only. No mascot (dropped 2026-11-19) | Landing, share/OG cards |
 | Empty states | One accent colour in the line illustration | Empty states |
 
 ---
@@ -562,7 +562,7 @@ AI suggestions, earnings calculator and mode simulation are deferred.
 
 | Wireframe section | Keep | Change | Flow |
 |---|---|---|---|
-| 1 Landing | Story-first headline; follower-first live cards; plain legal | Caesar-in-VR bust as the recurring mascot (lazy-loaded); 3 proof numbers; live basket cards; "Founding Creator spots: N of 50" only if real; email capture for non-testers | 4.1 |
+| 1 Landing | Story-first headline; follower-first live cards; plain legal | Anton headline over silk/smoke with basket covers (lazy-loaded); 3 proof numbers; live basket cards; "Founding Creator spots: N of 50" only if real; email capture for non-testers | 4.1 |
 | 2 Sign-up | At first Buy; no "wallet"; attestation never pre-ticked | Email code first; Google hidden in webviews; one-sentence attestation; auto test dollars instead of the generic Add money sheet | 5.1, 5.2 |
 | 3 Explore | Theme chips; follower-first card; stake; pending pill | Card to ≤ 12 words; logos instead of ticker text; pick one default sort (OQ #3 says Most followed) | §0.1 |
 | 4 Basket detail | Order; Details toggle | "Value" not "price"; pending-change card near top; Exit entry; Open-in-browser bar | 5.3–5.7 |
@@ -601,12 +601,12 @@ AI suggestions, earnings calculator and mode simulation are deferred.
 | Market-closed copy | Repeated on many screens | One status strip; tap for a sheet |
 
 ### 8.3 Too much black and white (P-2)
-Round 1 is greyscale with burgundy only for primary actions. That reads austere on product screens. For the visual team: basket identity colours and cover art (biggest single change), stock logos wherever tickers appear, composition donut/bars in stock colours, two-hue follower vs creator lines, a colour moment and the Founding # on success, the Caesar mascot on share cards. Keep gain/loss/amber reserved for meaning.
+Round 1 is greyscale with burgundy only for primary actions. That reads austere on product screens. For the visual team: basket identity colours and cover art (biggest single change), stock logos wherever tickers appear, composition donut/bars in stock colours, two-hue follower vs creator lines, a colour moment and the Founding # on success and the ALLOY wordmark on share cards. Keep gain/loss/amber reserved for meaning.
 
 ### 8.4 Share cards and marketing hooks
 - **Follower share card** (primary post-buy CTA): basket cover colour, name, 3 logos, "Founding Follower #212", **TEST** watermark, link `/b/:addr?ref={user}&s=x`.
-- **Creator launch card**: name, recipe bar, stake, "Founding Creator #07", Caesar-in-VR bust as a small recurring mark, TEST watermark.
-- **BUILD LOG 01, 02, …** is the faceless build-in-public series (no day counts). Every BUILD LOG post links to a basket page, not the landing. The bust is the recurring visual; it never appears inside product flows.
+- **Creator launch card**: name, recipe bar, stake, "Founding Creator #07", ALLOY wordmark, TEST watermark.
+- **BUILD LOG 01, 02, …** is the faceless build-in-public series (no day counts). Every BUILD LOG post links to a basket page, not the landing. Visuals are type, real product screens and basket covers; no mascot.
 - "Reply with a story" → a prefilled `/create?name=…` link.
 - A live counter on landing ("214 baskets bought today") only if true.
 

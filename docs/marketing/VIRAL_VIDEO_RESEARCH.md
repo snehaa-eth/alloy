@@ -115,7 +115,7 @@ Source: [the-algorithm-ml README, Apr 2023](https://github.com/twitter/the-algor
 | **Hyperliquid (2024)** | No VCs, a team of ~11, and an airdrop of ~31% of supply to ~94k users. Growth was word of mouth from product quality. | A story of being on the user's side. Note the "no VC" framing is disputed. | [Yellow](https://yellow.com/research/hyperliquid-no-vc-funding-dex-volume-record), [OneKey](https://onekey.so/blog/ecosystem/hype-airdrop-breakdown/) |
 | **Unusual Whales → NANC (2020–23)** | Posts flagging congressional trades kept going viral, so they launched the NANC and KRUZ ETFs. NANC returns vary by period; it once lagged KRUZ by 10+ pts over 3 months and still took $14M in inflows. | **Proof that "copy the insiders" is a proven hook.** It's also proof the returns aren't guaranteed. | [NPR](https://www.npr.org/transcripts/nx-s1-4974720), [Benzinga](https://www.benzinga.com/article/25015596), [etf.com](https://www.etf.com/sections/news/how-congress-tracking-etfs-reacted-market-drawdown) |
 | **Base / Jesse Pollak** | Jesse replies to builders a lot and pushes "experiment in public". His "Base is for everyone" post was a solo experiment, not a coordinated campaign, and drew mixed results. | Base amplifies builders who ship in public. Replies from Base accounts are a big reach lever. | [Blockworks](https://blockworks.co/news/jesse-pollak-base-content-coin) |
-| **Phantom** | A recurring mascot (the ghost) in every asset, plus cryptic emoji teasers on X. | A recurring character gives you instant recognition. Our version is the **Caesar bust**. | [Phantom brand post](https://phantom.com/learn/blog/introducing-phantom-s-new-brand-identity), [Blockchain.news](https://blockchain.news/flashnews/phantom-teases-major-solana-wallet-update-potential-trading-features-and-impacts-on-sol) |
+| **Phantom** | A recurring mascot (the ghost) in every asset, plus cryptic emoji teasers on X. | A recurring character gives Phantom instant recognition. **We don't copy this:** the founder dropped our mascot on 2026-11-19. Our recognition comes from Anton type and jewel-tone basket covers. | [Phantom brand post](https://phantom.com/learn/blog/introducing-phantom-s-new-brand-identity), [Blockchain.news](https://blockchain.news/flashnews/phantom-teases-major-solana-wallet-update-potential-trading-features-and-impacts-on-sol) |
 | **AI cinematic films** | Toys "R" Us made a Sora brand film. It got attention, plus a lot of "uncanny" criticism. Vendor guides say AI video mostly comes out silent, so you need separate sound. No hard data that AI teasers outperform. | AI is good for 2–4 hero shots. Don't build a whole video from it. | [Dreamina guide](https://dreamina.capcut.com/ai-video/best-ai-video-generator-for-launch-campaigns), [Flik](https://www.flikai.com/ai-trailer-generator) |
 | **Copy-trading evidence** | Lab and field research finds copiers take more risk, and leaders aren't reliably better. The "53% follower gap" stat is **(unverified)**. | Our "followers vs creator" honesty angle answers a real, documented worry. | [Apesteguia et al., BSE](https://bse.eu/research/publications/copy-trading), [Bond Univ.](https://bond.edu.au/news/fomo-wrecking-your-portfolio) |
 
@@ -130,7 +130,7 @@ Source: [the-algorithm-ml README, Apr 2023](https://github.com/twitter/the-algor
 3. **A screenshot-able number in the frame.** Polymarket odds, friend.tech key prices, Robinhood queue position, NANC vs S&P. For Alloy: **"Followers +11.8% / Creator +12.4%"**, "24h notice", "$5".
 4. **Real product beats a rendered promise.** Humane and Devin got punished for staged or wrong demos. Show actual screens, actual tx hashes, actual testnet.
 5. **Self-aware humour.** Arc mocked keynotes. On crypto X, "we're not going to tell you this will make you rich" reads as confident.
-6. **A drip cadence plus a recurring character.** Nothing's teaser rhythm; Phantom's ghost. Our recurring character is the **Caesar bust in a VR headset**.
+6. **A drip cadence plus a consistent look.** Nothing's teaser rhythm. Phantom uses a ghost mascot; we use a consistent type-and-cover system instead (no mascot, decided 2026-11-19).
 7. **Scarcity or status mechanics with a public number.** Robinhood's queue, friend.tech's 3 invites. For us: "Founding creator" spots, numbered.
 8. **A coordinated launch-hour quote wave** (Devin's 15 quote-posts). Line up 10–15 real builders and users to quote on launch day. They must have actually used it; don't pay anyone.
 9. **The link goes in a reply, the video is native, and captions are burned in.**
@@ -142,18 +142,18 @@ Source: [the-algorithm-ml README, Apr 2023](https://github.com/twitter/the-algor
 
 | Steal | Avoid |
 |---|---|
-| A claim or mystery in the first 2 s (Devin, Coinbase QR) | Logo stings, "Hey guys", slow push-ins on the bust before anything happens |
+| A claim or mystery in the first 2 s (Devin, Coinbase QR) | Logo stings, "Hey guys", slow push-ins on a texture before anything happens |
 | Real UI, a real Base Sepolia tx, a basescan link in the replies | Mocked or "for illustration" flows passed off as the product (Devin backlash) |
 | Fact-check every number on screen before posting | Wrong numbers in the video (Humane's almonds) |
 | One idea, one number, one CTA | Feature montage |
 | Self-aware wit (Arc) | Fake hype, "this changes everything", countdown to nothing |
-| Recurring character: Caesar bust (Phantom ghost) | Switching visual styles every post |
+| One consistent look: Anton type + jewel-tone basket covers | Switching visual styles every post; mascots (dropped 2026-11-19) |
 | A drip cadence of 1 hero post a day (Nothing) | Posting 5 times in a row (author diversity decay); a drip so slow people forget |
 | Screenshot-able numbers (Polymarket) | Undisclosed paid influencers (Polymarket got burned) |
 | Position or status mechanic (Robinhood, friend.tech) | Pay-for-activity or bot wallets: quest rules disqualify "manipulated traction" |
 | Founder in the replies within 60 min | Posting and leaving |
 | Native MP4, link in the first reply | YouTube/Loom link as the main post |
-| AI for 2–4 hero shots (the bust, silk, smoke) | 100% AI film: uncanny, silent, reads as "AI slop" to crypto X |
+| AI for 2–4 texture shots (silk, smoke), never characters | 100% AI film: uncanny, silent, reads as "AI slop" to crypto X |
 | "Congress discloses trades" as a public-record hook (NANC) | Implying a politician endorses, is involved, or that copying = profit |
 | Showing the downside (followers behind creator, market closed) | "Passive income", "beat the market", return screenshots without dates |
 

@@ -83,12 +83,16 @@ Each question comes with a recommendation, so a "yes, go" is enough. Ordered by 
 - **B:** Big Shoulders Display + Geist. More crypto-native and futuristic.
 - **Needs from you:** a gut pick. Both are free Google Fonts and the wireframes use A.
 
-### 13. Illustration and art direction
-- The moodboard (bust + VR headset, silk, smoke) is strong but costly to produce well.
-- **Recommendation:**
-  - One commissioned or AI-assisted hero render for the landing page and OG images.
-  - No illustrations inside the product; empty states use simple line marks.
-- **Needs from you:** is AI-generated hero art acceptable for the brand? (It must not reference a real person's likeness.)
+### 13. ~~Illustration and art direction~~ **Decided 2026-11-19: mascot dropped**
+- **No Caesar bust or statue-in-VR anywhere.** The founder's reasons: it's an AI-art cliché, it means nothing to target users, and premium finance brands don't use mascots.
+- The brand rests on:
+  - Anton typography,
+  - **jewel-tone basket covers** (the main imagery),
+  - real product moments (numbers, rebalance visuals, share cards),
+  - burgundy silk and white smoke as background textures only,
+  - faceless type-plus-screen videos.
+- Avatar: the Alloy wordmark/mark.
+- Updated: wireframes-v2, IMAGERY, TOKENS, MOTION, the motion prototype, COPY and the marketing docs. wireframes.html (v1) is kept as a historical draft and still shows the old bust slot.
 
 ### 14. Should the word "wallet" appear anywhere?
 - **Recommendation:** only in Me > "Your wallet address (Base)" and on the "Send from another app" screen. Everywhere else, say "account".

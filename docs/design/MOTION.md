@@ -54,7 +54,7 @@ Research ran on 2026-11-19 via web search. Items marked *(verify)* are from prod
 | **Pendle / Morpho / Aave** | App UIs are mostly static. Number transitions on APY and health factor; modal fades. Marketing sites use slow ambient gradients and 3D tokens *(verify)*. | DeFi trust = stability. Motion is mostly on marketing pages. | Same split: ambient on marketing, quiet in the app. | 3D token spinners. |
 | **Uniswap** | Swap card: the token switch arrow rotates 180°, numbers re-quote with a fade, and the "price updated" banner slides in *(verify)*. | Small motions tie cause to effect (I flipped → it flipped). | Inline re-quote banner slide (we already spec "Price moved"). | — |
 | **Base.org** | Blue square brand device with bold, playful motion on marketing pages *(verify)*. | Brand recall. | Our square (logo dot) could pulse as a loading mark. | Copying Base's visual language. We must not look affiliated (ARCH §7). |
-| **Phantom** | Mascot and illustrations with springy, characterful micro-animations. Smooth tab transitions *(verify)*. | Personality lowers crypto anxiety. | A tiny bit of personality in empty states (a line-mark plinth that draws in). | Cute mascots; off-brand for CAESAR. |
+| **Phantom** | Mascot and illustrations with springy micro-animations (we don't use a mascot). Smooth tab transitions *(verify)*. | Personality lowers crypto anxiety. | A tiny bit of personality in empty states (a line-mark plinth that draws in). | Cute mascots; off-brand for CAESAR. |
 | **Editorial / fashion (Awwwards parallax tag [R8])** | Oversized condensed type that slides horizontally at a different speed than the page. Images with mask reveals. Grain and smoke overlays. Vertical type rails. | Speed differences between layers create depth (parallax) from type alone, without heavy imagery. | **Headline words drifting at different speeds**, a vertical rail that counter-scrolls, and a mask reveal on the bust. | Smooth-scroll hijacking, custom cursors, preloaders (for our users these cost seconds of data and battery). |
 
 **Platform facts behind the library pick**
@@ -130,7 +130,7 @@ Nielsen Norman's guidance puts most UI animation at 100–500ms [R14]. Nothing i
 |---|---|
 | Smoke (back) | 0.15 |
 | Silk | 0.3 |
-| Bust | 0.5 |
+| Outlined wordmark (giant Anton **ALLOY**, right edge) | 0.5 |
 | Headline line 1 / 2 / 3 | X-drift −8% / +6% / −4% of viewport over the hero's scroll range |
 | Vertical rail | Counter-scroll −0.2 |
 
@@ -142,11 +142,11 @@ Each spec gives **Full** motion, then **Reduced** (`prefers-reduced-motion: redu
 
 ### 5.1 Landing hero (parallax)
 - **Full**
-  - Four layers: smoke, silk, bust, type. Each translates on Y at its speed while the hero is in view (CSS `animation-timeline: view()`, range `exit 0%`→`exit 100%`).
+  - Four layers: smoke, silk, outlined wordmark, headline. (No mascot: dropped 2026-11-19. Silk and smoke are textures only.) Each translates on Y at its speed while the hero is in view (CSS `animation-timeline: view()`, range `exit 0%`→`exit 100%`).
   - Headline lines drift horizontally in alternating directions.
   - The vertical "TOKENIZED US STOCKS · ON BASE" rail counter-scrolls.
   - On first load:
-    - the bust is revealed by a clip-path mask from the bottom (800ms, once),
+    - the outlined wordmark is revealed by a clip-path mask from the bottom (800ms, once),
     - the headline words rise 24px with a 60ms stagger,
     - the smoke drifts ambiently (CSS keyframes, 20s loop, `translate` + `opacity` only).
 - **Reduced**

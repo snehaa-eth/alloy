@@ -42,11 +42,11 @@ p{margin:0}
 [data-motion="full"] .smoke i{animation:drift 20s ease-in-out infinite alternate}
 .smoke i:nth-child(2){animation-delay:-7s}.smoke i:nth-child(3){animation-delay:-13s}
 @keyframes drift{from{transform:translate3d(-4vw,0,0)}to{transform:translate3d(4vw,-3vh,0)}}
-.silk svg,.bust svg{position:absolute;right:0;bottom:0;height:100%;width:auto;max-width:none}
-.bust svg{right:6vw;height:88%}
-.bust .mask{transform-origin:bottom}
-.ready .bust .mask,[data-motion="reduced"] .bust .mask,[data-motion="low"] .bust .mask{clip-path:inset(0 0 0 0)}
-.bust .mask{clip-path:inset(100% 0 0 0);transition:clip-path 800ms var(--ease-out)}
+.silk svg,.wmark svg{position:absolute;right:0;bottom:0;height:100%;width:auto;max-width:none}
+.wmark svg{right:6vw;height:88%}
+.wmark .mask{transform-origin:bottom}
+.ready .wmark .mask,[data-motion="reduced"] .wmark .mask,[data-motion="low"] .wmark .mask{clip-path:inset(0 0 0 0)}
+.wmark .mask{clip-path:inset(100% 0 0 0);transition:clip-path 800ms var(--ease-out)}
 .type{display:flex;align-items:flex-end;padding:0 4vw 12vh;z-index:1}
 .type h1{font:400 clamp(64px,13vw,190px)/.86 var(--display);text-transform:uppercase;margin:0;letter-spacing:.5px}
 .type h1 .ln{display:block;white-space:nowrap}
@@ -62,7 +62,7 @@ p{margin:0}
 .btn.p{background:var(--paper);border-color:var(--paper);color:var(--bg)}
 .btn:active{transform:scale(.98)}
 .scrollhint{position:absolute;left:50%;bottom:28px;transform:translateX(-50%);font-size:12px;color:var(--ink400)}
-@media (max-width:760px){.hero .sub{left:16px;right:16px;top:16px;max-width:none}.type{padding-bottom:18vh}.bust svg{right:-20vw;height:70%;opacity:.7}}
+@media (max-width:760px){.hero .sub{left:16px;right:16px;top:16px;max-width:none}.type{padding-bottom:18vh}.wmark svg{right:-20vw;height:70%;opacity:.7}}
 
 /* ---------- STORY (sticky storytelling) ---------- */
 .story{position:relative;height:420vh;background:#0B0B0C;border-top:1px solid var(--ink800)}
@@ -190,18 +190,10 @@ footer{padding:24px 0 100px;border-top:1px solid var(--ink800);font-size:12px;co
         <path d="M60,712 C200,640 300,800 440,728" stroke="url(#silkhi)" stroke-width="6" fill="none"/>
       </svg>
     </div>
-    <div class="layer bust" data-speed="0.5" aria-hidden="true">
-      <svg viewBox="0 0 520 760" preserveAspectRatio="xMaxYMax meet">
-        <defs><linearGradient id="marble" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F6F5F3"/><stop offset=".6" stop-color="#B3B3B8"/><stop offset="1" stop-color="#5C5C62"/></linearGradient>
-        <linearGradient id="visor" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#141416"/><stop offset=".55" stop-color="#3A3A40"/><stop offset="1" stop-color="#0B0B0C"/></linearGradient></defs>
-        <g class="mask">
-          <!-- abstract bust placeholder: head, neck, shoulders, VR visor (no real likeness) -->
-          <path d="M60,760 C70,640 150,590 210,575 L215,500 C170,470 150,420 150,350 C150,230 210,150 270,150 C340,150 390,220 390,330 C390,420 365,470 325,500 L330,575 C395,590 470,640 480,760 Z" fill="url(#marble)"/>
-          <path d="M175,225 C205,175 245,165 275,165 C320,165 360,195 375,240 C350,220 320,205 285,205 C240,205 200,215 175,225 Z" fill="#DADAD7" opacity=".7"/>
-          <rect x="138" y="268" width="262" height="78" rx="22" fill="url(#visor)"/>
-          <rect x="150" y="284" width="238" height="10" rx="5" fill="#C41A42" opacity=".9"/>
-          <rect x="138" y="268" width="262" height="78" rx="22" fill="none" stroke="#6D001A" stroke-width="3"/>
-        </g>
+    <div class="layer wmark" data-speed="0.5" aria-hidden="true">
+      <!-- No mascot (dropped 2026-11-19). This parallax layer is a giant outlined Anton wordmark. -->
+      <svg viewBox="0 0 520 900" preserveAspectRatio="xMaxYMax meet">
+        <g class="mask"><text x="430" y="880" transform="rotate(-90 430 880)" font-family="Anton, Impact, sans-serif" font-size="300" fill="none" stroke="#F2F0ED" stroke-opacity=".55" stroke-width="2" letter-spacing="6">ALLOY</text></g>
       </svg>
     </div>
     <div class="rail" data-rail aria-hidden="true"><span>Tokenized US stocks · On Base · Tokenized US stocks · On Base</span></div>
@@ -320,7 +312,7 @@ footer{padding:24px 0 100px;border-top:1px solid var(--ink800);font-size:12px;co
   </div>
 </section>
 
-<footer><div class="wrap">Alloy motion prototype · round 1 · placeholders are CSS/SVG (no real likeness). Tokenized stock exposure, not shares. Not available to US persons. Spec: MOTION.md. <span id="status"></span></div></footer>
+<footer><div class="wrap">Alloy motion prototype · round 1 · placeholders are CSS/SVG; no mascot, silk and smoke are textures only. Tokenized stock exposure, not shares. Not available to US persons. Spec: MOTION.md. <span id="status"></span></div></footer>
 
 <script>
 (function(){

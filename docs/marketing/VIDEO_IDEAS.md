@@ -8,13 +8,14 @@ Based on `VIRAL_VIDEO_RESEARCH.md`. Brand rules come from `docs/design/TOKENS.md
   - Gain is jade #3DBE8B and loss is vermilion #FF6A3D, each with a ▲ or ▼ sign.
 - **Type:** Anton, uppercase, tight leading, for headlines. Vertical type rails on the frame edge. Inter for captions.
   - Captions are burned in: max 2 lines, kept out of the bottom 12% where player controls sit.
-- **Recurring character: CAESAR.** A classical marble bust wearing a VR headset, plus burgundy silk and white smoke.
-  - He never talks. He reacts: a head tilt or a headset glint. Think of him as Phantom's ghost, but for us.
+- **No mascot, no recurring character.** The founder dropped the Caesar bust on 2026-11-19: it reads as an AI-art cliché, means nothing to our users, and premium finance brands don't use mascots.
+  - Recognition comes from Anton type, the jewel-tone basket covers, real product moments (numbers, rebalance visuals, share cards) and faceless type-plus-screen videos.
+  - Burgundy silk and white smoke are background **textures** only, never a character.
 - **Tools:**
   - Screen recordings: Screen Studio or QuickTime.
   - Edit: CapCut (fast) or After Effects (type animation).
   - Cards: Figma.
-  - Caesar shots: a Midjourney still, then Kling, Veo or Runway image-to-video. Generate 6–10 takes and keep 2.
+  - Silk and smoke texture shots: stock footage, or a Midjourney still then Kling, Veo or Runway image-to-video. Generate 6–10 takes and keep 2.
 - **Endings:** Every video ends on an action, not a logo. Put the link in the first reply.
 - **Compliance footer**, used in the end card or first reply:
   - "Tokenized stock exposure, not shares. Not available to US persons. Can lose money."
@@ -29,7 +30,7 @@ Virality and effort are scored 1–5. Ranked by virality ÷ effort, with a tiebr
 | Rank | # | Concept | Virality | Effort | Quest value | Make by |
 |---|---|---|---|---|---|---|
 | 1 | 2 | **"Filed 45 days late"**: story basket hook | 5 | 2 | High (drives buys) | Nov 24 |
-| 2 | 6 | **"Caesar doesn't pick tickers"**: meme format | 4 | 1 | Med | Nov 22 |
+| 2 | 6 | **"Picking tickers vs picking a story"**: two-panel type meme | 4 | 1 | Med | Nov 22 |
 | 3 | 7 | **Founder clip: "Stock tokens on Base aren't contracts"** | 4 | 1 | **Very high** (build-in-public) | Nov 20 |
 | 4 | 4 | **"Did followers win too?"**: honesty angle | 4 | 2 | High | Nov 27 |
 | 5 | 1 | **"STORIES, NOT SYMBOLS"**: 18s cinematic teaser | 4 | 3 | Med | Nov 21 |
@@ -55,14 +56,14 @@ Virality and effort are scored 1–5. Ranked by virality ÷ effort, with a tiebr
 |---|---|---|
 | 0.0–2.0 | Ticker wall, rapid flicker, slight camera shake | top-left small: *you're not here for tickers.* |
 | 2.0–4.5 | Tickers dissolve into **white smoke** that drifts left to right | — |
-| 4.5–8.0 | Smoke clears to reveal **CAESAR**: marble bust, VR headset, a slow 10° turn toward camera, a glint on the visor | Vertical rail, right edge: **ALLOY** |
+| 4.5–8.0 | Smoke clears to a giant outlined Anton **ALLOY** drifting slowly left, with the sapphire AI Build-Out cover fading in behind it at 30% | Vertical rail, right edge: **ALLOY** |
 | 8.0–11.0 | **Burgundy silk** falls across the lower third (the only burgundy in the video) | Big centre, 3 words per beat: **INVEST IN / STORIES,** |
 | 11.0–13.5 | Silk slides off. Black. | **NOT SYMBOLS.** |
 | 13.5–16.0 | 3 basket "recipe cards" slide in, stacked (Figma), names only: THE AI BUILD-OUT · CAPITOL TECH · PICKS & SHOVELS | small: *baskets of tokenized US stocks* |
 | 16.0–18.0 | End card | **ALLOY** · *Dec 4* · @alloy_fi |
 
 - **Visual direction:**
-  - Bust and silk are AI (Midjourney still → Kling or Veo image-to-video, 5 s takes). Smoke is stock footage, or a CapCut overlay in "screen" blend mode.
+  - Silk is a texture shot (stock, or Midjourney still → Kling/Veo image-to-video, 5 s takes). Smoke is stock footage, or a CapCut overlay in "screen" blend mode. Basket covers come from the IMAGERY.md set. No characters.
   - Grain overlay at 6%. Everything stays monochrome except the silk.
 - **Sound:** One low sub hit at 0.0. A ticking clock or tape-machine chatter under the tickers (0–2 s), then a sudden **silence** at 4.5 s while the smoke clears. A single deep piano note on "NOT SYMBOLS." Use royalty-free (Artlist/Epidemic) or a CapCut library track.
 - **Caption (X post):**
@@ -71,7 +72,7 @@ Virality and effort are scored 1–5. Ranked by virality ÷ effort, with a tiebr
   > Alloy: baskets of tokenized US stocks, built around one idea each. Dec 4.
 
   First reply: "Want in before launch? Reply with the story you'd turn into a basket. We'll build the best one live." Then the compliance footer and "AI-assisted visuals."
-- **Effort:** 1 day. Half a day generating Caesar takes, half a day in CapCut/AE.
+- **Effort:** 1 day. A couple of hours on silk/smoke texture takes, the rest in CapCut/AE on type.
 - **Compliance:** No returns, no logos. Tickers are plain text. AI visuals credited. ✅
 
 ---
@@ -93,7 +94,7 @@ Virality and effort are scored 1–5. Ranked by virality ÷ effort, with a tiebr
 | 5–9 | Tickers lift off the paper and stack into a basket card: **CAPITOL TECH** | *So we bundled the tech stocks that show up most.* |
 | 9–14 | Screen recording: Capitol Tech basket page. Scroll to the story line, highlighted | *"Built from public disclosures dated {Aug 14, 2026}. Nobody named is involved."* |
 | 14–19 | Tap **Buy $5** → confirm sheet → done check (real Base Sepolia) | *$5. One token. The whole basket.* |
-| 19–23 | Caesar bust, small, lower right, slowly lowers his visor like sunglasses | *We show the filing date. We don't promise you their returns.* |
+| 19–23 | The Capitol Tech cover (burgundy dome art) fills the frame; the filing date underlines itself in accent | *We show the filing date. We don't promise you their returns.* |
 | 23–25 | End card | **ALLOY** · link in reply |
 
 - **Visual direction:** Off-white paper on black is the only bright surface. The stamp is accent #C41A42 ink (small area). Use Anton for the stamp and Inter for the line items. **No photo, name, or likeness of any politician.** Don't name Pelosi in the video. Let the audience make the connection.
@@ -135,7 +136,7 @@ Virality and effort are scored 1–5. Ranked by virality ÷ effort, with a tiebr
 | 25–28 | Mode chips: **Balanced · Let Winners Run · Trend-aware** | *Creators pick how strict.* |
 | 28–30 | End card | **ALLOY** · *We rebalance. You watch.* |
 
-- **Visual direction:** Bars in off-white. The target band is a dotted ink-600 line. The out-of-band pulse is accent #C41A42 (tiny). The gain arrow is jade. No Caesar except a 0.5 s cameo on the end card.
+- **Visual direction:** Bars in off-white. The target band is a dotted ink-600 line. The out-of-band pulse is accent #C41A42 (tiny). The gain arrow is jade. The end card is type only.
 - **Sound:** A soft tick on each bar move, a satisfying "click into place" when bars land in band. A calm lo-fi bed.
 - **Caption:**
   > Drift, explained in 30 seconds.
@@ -218,28 +219,28 @@ Virality and effort are scored 1–5. Ranked by virality ÷ effort, with a tiebr
 
 ---
 
-## 6. "Caesar doesn't pick tickers": meme format (requirement f)
+## 6. "Picking tickers vs picking a story": two-panel type meme (requirement f)
 
-- **Format:** 8–10 s loop, 1:1. The format is the classic two-panel "Drake no/yes" structure, rebuilt with Caesar so it's on-brand and not a stolen template.
-- **Hook (0–2 s):** Panel 1: Caesar in the VR headset **turns his head away in disgust** (AI image-to-video) from a screen showing a chaotic 47-tab spreadsheet titled "my_portfolio_FINAL_v9.xlsx".
+- **Format:** 8–10 s loop, 1:1. The classic two-panel "no / yes" structure, rebuilt with our own type and screens so it's on-brand and not a stolen template. No characters.
+- **Hook (0–2 s):** Panel 1: a chaotic 47-tab spreadsheet titled "my_portfolio_FINAL_v9.xlsx" gets a slow vermilion strike-through.
 
 **Storyboard**
 
 | Time | Picture | Text |
 |---|---|---|
-| 0–4 | Caesar turns away from the spreadsheet chaos | **RESEARCHING 9 TICKERS AT 2AM IST** |
-| 4–8 | Caesar turns back and nods slowly at a single basket card "THE AI BUILD-OUT · $5" | **BUYING THE WHOLE IDEA** |
+| 0–4 | The spreadsheet chaos, struck through | **RESEARCHING 9 TICKERS AT 2AM IST** |
+| 4–8 | A single basket card slides in with its sapphire cover: "THE AI BUILD-OUT · $5" | **BUYING THE WHOLE IDEA** |
 | 8–10 | Hold, then loop | small: alloy |
 
-- **Variants** (same Caesar shots with new text, so one generation session gives 5 posts):
+- **Variants** (same two panels with new text, so one Figma session gives 5 posts):
   - "Checking if the US market's open from Lagos" / "Buying anyway, it's 24/7 onchain"
   - "Copy-trading a guy with +212% in his bio" / "Checking if his followers made money too"
   - "Rebalancing manually" / "Reading the one-line reason"
   - "Picking stocks" / "Picking a story"
-- **Visual direction:** Black background, two Anton text bands, Caesar centred. Burgundy only as a thin border.
+- **Visual direction:** Black background, two Anton text bands, the screen panel centred. Burgundy only as a thin border.
 - **Sound:** None needed. Optionally use a trending X sound if one is running that week (check the Explore tab the morning you post).
-- **Caption:** "caesar has standards" (lowercase, that's it). First reply: "alloy, baskets of tokenized US stocks. dec 4."
-- **Effort:** 2–3 hours once the Caesar takes exist from video #1.
+- **Caption:** "standards." (lowercase, that's it). First reply: "alloy, baskets of tokenized US stocks. dec 4."
+- **Effort:** 1–2 hours (one screen capture plus Figma).
 - **Compliance:** Humour only, no claims. The "24/7" variant must keep "prices can be wider when the US market's closed" in the reply. ✅
 
 ---
@@ -300,7 +301,7 @@ Virality and effort are scored 1–5. Ranked by virality ÷ effort, with a tiebr
 
 ## 9. "Sorry, America": who it's for
 
-- **Format:** 10 s, 1:1. Type-only, plus a 2 s Caesar cameo.
+- **Format:** 10 s, 1:1. Type only.
 - **Hook (0–2 s):** **"US STOCKS. NOT FOR US PERSONS."**
 
 | Time | Text (Anton, one line per beat) |
@@ -308,7 +309,7 @@ Virality and effort are scored 1–5. Ranked by virality ÷ effort, with a tiebr
 | 0–2 | **US STOCKS.** / **NOT FOR US PERSONS.** |
 | 2–5 | *Built for Mumbai, Lagos, São Paulo, Manila, Nairobi, Jakarta.* (city names scroll down a vertical rail) |
 | 5–8 | *$5 minimum. Sign in with Google.* |
-| 8–10 | Caesar shrugs (headset tilt) · **ALLOY** |
+| 8–10 | One burgundy silk ribbon passes behind · **ALLOY** |
 
 - **Caption:**
   > Rare W for the rest of the world.
@@ -351,9 +352,9 @@ Virality and effort are scored 1–5. Ranked by virality ÷ effort, with a tiebr
 
 | Day | Make |
 |---|---|
-| Nov 20 | #7 Day-8 founder clip (1 h). Generate the Caesar takes (bust, headset turn, nod, shrug, visor) in one batch. |
+| Nov 20 | #7 Day-8 founder clip (1 h). Generate the silk and smoke texture takes in one batch. |
 | Nov 21 | #1 teaser edit |
-| Nov 22 | #6 meme (3 variants from the same takes) |
+| Nov 22 | #6 meme (3 variants from the same two panels) |
 | Nov 23–24 | #2 story basket hook (needs the Capitol Tech page on testnet) |
 | Nov 25–26 | #9, plus founder clip Day 13 |
 | Nov 27 | #4 followers vs creator |

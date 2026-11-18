@@ -14,7 +14,9 @@ If an image answers none of them, cut it. Images never push a screen past its wo
 
 ## 1. Art direction
 
-**Mood:** CAESAR, meaning classical × future. Marble, burgundy silk, white smoke, a bust in a VR headset. The images are editorial and high-contrast, built on near-black.
+**Mood:** editorial and high-contrast on near-black. Burgundy silk and white smoke appear only as **textures**.
+
+**No mascot, no characters, no statues** (founder decision 2026-11-19: an AI-art cliché that means nothing to our users, and premium finance brands don't use mascots). The imagery is the jewel-tone basket covers, real product moments and Anton type.
 
 ### 1.1 Duotone recipe (basket covers)
 Every cover is rendered in its basket's jewel tone, so the cover is the basket's identity colour.
@@ -39,7 +41,7 @@ A burgundy-tone cover counts toward the 10% burgundy budget wherever the mid sto
 
 | Asset | Look | Used on | Never on |
 |---|---|---|---|
-| **Caesar-in-VR bust** (mascot) | Marble bust, three-quarter view, slim black VR visor with one burgundy-red light line (#C41A42), rim light from the top right, smoke behind | Landing hero, share/OG cards (small mark), empty states, 404, loading | Inside money flows (Buy/Exit sheets), next to numbers |
+| **Wordmark composition** | Giant Anton **ALLOY** (or the headline) in outline or solid off-white over silk/smoke texture | Landing hero, 404, share/OG card corner mark | Inside money flows |
 | **Burgundy silk** | One flowing ribbon of satin (#6D001A, highlights ≤ #8C1230), on black | Landing hero band, change-notice sheet header (46px band) | Behind text; more than one ribbon per screen |
 | **White smoke** | Soft volumetric smoke at 8–16% opacity | Landing background, success moments | Behind numbers or controls |
 
@@ -47,12 +49,12 @@ A burgundy-tone cover counts toward the 10% burgundy budget wherever the mid sto
 - **Drift → trim:** a 96×28 bar. A faint bar shows the old weight and a solid bar the new one, with a dashed amber line at the band edge. Used in Activity and the basket feed.
 - **In-kind exit ("your stocks"):** an overlapping stack of the basket's stock logos at 32px. Used in Exit › Get the stocks and on that flow's success screen.
 - **Market closed:** a moon + clock line icon in warn amber, beside "Opens Mon 8:00 PM".
-- **Loading:** the mascot bust plus a 3px accent progress line. No spinners in flows longer than 2s.
-- **Empty states:** one image (the mascot, or a single-colour line mark) + one line + one button.
+- **Loading:** the basket's own cover tile plus a 3px accent progress line. No spinners in flows longer than 2s.
+- **Empty states:** one image (a single-colour line mark, a jewel cover fragment, or the silk band) + one line + one button.
 
 ### 1.4 Crop and composition
 - Keep the subject in the **right two-thirds**. The left third and bottom 40% are reserved for text on hero bands and share cards.
-- Show the mascot as head and shoulders only, never full figure. The visor stays horizontal.
+- No characters, faces, busts or statues anywhere.
 - No faces of real people. No real brand logos in cover art. No recognisable buildings other than a generic dome silhouette for "Capitol".
 
 ### 1.5 Text over images (AA)
@@ -81,8 +83,8 @@ All raster images are **AVIF first, WebP fallback**. Use `srcset` at 1×/2×, `l
 
 | # | Asset | Where | Size (CSS px → export) | Budget | Notes |
 |---|---|---|---|---|---|
-| 1 | Mascot hero (bust + silk + smoke) | Landing mobile + desktop | 390×430 → 780×860; 1200×540 → 2400×1080 | **≤ 120kb** desktop, ≤ 80kb mobile | Art-directed crops (`<picture>`); text-safe left third |
-| 2 | Mascot mark (bust only, transparent) | Share/OG cards, empty states, 404, loading | 170px tall → 340/510px | ≤ 25kb | Prefer **SVG** (as in wireframes) or WebP with alpha |
+| 1 | Landing hero (silk + smoke texture behind Anton type and 3 fanned basket covers) | Landing mobile + desktop | 390×430 → 780×860; 1200×540 → 2400×1080 | **≤ 120kb** desktop, ≤ 80kb mobile | Art-directed crops (`<picture>`); text-safe left third |
+| 2 | Alloy wordmark/mark | Share/OG card corner, X avatar, 404, favicon | SVG | < 4kb | Off-white on #0A0A0A; the avatar must read at 48px |
 | 3 | Silk band | Change-notice sheet header, landing section dividers | 390×46 → 780×92; 1200×200 | ≤ 15kb / ≤ 40kb | Can be SVG |
 | 4 | Smoke texture | Landing, success moments | 1200×800, tileable | ≤ 30kb | Grayscale WebP at 8–16% opacity; or CSS radial gradients |
 | 5 | Seed basket covers ×5 (+ 3 demo) | Explore card, basket hero, Portfolio/Activity tile, share + OG card | Master 1600×900 → card 390×88 (2×), hero 390×120 / 1200×150, tile 44×44, OG 1200×630, share 1080×1350 | Card ≤ 30kb, hero ≤ 60kb, OG ≤ 120kb | Duotone per §1.1, one master per basket |
@@ -90,7 +92,7 @@ All raster images are **AVIF first, WebP fallback**. Use `srcset` at 1×/2×, `l
 | 7 | Stock logos ×10 | Everywhere a stock appears | 24/32px circles | n/a | **Source: the `icon_url` field of Coinbase's tokenized-stocks API** (`https://api.coinbase.com/v1/tokenized-stocks`). Cache at build time. Fallback: a colour monogram on surface-2 |
 | 8 | Creator avatars | Cards, basket page, Activity, Me | 20/28/48px | ≤ 8kb | User upload (crop to circle) or a generated gradient avatar (as in wireframes); gold ring = creator |
 | 9 | OG images per basket | X link previews | 1200×630 | ≤ 120kb PNG/WebP | Server-rendered (`opengraph-image.tsx`): cover + name + 3 logos + **TEST** watermark on testnet |
-| 10 | Share cards (follower / creator) | Post-buy, post-create | 1080×1350 | ≤ 200kb PNG | Cover + mascot mark + Founding # badge (gold) + **TEST** watermark |
+| 10 | Share cards (follower / creator) | Post-buy, post-create | 1080×1350 | ≤ 200kb PNG | Cover + Alloy wordmark + Founding # badge (gold) + **TEST** watermark |
 | 11 | State icons (moon/clock, trim bar, logo stack, empty marks) | States | SVG | < 2kb each | Inline SVG, `currentColor` |
 
 **Logo licensing note.**
@@ -104,7 +106,7 @@ All raster images are **AVIF first, WebP fallback**. Use `srcset` at 1×/2×, `l
 
 | Asset | Recommended source | Why |
 |---|---|---|
-| Mascot, silk, smoke | **AI generation** (Midjourney, Ideogram or Flux), then hand-finished | The mascot is unique to us, and a style can be kept consistent. No licence chasing. |
+| Silk, smoke | Stock footage/photos (Unsplash/Pexels) or **AI generation** (Midjourney, Ideogram or Flux) | Textures only; easy to keep consistent |
 | Basket covers | **AI generation in one batch from one style prompt**, then the duotone script (§1.1) | Consistent series. Themes are abstract objects, so there are no likeness issues. |
 | Textures (marble, grain) | Licensed stock (Unsplash/Pexels), or generated | Both fine |
 | Stock logos | Coinbase API `icon_url` | Authoritative, per token |
@@ -120,30 +122,27 @@ All raster images are **AVIF first, WebP fallback**. Use `srcset` at 1×/2×, `l
 - Don't prompt for a real person's likeness or for "in the style of" a living artist.
 - Keep the prompt plus the seed in `credits.md`.
 
-**Wireframes v2 credits:** none needed. Every image in `wireframes-v2.html` is original CSS/SVG made for this project (bust silhouette, motifs, avatars, grain filter). No external images are loaded.
+**Wireframes v2 credits:** none needed. Every image in `wireframes-v2.html` is original CSS/SVG made for this project (cover motifs, silk band, avatars, grain filter). No external images are loaded.
 
 ### 3.1 Ready-to-use AI prompts (brand palette)
 Shared style suffix for every prompt:
 > `, editorial still life, near-black background #0A0A0A, deep burgundy #6D001A accents, warm off-white #F2F0ED highlights, subtle film grain, high contrast, soft rim light, minimal composition, negative space on the left third, no text, no logos, no watermark --ar {ratio} --style raw`
 
-1. **Mascot (Caesar-in-VR):**
-   > `Classical white marble Roman emperor bust, head and shoulders, three-quarter view facing left, wearing a sleek slim black VR headset visor with a single thin glowing red-burgundy light line, rim light from top right, faint white smoke drifting behind, a single ribbon of burgundy satin silk curling across the lower third` + suffix (`--ar 4:5`; landing crop `--ar 16:9`)
-   - Variant for the mark: same subject, isolated on a pure black background for cut-out.
-2. **Burgundy silk:**
+1. **Burgundy silk:**
    > `A single flowing ribbon of deep burgundy satin silk, liquid folds, specular highlights, floating horizontally across a black void` + suffix (`--ar 21:9`)
-3. **White smoke:**
+2. **White smoke:**
    > `Soft volumetric white smoke wisps, slow and calm, low density, on pure black, studio photograph` + suffix (`--ar 3:2`); export greyscale.
-4. **Cover: The AI Build-Out (sapphire):**
+3. **Cover: The AI Build-Out (sapphire):**
    > `Macro photograph of a single silicon chip on a dark circuit board, glowing traces leading out of frame, a hint of a data-centre aisle in soft focus behind` + suffix (`--ar 16:9`) → duotone sapphire.
-5. **Cover: Capitol Tech (burgundy, story):**
+4. **Cover: Capitol Tech (burgundy, story):**
    > `Abstract silhouette of a neoclassical dome with columns, stacks of paper filings in the foreground, low-key lighting, no flags, no identifiable building` + suffix (`--ar 16:9`) → duotone burgundy.
-6. **Cover: Big Tech, Trimmed (emerald):**
+5. **Cover: Big Tech, Trimmed (emerald):**
    > `Rows of server racks with tiny status lights receding into darkness, symmetrical, quiet` + suffix (`--ar 16:9`) → duotone emerald.
-7. **Cover: Picks & Shovels (amber):**
+6. **Cover: Picks & Shovels (amber):**
    > `A pickaxe and a shovel crossed in front of a dark mountain ridge, dust in the air, gold-hour rim light` + suffix (`--ar 16:9`) → duotone amber.
-8. **Cover: Space Race (plum):**
+7. **Cover: Space Race (plum):**
    > `A ringed planet at the edge of frame and a thin rocket launch trail arcing across a star field` + suffix (`--ar 16:9`) → duotone plum.
-9. **Demo-lab covers:** reuse 4, 6 and 8 with a "DEMO" chip in UI (never baked in).
+8. **Demo-lab covers:** reuse 3, 5 and 7 with a "DEMO" chip in UI (never baked in).
 
 ---
 
@@ -154,7 +153,7 @@ Shared style suffix for every prompt:
    - Logo: `alt="NVIDIA"` (company name, not "logo"). In a row of logos, the row gets `role="img" aria-label="NVIDIA, Microsoft, Alphabet and 2 more"` and the individual logos get `alt=""`.
    - Avatar: `alt="@kavya"`.
    - State visual: say the fact. `aria-label="Trimmed 41 to 40 percent"`, `aria-label="Market closed"`.
-2. **Decorative images get `alt=""` / `aria-hidden="true"`:** silk, smoke, grain, the mascot on the landing page (the headline already says it all), and the bust on empty states when the line below carries the message.
+2. **Decorative images get `alt=""` / `aria-hidden="true"`:** silk, smoke, grain, and line marks on empty states when the line below carries the message.
 3. **No text baked into images**, except share/OG cards. Those carry the same text in their `og:title` / `og:description`, and the share sheet's `alt` repeats the card's words: `alt="Founding Follower #212 of The AI Build-Out. Test network."`.
 4. **Keep it short:** ≤ 12 words. No "image of".
 5. **Localisation:** alt text goes through the same i18n strings as UI copy.

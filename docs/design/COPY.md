@@ -28,6 +28,11 @@ All copy for the key screens, written to match the wireframes in `wireframes.htm
 | stock tokens | B20 precompile tokens |
 | basket token | vault share, receipt token |
 
+### No mascot (decided 2026-11-19)
+- Copy never personifies a brand character. There is no Caesar, no "he", no mascot voice.
+- The brand speaks as "we" (the product) and lets the numbers, the basket covers and the type do the work.
+- Share cards say what happened ("Founding Follower #212 · The AI Build-Out"), never a character's line.
+
 ### Word budgets (v0.3: fewer words reads as premium)
 The founder's call: the screens feel cluttered. Premium means fewer words. These budgets override longer strings elsewhere in this file. The wireframe redo will trim to them.
 

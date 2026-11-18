@@ -9,7 +9,7 @@
 - gain is jade,
 - the pink accent is removed.
 
-The tokens come from the founder's "Project CAESAR" moodboard: Black, **Burgundy #6D001A**, White. Its mood is heavy condensed uppercase headlines, an editorial high-contrast feel, classical statue × future, burgundy silk and white smoke.
+The tokens come from the founder's "Project CAESAR" moodboard: Black, **Burgundy #6D001A**, White. Its mood is heavy condensed uppercase headlines, an editorial high-contrast feel, burgundy silk and white smoke. **No mascot** (the Caesar bust was dropped on 2026-11-19). The brand rests on Anton type, jewel-tone basket covers, real product moments, and silk and smoke used as textures only.
 
 Contrast ratios are WCAG 2.x relative-luminance ratios, computed by a script (`tbl.py` logic, sRGB formula). AA needs:
 - **4.5:1** for body text,
@@ -188,7 +188,7 @@ Contrast ratios are WCAG 2.x relative-luminance ratios, computed by a script (`t
 - Why: Anton gives the CAESAR poster energy, and Inter keeps finance screens calm and legible on cheap Android screens.
 
 ### Pairing B: **Big Shoulders Display + Geist / Geist Mono**
-- **Display: Big Shoulders Display** 800–900. Condensed, with a slightly more "futuristic" Chicago-industrial cut. It matches the VR-headset-on-a-bust side of the moodboard.
+- **Display: Big Shoulders Display** 800–900. Condensed, with a slightly more "futuristic" Chicago-industrial cut. It reads more tech than poster.
 - **UI: Geist** 400–600, and **Geist Mono** for numbers in dense tables.
   - Geist's tabular-figure support is unconfirmed. If `tnum` isn't there, use Geist Mono for numeric columns.
 - Why: it feels more "Pendle/Morpho" crypto-native. Big Shoulders is less legible than Anton below 28px.
@@ -299,7 +299,7 @@ Each basket gets **one of five** jewel tones. The creator picks it at create tim
 
 ### 10.2 Cover art (duotone)
 - Background: `linear-gradient(160deg, <deep> 0%, #0A0A0A 85%)`.
-- The art is a duotone (deep → mid) of a texture from the moodboard family: marble, silk, smoke, circuit, statue fragment. The mid stop is at most 35% opacity.
+- The art is a duotone (deep → mid) of a themed object or texture: circuit, dome, server racks, tools, planet, marble, silk, smoke. No characters, faces or statues. The mid stop is at most 35% opacity.
 - Text on covers is paper `#F2F0ED` (≥12:1 on every deep stop) and text-2 `#9A9894` (≥4.8:1).
 - **Sizes:**
   - card cover 16:9 on Explore,

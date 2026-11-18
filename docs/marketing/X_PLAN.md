@@ -38,7 +38,7 @@ Videos referenced as V1–V10 are in `VIDEO_IDEAS.md`. The research behind this 
 ## 1. Profile (do on Nov 20, before the first post)
 
 ### Banner (1500×500)
-- **Option A, recommended.** Black #0A0A0A. Caesar bust in a VR headset at the right third, with a thin burgundy silk ribbon crossing below the chin (the only colour). White smoke fades left.
+- **Option A, recommended.** Type and silk only. Black #0A0A0A, with one thin burgundy silk ribbon crossing the right third (the only colour) and white smoke fading left. No mascot or character (dropped 2026-11-19).
   - Left side: **INVEST IN STORIES, NOT SYMBOLS.** in Anton, off-white, two lines.
   - Tiny Inter line under it: **Dec 4 · testnet live**.
   - Keep the bottom-left 400×150 clear, because the avatar covers it on mobile.
@@ -46,7 +46,7 @@ Videos referenced as V1–V10 are in `VIDEO_IDEAS.md`. The research behind this 
 - After Dec 4, change the line to **live on testnet · make a basket**.
 
 ### Avatar
-The Alloy mark in off-white on #0A0A0A. Not Caesar: the bust is the mascot, the mark is the logo, and the avatar must read at 48 px.
+The Alloy wordmark/mark in off-white on #0A0A0A. There is no mascot; the mark is the identity, and it must read at 48 px.
 
 ### Name field
 - Now: `Alloy · Dec 4`
@@ -100,7 +100,7 @@ Times are UTC. "F:" means the founder's personal account. "A:" means @alloy_fi.
 | Date | Slot | Post | Asset |
 |---|---|---|---|
 | **Fri Nov 20** | 14:30 | **A: V7 Day-8 founder clip** (B20 precompile story) as a native video with a 4-post thread. F quotes it with: "the stock isn't there. it's in the chain. took me a day." | V7 |
-| | all day | Profile refresh (banner, bio 3, name `Alloy · Dec 4`). Generate the Caesar batch. | — |
+| | all day | Profile refresh (banner, bio 3, name `Alloy · Dec 4`). Generate the silk/smoke texture batch. | — |
 | **Sat Nov 21** | 14:30 | **A: V1 teaser.** Pin it. Reply: "Reply with the story you'd turn into a basket." | V1 |
 | **Sun Nov 22** | 03:30 | **A: V6 meme** ("2am IST" variant). Low effort, aimed at the India/SEA morning. | V6 |
 | **Mon Nov 23** | 14:30 | **F: build-in-public thread** "How a basket token works, in 5 posts" with a diagram image: recipe → USDC in → router buys → basket token → in-kind exit. End with "testnet this week". | Figma diagram |
@@ -117,7 +117,7 @@ Times are UTC. "F:" means the founder's personal account. "A:" means @alloy_fi.
 | **Fri Nov 27** | 14:30 | **A: V4 "Did followers win too?"** | V4 |
 | **Sat Nov 28** | 14:30 | **F: "What I got wrong" post** (text only, no video). "I designed the trend mode as an on-chain 50-day average. Reviewer said it was unsound. They were right. Here's what we do instead." Honesty does well on X, and it scores as public building. | text |
 | **Sun Nov 29** | 14:30 | **A: V3 drift explainer.** | V3 |
-| **Mon Nov 30** | 14:30 | **A: countdown starts.** "4 days." with a single Caesar still. One line per day, nothing more. Reply: testnet link + "Founding Creator spots: 50". | still |
+| **Mon Nov 30** | 14:30 | **A: countdown starts.** "4 days." in Anton over a silk texture still. One line per day, nothing more. Reply: testnet link + "Founding Creator spots: 50". | still |
 | | 03:30 | F: Day-18 clip, whatever broke that day. | V7 ep3 |
 | **Tue Dec 1** | 14:30 | **A: "3 days."** + **V8 withdraw proof.** | V8 |
 | **Wed Dec 2** | 14:30 | **A: "2 days."** + **V10 "Bottle your thesis"** creator call. | V10 |
