@@ -46,7 +46,7 @@ export default function DiscoverPage() {
   }
 
   if (!crates || crates?.length === 0) {
-    return <div className="flex items-center justify-center min-h-screen">No crates found</div>;
+    return <div className="flex items-center justify-center min-h-screen">No baskets found</div>;
   }
   const subscribedIds = new Set(
     userData?.subscribedCrates.map((c: any) => c.crateId)
@@ -103,7 +103,7 @@ export default function DiscoverPage() {
                     variant="outline"
                     className="w-36 bg-[#232323] border-none text-white font-chakra justify-between"
                   >
-                    Crate type
+                    Basket type
                     <span className="ml-2">▼</span>
                   </Button>
                 </PopoverTrigger>
@@ -193,7 +193,7 @@ export default function DiscoverPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#727272] w-4 h-4 pointer-events-none" />
               <Input
                 className="bg-[#181818] border-none text-white font-chakra placeholder:text-[#727272] h-12 pl-10"
-                placeholder="Search crates, creators and..."
+                placeholder="Search baskets, creators and..."
               />
             </div>
           </div>

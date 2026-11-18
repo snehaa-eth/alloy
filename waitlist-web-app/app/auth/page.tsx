@@ -217,7 +217,7 @@ export default function Home() {
 
         <Button
           onClick={()=>{
-            window.open("https://x.com/use_crates", "_blank");
+            window.open("https://x.com/alloy_fi", "_blank");
           }}
           className={cn(
             "w-full bg-white text-black font-chakra hover:bg-white py-4  rounded-none mt-6 font-semibold transition-colors"
@@ -252,7 +252,7 @@ export default function Home() {
               Invest Like the <br /> Insiders
             </h1>
             <p className="text-[#A0A0A0] text-base sm:text-lg md:text-xl mt-4 mb-6 font-chakra">
-              Buy curated crates of US stocks based on real politician holdings.
+              Buy curated baskets of US stocks based on real politician holdings.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center w-full gap-3 sm:gap-0 rounded overflow-hidden mt-4">
@@ -293,7 +293,7 @@ export default function Home() {
           >
             <img
               src="/assets/auth_main.svg"
-              alt="crate visual"
+              alt="basket visual"
               className="w-full max-w-xs sm:max-w-3xl md:max-w-4xl rounded-lg"
             />
           </motion.div>

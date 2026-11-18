@@ -22,7 +22,7 @@ export default function NotFound() {
             transition={{ duration: 0.5 }}
             className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-200"
           >
-            Use Crates
+            Use Alloy
           </motion.div>
         </div>
 

@@ -1,8 +1,8 @@
-# 🌍 Crates – Invest in Stories, Not Just Symbols
+# 🌍 Alloy – Invest in Stories, Not Just Symbols
 
 **A global platform for thematic U.S. stock investing.**
 
-Crates makes the U.S. stock market **accessible, narrative-driven, and relatable** for everyone, everywhere.
+Alloy makes the U.S. stock market **accessible, narrative-driven, and relatable** for everyone, everywhere.
 
 
 ![architecture](https://github.com/user-attachments/assets/c811e117-9f46-4fb5-af53-5cdcba665b83)
@@ -13,13 +13,13 @@ Crates makes the U.S. stock market **accessible, narrative-driven, and relatable
 
 ## 🚀 About The Project
 
-Crates is a **global investing platform** designed to simplify access to U.S. equities. We empower users in **India, Africa, LATAM, and Southeast Asia** to buy **real, fractional shares of U.S. stocks**.
+Alloy is a **global investing platform** designed to simplify access to U.S. equities. We empower users in **India, Africa, LATAM, and Southeast Asia** to buy **real, fractional shares of U.S. stocks**.
 
-Instead of navigating confusing tickers and charts, users invest in **curated themes**—called **Crates**—such as *“AI Leaders”* or *“Women-Led Enterprises.”*
+Instead of navigating confusing tickers and charts, users invest in **curated themes**—called **baskets**—such as *“AI Leaders”* or *“Women-Led Enterprises.”*
 
-Crates provides a **narrative-first investing experience**, helping investors connect with the **stories behind the companies** they back.
+Alloy provides a **narrative-first investing experience**, helping investors connect with the **stories behind the companies** they back.
 
-We also enable **creators and financial influencers** to build, share, and monetize their own Crates, fostering a **community-driven approach** to investing.
+We also enable **creators and financial influencers** to build, share, and monetize their own baskets, fostering a **community-driven approach** to investing.
 
 All of this is built on top of the **Dinari SDK**, which powers **Dstocks** and ensures:
 
@@ -36,7 +36,7 @@ This lets us focus on creating a **seamless and intuitive experience** for our u
 - 📦 **Thematic Investing** – curated bundles of U.S. stocks based on compelling narratives.  
 - 💸 **Fractional Shares** – own part of a U.S. company without needing full share prices.  
 - 🌍 **Global Access** – open to emerging markets: India, Africa, LATAM, SEA.  
-- 👥 **Creator-Driven Content** – follow experts or build & monetize your own Crates.  
+- 👥 **Creator-Driven Content** – follow experts or build & monetize your own baskets.  
 - 📊 **Effortless Portfolio Management** – trade, rebalance, and invest like a pro.  
 - 🔐 **Fully Compliant & Secure** – built on licensed infrastructure with regulatory compliance.
 
@@ -44,7 +44,7 @@ This lets us focus on creating a **seamless and intuitive experience** for our u
 
 ## ⚙️ How It Works
 
-1. **Discover** → Browse a marketplace of Crates curated by experts and the community.  
+1. **Discover** → Browse a marketplace of baskets curated by experts and the community.  
 2. **Invest** → Choose a theme and invest in fractionalized bundles of U.S. stocks.  
 3. **Track** → Monitor portfolio performance with ease.  
 4. **Create (Optional)** → Build your own Edge, share insights, and earn through subscriptions.
@@ -62,7 +62,7 @@ This lets us focus on creating a **seamless and intuitive experience** for our u
 ## 💰 Monetization
 
 - 💵 **Transaction Fees** – a small percentage on trades.  
-- 📈 **Creator Subscriptions** – premium Crates from top creators with subscription models.
+- 📈 **Creator Subscriptions** – premium baskets from top creators with subscription models.
 
 ---
 

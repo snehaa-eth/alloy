@@ -255,7 +255,7 @@ export default function LaunchPage() {
       </section>
       <section className="max-w-7xl mx-auto mt-16 px-4">
         <h2 className="text-3xl font-chakra font-bold mb-8">
-          Top Trending crates
+          Top Trending baskets
         </h2>
 
 
@@ -282,8 +282,8 @@ export default function LaunchPage() {
               Invest in Top US stocks
             </h2>
             <p className="text-[#A0A0A0] font-chakra text-sm max-w-md">
-              Find different crates of stocks based on domains, risk and
-              investors, or create your own crate today
+              Find different baskets of stocks based on domains, risk and
+              investors, or create your own basket today
             </p>
           </div>
           <Button
@@ -320,7 +320,7 @@ export default function LaunchPage() {
                 </div>
                 <div className="flex-1  text-[#A1A1A1] text-sm font-chakra">{insight.description}</div>
               </div>
-              <button className="w-full md:w-auto md:ml-8 px-6 md:px-16 py-2 font-chakra bg-[#232323] text-white rounded-md font-medium">View Crate</button>
+              <button className="w-full md:w-auto md:ml-8 px-6 md:px-16 py-2 font-chakra bg-[#232323] text-white rounded-md font-medium">View Basket</button>
             </div>
           ))}
         </div>
@@ -337,7 +337,7 @@ export default function LaunchPage() {
               color: "transparent",
               display: "inline",
             }}>
-              Create your custom crates
+              Create your custom baskets
             </h2>
             <p className="text-[#A0A0A0] font-chakra text-sm max-w-md">
               Choose the stocks you want to add, select their weights, and
@@ -352,7 +352,7 @@ export default function LaunchPage() {
               backgroundBlendMode: "normal, normal",
             }}
           >
-            Create a Crate
+            Create a Basket
           </Button>
         </div>
       </section>

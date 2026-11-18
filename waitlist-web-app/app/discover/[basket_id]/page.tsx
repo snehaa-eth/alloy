@@ -76,7 +76,7 @@ export default function SingleCrate() {
       { wallet: address, crateId: basket_id as string },
       {
         onSuccess: () => {
-          toast.success("Subscribed to crate successfully.");
+          toast.success("Subscribed to basket successfully.");
           refetchUser();
           //todo refresh the page after subcribing
         },
@@ -87,7 +87,7 @@ export default function SingleCrate() {
 
   const handleInvest = () => {
     if (!userData?.dinari_account_id) {
-      toast.error("Please complete KYC to invest in crates.");
+      toast.error("Please complete KYC to invest in baskets.");
       return;
     }
     createBuyOrder(
@@ -104,7 +104,7 @@ export default function SingleCrate() {
       },
       {
         onSuccess: () => {
-          toast.success("Invested in crate successfully.");
+          toast.success("Invested in basket successfully.");
           refetchUser();
         },
       }
@@ -123,7 +123,7 @@ export default function SingleCrate() {
   if (!crate) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        Crate not found
+        Basket not found
       </div>
     );
   }
@@ -238,10 +238,10 @@ export default function SingleCrate() {
               <div className="flex p-5 mt-4">
                 <div className="w-1/2 space-y-4 ">
                   <h3 className="text-xl font-semibold mb-2">
-                    About this crate
+                    About this basket
                   </h3>
                   <p className="text-gray-400 text-sm">
-                    This crate mirrors the stock holdings publicly disclosed by
+                    This basket mirrors the stock holdings publicly disclosed by
                     Nancy Pelosi, the longtime Democratic leader and former
                     Speaker of the U.S. House of Representatives. Known for her
                     high-profile tenure in Congress and her role at the center
@@ -252,7 +252,7 @@ export default function SingleCrate() {
                   <p className="text-gray-400 text-sm">
                     All politician trades featured in this platform are based on
                     publicly available congressional financial disclosures,
-                    which are legally required under the STOCK Act. This crate
+                    which are legally required under the STOCK Act. This basket
                     does not imply insider information or personal endorsement
                     by Nancy Pelosi. Investing involves risk, and past
                     performance is not indicative of future returns.
@@ -326,7 +326,7 @@ export default function SingleCrate() {
                         height={54}
                       />
                       <div className="text-white text-3xl w-1/2 text-center font-semibold mb-2">
-                        Subscribe to see stocks of this crate
+                        Subscribe to see stocks of this basket
                       </div>
                       <button className="bg-gradient-to-b from-[#7B7B7B] to-[#EBEBEB] text-black font-bold px-8 py-2 rounded mt-2">
                         Subscribe
@@ -348,7 +348,7 @@ export default function SingleCrate() {
                             height={54}
                           />
                           <div className="text-white text-3xl w-1/2 text-center font-semibold mb-2">
-                            Subscribe to see stocks of this crate
+                            Subscribe to see stocks of this basket
                           </div>
                           <button className="bg-gradient-to-b from-[#7B7B7B] to-[#EBEBEB] text-black font-bold px-8 py-2 rounded mt-2">
                             Subscribe
@@ -465,7 +465,7 @@ export default function SingleCrate() {
                 {crate.activeSubscribers} Subscribers
               </p>
               <p className="text-sm text-gray-400">
-                Follow {crate.name} crates and copy trade automatically
+                Follow {crate.name} baskets and copy trade automatically
               </p>
               <div className="flex gap-4">
                 {!address ? (

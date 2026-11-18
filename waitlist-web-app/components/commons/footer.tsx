@@ -4,7 +4,7 @@ const Footer = () => {
   return (
     <footer className="w-full border-t border-[#272727]  px-4 py-6 text-sm text-gray-400">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-        <p className="font-chakra text-base text-[#474747] ">&copy; 2025 Crates. All rights reserved.</p>
+        <p className="font-chakra text-base text-[#474747] ">&copy; 2025 Alloy. All rights reserved.</p>
 
         <div className="flex space-x-6 font-chakra text-base text-[#474747]">
           {/* <a
@@ -24,7 +24,7 @@ const Footer = () => {
             Telegram
           </a> */}
           <a
-            href="https://x.com/use_crates"
+            href="https://x.com/alloy_fi"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-white transition-colors"

@@ -1,6 +1,6 @@
-# USE CRATES Backend API
+# Alloy Backend API
 
-This backend powers the USE CRATES app, allowing users to subscribe to investment crates, view stocks, and manage investments.
+This backend powers the Alloy app, allowing users to subscribe to investment baskets, view stocks, and manage investments.
 
 ---
 

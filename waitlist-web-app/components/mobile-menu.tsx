@@ -47,8 +47,8 @@ export function MobileMenu() {
               <div className="max-w-6xl mx-auto px-4 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-white">
-                    <img src="/assets/logo_crates.svg" alt="Crates" className="h-8 w-auto" />
-                    <span className="font-chakra text-lg">Crates</span>
+                    <img src="/assets/logo_crates.svg" alt="Alloy" className="h-8 w-auto" />
+                    <span className="font-chakra text-lg">Alloy</span>
                   </div>
                   <Button variant="ghost" size="icon" onClick={closeMenu} className="text-white">
                     <X className="h-5 w-5" />

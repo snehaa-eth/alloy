@@ -70,7 +70,7 @@ export function BuyCrateModal({ open, onOpenChange, crate, stocks = [] }: BuyCra
 
   const handleInvest = () => {
     if (!userData?.dinari_account_id) {
-      toast.error("Please complete KYC to invest in crates.");
+      toast.error("Please complete KYC to invest in baskets.");
       return;
     }
     
@@ -117,7 +117,7 @@ export function BuyCrateModal({ open, onOpenChange, crate, stocks = [] }: BuyCra
       },
       {
         onSuccess: () => {
-          toast.success("Invested in crate successfully.");
+          toast.success("Invested in basket successfully.");
           refetchUser();
         },
         onError: (error) => {
@@ -165,7 +165,7 @@ export function BuyCrateModal({ open, onOpenChange, crate, stocks = [] }: BuyCra
       <DialogContent className="w-full sm:max-w-xl text-white bg-[#181818] p-0 rounded-2xl font-chakra max-h-[90vh] overflow-y-auto mx-4 my-6 sm:mx-0 sm:my-0">
         <div className="p-3">
           <div className="flex bg-[#121212] justify-between items-center p-2 ">
-            <div className="text-2xl text-white font-bold">Buy crate</div>
+            <div className="text-2xl text-white font-bold">Buy basket</div>
             <button className="text-gray-400 hover:text-white" onClick={() => onOpenChange(false)}>
               <X className="text-white" size={20} />
             </button>
@@ -175,7 +175,7 @@ export function BuyCrateModal({ open, onOpenChange, crate, stocks = [] }: BuyCra
           {step !== 'success' && (
             <div className="flex items-center text-white border-[#484848] border bg-[#232323] rounded-md p-3 my-4">
               <div className="p-[2px] rounded-lg" style={{ background: "linear-gradient(180deg, #8B8B8B 0%, #E9E9E9 50%, #8B8B8B 100%)" }}>
-                <img src={crate?.image || "/public/placeholder-user.jpg"} className="w-12 h-12 rounded-lg object-cover" alt="crate" />
+                <img src={crate?.image || "/public/placeholder-user.jpg"} className="w-12 h-12 rounded-lg object-cover" alt="basket" />
               </div>
               <div className="ml-2">
                 <div className="text-lg font-semibold">{crate?.name}</div>
@@ -420,7 +420,7 @@ export function BuyCrateModal({ open, onOpenChange, crate, stocks = [] }: BuyCra
               </div>
               <div className="border-[#484848] border-t p-3">
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-[#A1A1A1]">Crate name</span>
+                  <span className="text-[#A1A1A1]">Basket name</span>
                   <span className="font-bold">{crate?.name}</span>
                 </div>
                 <div className="flex justify-between text-sm mb-1">
@@ -431,7 +431,7 @@ export function BuyCrateModal({ open, onOpenChange, crate, stocks = [] }: BuyCra
               </div>
               <div className="flex items-center text-white border-[#484848] border bg-[#232323] rounded-md p-3 my-2">
                 <div className="p-[2px] rounded-lg" style={{ background: "linear-gradient(180deg, #8B8B8B 0%, #E9E9E9 50%, #8B8B8B 100%)" }}>
-                  <img src={crate?.image || "/public/placeholder-user.jpg"} className="w-12 h-12 rounded-lg object-cover" alt="crate" />
+                  <img src={crate?.image || "/public/placeholder-user.jpg"} className="w-12 h-12 rounded-lg object-cover" alt="basket" />
                 </div>
                 <div className="ml-2">
                   <div className="text-lg font-semibold">{crate?.name}</div>

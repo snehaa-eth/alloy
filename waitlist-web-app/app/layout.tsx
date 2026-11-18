@@ -31,7 +31,7 @@ const dmSans = DM_Sans({
 
 // Metadata
 export const metadata: Metadata = {
-  title: "Invest Like the Insiders",
+  title: "Alloy — Invest Like the Insiders",
   description:
     "Buy curated baskets of US stocks based on real politician holdings.",
   generator: "v0.dev",

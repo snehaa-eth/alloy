@@ -82,7 +82,7 @@ const fetchAllCrates = async () => {
     try {
         const res = await api.get('/crates');
         if (!res.data.success) {
-            throw new Error(res.data.message || "Failed to fetch crates");
+            throw new Error(res.data.message || "Failed to fetch baskets");
         }
         return res.data.data;
     } catch (error: any) {
@@ -94,7 +94,7 @@ const getCrateById = async (crateId: string) => {
     try {
         const res = await api.get(`/crates/${crateId}`);
         if (!res.data.success) {
-            throw new Error(res.data.message || "Failed to fetch crate");
+            throw new Error(res.data.message || "Failed to fetch basket");
         }
         return res.data.data;
     } catch (error: any) {
@@ -144,7 +144,7 @@ export const useGetCrateById = (crateId: string) => {
 export const useSubscribeCrate = () => {
     return useMutation({
         mutationFn: async ({ wallet, crateId }: SubscribeCrateParams) => {
-            let id = toast.loading("Subscribing to crate...");
+            let id = toast.loading("Subscribing to basket...");
             try {
                 //todo if not free take money in admin wallet
                 const response = await api.post(`/user/${wallet}/subscribe`, {
@@ -155,7 +155,7 @@ export const useSubscribeCrate = () => {
                 });
                 return response.data;
             } catch (error) {
-                toast.error("Failed to subscribe to crate", {
+                toast.error("Failed to subscribe to basket", {
                     id,
                 });
             }

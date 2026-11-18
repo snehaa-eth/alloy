@@ -42,7 +42,7 @@ const CrateCard = ({ crate }: { crate: Crate }) => {
       { wallet: address, crateId: crate?._id as string },
       {
         onSuccess: () => {
-          toast.success("Subscribed to crate successfully.");
+          toast.success("Subscribed to basket successfully.");
           refetchUser();
           //todo refresh the page after subcribing
         },

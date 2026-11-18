@@ -105,7 +105,7 @@ export function ExitCrateModal({ open, onOpenChange, crate, subscribeCrateData, 
       return;
     }
     if (!userData?.dinari_account_id) {
-      toast.error("Please complete KYC to invest in crates.");
+      toast.error("Please complete KYC to invest in baskets.");
       return;
     };
 
@@ -134,7 +134,7 @@ export function ExitCrateModal({ open, onOpenChange, crate, subscribeCrateData, 
       },
       {
         onSuccess: () => {
-          toast.success("Invested in crate successfully.");
+          toast.success("Invested in basket successfully.");
           refetchUser();
         },
       }
@@ -147,7 +147,7 @@ export function ExitCrateModal({ open, onOpenChange, crate, subscribeCrateData, 
       <DialogContent className="w-full sm:max-w-md text-white bg-[#181818] p-0 rounded-2xl font-chakra max-h-[90vh] overflow-y-auto mx-4 my-6 sm:mx-0 sm:my-0">
         <div className="p-3">
           <div className="flex bg-[#121212] justify-between items-center p-2 ">
-            <div className="text-2xl text-white font-bold">Exit crate</div>
+            <div className="text-2xl text-white font-bold">Exit basket</div>
             <button className="text-gray-400 hover:text-white" onClick={() => onOpenChange(false)}>
               <X className="text-white" size={20} />
             </button>
@@ -156,11 +156,11 @@ export function ExitCrateModal({ open, onOpenChange, crate, subscribeCrateData, 
           {step !== 'success' && (
             <>
               <div className="text-[#C9C9C9] my-4 text-sm">
-                This will only sell stocks attributed to this Crate. Your other holdings will remain unaffected.
+                This will only sell stocks attributed to this basket. Your other holdings will remain unaffected.
               </div>
               <div className="flex items-center border gap-4 border-[#484848] bg-[#232323] rounded-md p-3 mb-4">
                 <div className="p-[2px] rounded-lg" style={{ background: "linear-gradient(180deg, #8B8B8B 0%, #E9E9E9 50%, #8B8B8B 100%)" }}>
-                  <img src={crate?.image} className="w-12 h-12 rounded-lg object-cover" alt="crate" />
+                  <img src={crate?.image} className="w-12 h-12 rounded-lg object-cover" alt="basket" />
                 </div>
                 <div>
                   <div className="text-lg font-semibold">{crate?.name}</div>
@@ -379,8 +379,8 @@ export function ExitCrateModal({ open, onOpenChange, crate, subscribeCrateData, 
               </div>
               <div className="border-[#484848] border-t p-3 mb-4">
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-[#A1A1A1]">Crate name</span>
-                  <span className="font-bold">Pelosi Crate</span>
+                  <span className="text-[#A1A1A1]">Basket name</span>
+                  <span className="font-bold">Pelosi Basket</span>
                 </div>
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-[#A1A1A1]">Amount sold</span>
@@ -393,7 +393,7 @@ export function ExitCrateModal({ open, onOpenChange, crate, subscribeCrateData, 
               </div>
               <div className="flex items-center gap-4 bg-[#232323] rounded-md p-3 mb-4 border border-[#484848]">
                 <div className="p-[2px] rounded-lg" style={{ background: "linear-gradient(180deg, #8B8B8B 0%, #E9E9E9 50%, #8B8B8B 100%)" }}>
-                  <img src={crate?.image} className="w-12 h-12 rounded-lg object-cover" alt="crate" />
+                  <img src={crate?.image} className="w-12 h-12 rounded-lg object-cover" alt="basket" />
                 </div>
                 <div>
                   <div className="text-lg font-semibold">{crate?.name}</div>
@@ -437,7 +437,7 @@ export function ExitCrateModal({ open, onOpenChange, crate, subscribeCrateData, 
                     color: "#000"
                   }}
                 >
-                  Discover Crates
+                  Discover Baskets
                 </button>
               </div>
             </>

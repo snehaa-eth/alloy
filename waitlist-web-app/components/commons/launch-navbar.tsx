@@ -45,8 +45,8 @@ export default function Navbar() {
         {/* Left: Logo + Nav Links */}
         <div className="flex items-center gap-4 md:gap-10">
           <Link href="/" className="text-sm tracking-wide flex items-center gap-2 text-white">
-            <img src="/assets/logo_crates.svg" alt="Use Crates Logo" className="h-8 md:h-10 w-auto" />
-            <span className="text-white text-lg md:text-xl font-chakra">Crates</span>
+            <img src="/assets/logo_crates.svg" alt="Alloy Logo" className="h-8 md:h-10 w-auto" />
+            <span className="text-white text-lg md:text-xl font-chakra">Alloy</span>
           </Link>
           <nav className="hidden md:flex items-center gap-8 text-sm">
             <Link href="/discover" className={pathname === "/discover" ? "text-white" : "text-gray-400 hover:text-white transition-colors"}>

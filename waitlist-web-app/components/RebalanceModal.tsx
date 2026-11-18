@@ -223,7 +223,7 @@ export function RebalanceModal({ open, onOpenChange, crate }: RebalanceModalProp
           {step !== 'success' && (
             <div className="flex items-center gap-4 bg-[#232323] rounded-md p-3 mb-4 border border-[#484848]">
               <div className="p-[2px] rounded-lg" style={{ background: "linear-gradient(180deg, #8B8B8B 0%, #E9E9E9 50%, #8B8B8B 100%)" }}>
-                <img src={crate?.imageUrl} className="w-12 h-12 rounded-lg object-cover" alt="crate" />
+                <img src={crate?.imageUrl} className="w-12 h-12 rounded-lg object-cover" alt="basket" />
               </div>
               <div>
                 <div className="text-lg font-semibold">{crate?.name}</div>
@@ -383,7 +383,7 @@ export function RebalanceModal({ open, onOpenChange, crate }: RebalanceModalProp
                     color: "#000"
                   }}
                 >
-                  View more Crates
+                  View more Baskets
                 </button>
               </div>
             </>
@@ -394,13 +394,13 @@ export function RebalanceModal({ open, onOpenChange, crate }: RebalanceModalProp
               <div className="flex flex-col items-center my-4">
                 <img src="/assets/buy_tick.svg" alt="Success" className="w-14 h-14 mb-2" />
                 <div className="text-lg w-3/4 font-semibold text-center mb-2">
-                  Your selected Crate has been rebalanced successfully.
+                  Your selected basket has been rebalanced successfully.
                 </div>
               </div>
               <div className="border-[#484848] border-t p-3 mb-4">
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-[#A1A1A1]">Crate name</span>
-                  <span className="font-bold">Pelosi Crate</span>
+                  <span className="text-[#A1A1A1]">Basket name</span>
+                  <span className="font-bold">Pelosi Basket</span>
                 </div>
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-[#A1A1A1]">Total Rebalanced</span>
@@ -415,7 +415,7 @@ export function RebalanceModal({ open, onOpenChange, crate }: RebalanceModalProp
               </div>
               <div className="flex items-center gap-4 bg-[#232323] rounded-md p-3 mb-4 border border-[#484848]">
                 <div className="p-[2px] rounded-lg" style={{ background: "linear-gradient(180deg, #8B8B8B 0%, #E9E9E9 50%, #8B8B8B 100%)" }}>
-                  <img src={crate?.imageUrl} className="w-12 h-12 rounded-lg object-cover" alt="crate" />
+                  <img src={crate?.imageUrl} className="w-12 h-12 rounded-lg object-cover" alt="basket" />
                 </div>
                 <div>
                   <div className="text-lg font-semibold">{crate?.name}</div>
@@ -462,7 +462,7 @@ export function RebalanceModal({ open, onOpenChange, crate }: RebalanceModalProp
                     color: "#000"
                   }}
                 >
-                  View more Crates
+                  View more Baskets
                 </button>
               </div>
             </>

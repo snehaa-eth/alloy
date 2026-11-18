@@ -144,7 +144,7 @@ const Page = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#727272] w-4 h-4 pointer-events-none" />
               <Input
                 className="bg-[#181818] border-none text-white font-chakra placeholder:text-[#727272] h-12 pl-10"
-                placeholder="Search crates, creators and..."
+                placeholder="Search baskets, creators and..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
@@ -205,11 +205,11 @@ const Page = () => {
               <div className="mt-8 text-xl font-chakra text-gray-300">
                 No transactions yet.
                 <br />
-                Start by buying your first crate!
+                Start by buying your first basket!
               </div>
               <a href="/discover" className="mt-8">
                 <button className="border border-[#444] rounded-lg px-6 py-3 text-white font-chakra text-lg hover:bg-[#181818] transition">
-                  Discover More Crates
+                  Discover More Baskets
                 </button>
               </a>
             </div>
