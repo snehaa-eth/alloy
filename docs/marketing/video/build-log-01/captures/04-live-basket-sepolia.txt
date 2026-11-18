@@ -1,19 +1,10 @@
-$ cast call 0x66056FD4724634F6028b75320Bb559218276Cd6f "name()(string)" --rpc-url https://sepolia.base.org
+$ cast call 0x60B0E5813dF4D7C5e602f78743c73CC90A63d36c "name()(string)" --rpc-url https://sepolia.base.org
 "Alloy Demo: Big Tech"
-$ cast call 0x66056FD4724634F6028b75320Bb559218276Cd6f "symbol()(string)" --rpc-url https://sepolia.base.org
+$ cast call 0x60B0E5813dF4D7C5e602f78743c73CC90A63d36c "symbol()(string)" --rpc-url https://sepolia.base.org
 "aDEMO"
-$ cast call 0x66056FD4724634F6028b75320Bb559218276Cd6f "nav()(uint256)" --rpc-url https://sepolia.base.org
-13492083036 [1.349e10]
-$ cast call 0x66056FD4724634F6028b75320Bb559218276Cd6f "totalSupply()(uint256)" --rpc-url https://sepolia.base.org
-134996091487136088321 [1.349e20]
-$ cast call 0x66056FD4724634F6028b75320Bb559218276Cd6f "getBundle()(address[],uint256[])" --rpc-url https://sepolia.base.org
-[0xB200000000000000000000C9F680261469C1fdC4, 0xB2000000000000000000009A12E065827c618897, 0xB2000000000000000000003b1A4D4e4d56C3b39a]
-[18966164 [1.896e7], 7960533 [7.96e6], 10592247 [1.059e7]]
-$ cast call 0xB200000000000000000000C9F680261469C1fdC4 "symbol()(string)" --rpc-url https://sepolia.base.org
-"tGOOGLc"
-$ cast call 0xB2000000000000000000009A12E065827c618897 "symbol()(string)" --rpc-url https://sepolia.base.org
-"tMSFTc"
-$ cast call 0xB2000000000000000000003b1A4D4e4d56C3b39a "symbol()(string)" --rpc-url https://sepolia.base.org
-"tTSLAc"
-$ cast code 0xB200000000000000000000C9F680261469C1fdC4 --rpc-url https://sepolia.base.org
-0xef
+$ cast call 0x60B0E5813dF4D7C5e602f78743c73CC90A63d36c "nav()(uint256)" --rpc-url https://sepolia.base.org
+13490128363 [1.349e10]
+$ cast call 0x60B0E5813dF4D7C5e602f78743c73CC90A63d36c "navPerShare()(uint256)" --rpc-url https://sepolia.base.org
+99930480 [9.993e7]
+$ cast call 0x60B0E5813dF4D7C5e602f78743c73CC90A63d36c "totalSupply()(uint256)" --rpc-url https://sepolia.base.org
+134995131483030873813 [1.349e20]

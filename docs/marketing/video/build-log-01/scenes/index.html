@@ -1,0 +1,513 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Build Log 01</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+  html, body { margin: 0; padding: 0; background: #0A0A0A; }
+  #stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #0A0A0A;
+    font-feature-settings: "tnum" 1, "cv11" 1, "ss01" 1; -webkit-font-smoothing: antialiased; }
+  #stage div { box-sizing: border-box; }
+  .abs { position: absolute; }
+  canvas { position: absolute; left: 0; top: 0; }
+  #vig { position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse 75% 60% at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,.18) 100%); }
+  .ico { display: inline-block; width: 0.6em; height: 0.6em; margin-right: 0.6em; vertical-align: 0.02em; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <filter id="tA" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 0 0 0.769  0 0 0 0 0.102  0 0 0 0 0.259  0 0 0 1 0"/></filter>
+  <filter id="tP" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 0 0 0.949  0 0 0 0 0.941  0 0 0 0 0.929  0 0 0 1 0"/></filter>
+</svg>
+<div id="stage">
+  <div id="world" class="abs" style="inset:0"></div>
+  <canvas id="parts" width="1080" height="1920"></canvas>
+  <div id="chyron" class="abs" style="inset:0"></div>
+  <div id="vig"></div>
+  <canvas id="grain" width="1080" height="1920" style="opacity:1"></canvas>
+</div>
+<script>
+// ---------------------------------------------------------------- constants
+window.DURATION = 32; window.FPS = 30;
+const C = {bg:'#0A0A0A', paper:'#F2F0ED', gray:'#9A9894', acc:'#C41A42', brand:'#6D001A', gold:'#C9A96E',
+  jade:'#3DBE8B', verm:'#FF6A3D', i850:'#1C1C1F', i800:'#26262A', i700:'#3A3A40', i600:'#6B6B70', i900:'#141416'};
+const MONO = "'JetBrains Mono'", INTER = "'Inter'", ANTON = "'Anton'";
+const CX = 510;           // live-box centre x
+const ORIGIN = '510px 890px';
+
+// Real strings (traced to captures/; see README "Truth audit").
+const NVDA_SHORT = '0xb200…108C';                       // 0xb20000000000000000000078ee7ce2fE4908108C (captures/01)
+const BASKET_SHORT = '0x60B0…d36c';                     // 0x60B0E5813dF4D7C5e602f78743c73CC90A63d36c (captures/04)
+const FAILS = [                                         // captures/02-forge-fail.txt (stock forge 1.1.0)
+  ['[FAIL: EvmError: Revert]', 'test_b20_precompile_smoke() (gas: 6141)'],
+  ['[FAIL: EvmError: Revert] setUp() (gas: 0)'], ['[FAIL: EvmError: Revert] setUp() (gas: 0)'],
+  ['[FAIL: EvmError: Revert] setUp() (gas: 0)'], ['[FAIL: EvmError: Revert] setUp() (gas: 0)'],
+  ['[FAIL: EvmError: Revert] setUp() (gas: 0)'], ['[FAIL: EvmError: Revert] setUp() (gas: 0)'],
+  ['[FAIL: EvmError: Revert] setUp() (gas: 0)'],
+];
+const FAIL_SUMMARY = '0 passed · 9 failed';            // "0 tests passed, 9 failed, 1 skipped (10 total tests)"
+const PASSES = [                                        // captures/03-base-forge-pass.txt (base-forge 1.6.0-v1.1.0)
+  '[PASS] test_admin_onlyOwner() (gas: 41804)', '[PASS] test_admin_setters() (gas: 91449)',
+  '[PASS] test_allow_onlyOwner() (gas: 22237)', '[PASS] test_constructor_state() (gas: 34357)',
+  '[PASS] test_fee_oneYear_exact() (gas: 80028)', '[PASS] test_issue_tvlCap() (gas: 605594)',
+  '[PASS] test_seed_state() (gas: 224596)', '[PASS] test_aero_unknownKind() (gas: 545235)',
+  '[PASS] test_buy_exact() (gas: 606540)', '[PASS] test_buy_guards() (gas: 142602)',
+  '[PASS] test_sell_exact() (gas: 883180)', '[PASS] test_bandOf() (gas: 15817)',
+  '[PASS] test_invalidTrades() (gas: 613244)', '[PASS] test_perTxLossCap() (gas: 411792)',
+  '[PASS] test_recipe_cancel() (gas: 320443)', '[PASS] test_trim_toBandEdge() (gas: 378230)',
+];
+const N_PASSED = 108;                                   // "108 tests passed, 0 failed, 1 skipped (109 total tests)"
+const CHIPS = ['tGOOGLc', 'tMSFTc', 'tTSLAc'];          // getBundle() on the live demo basket (captures/05)
+
+// ---------------------------------------------------------------- utils
+function mulberry(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function hash(i, j) { return mulberry(i * 73856093 ^ j * 19349663)(); }
+function bez(x1, y1, x2, y2) {
+  return function (x) {
+    if (x <= 0) return 0; if (x >= 1) return 1;
+    let t = x;
+    for (let i = 0; i < 12; i++) {
+      const cx = 3 * x1 * t * (1 - t) * (1 - t) + 3 * x2 * t * t * (1 - t) + t * t * t - x;
+      const d = 3 * x1 * (1 - t) * (1 - 3 * t) + 3 * x2 * t * (2 - 3 * t) + 3 * t * t;
+      if (Math.abs(d) < 1e-6) break; t -= cx / d; t = Math.min(1, Math.max(0, t));
+    }
+    return 3 * y1 * t * (1 - t) * (1 - t) + 3 * y2 * t * t * (1 - t) + t * t * t;
+  };
+}
+const easeOut = bez(0.2, 0.8, 0.2, 1), easeIn = bez(0.4, 0, 1, 1), easeInOut = bez(0.65, 0, 0.35, 1);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lin = (f, a, b) => clamp((f - a) / (b - a));
+const mix = (a, b, p) => a + (b - a) * p;
+
+// text block. x=null → centred in the live box; otherwise left-aligned at x. y = vertical centre.
+function T(s, o) {
+  const {x = null, y, font = INTER, w = 600, size, color = C.paper, ls = 0, scale = 1, op = 1, lh = 1, tx = 0, ty = 0, extra = ''} = o;
+  const pos = x === null ? `left:60px;width:900px;text-align:center;transform-origin:50% 50%;` : `left:${x}px;transform-origin:0 50%;`;
+  return `<div class="abs" style="${pos}top:${y}px;white-space:pre;font-family:${font};font-weight:${w};font-size:${size}px;line-height:${lh};letter-spacing:${ls}em;color:${color};opacity:${op};transform:translate(${tx}px,calc(-50% + ${ty}px)) scale(${scale});${extra}">${s}</div>`;
+}
+const ICO_X = `<svg class="ico" viewBox="0 0 10 10"><path d="M1.5 1.5L8.5 8.5M8.5 1.5L1.5 8.5" stroke="currentColor" stroke-width="1.7" fill="none"/></svg>`;
+const ICO_V = `<svg class="ico" viewBox="0 0 10 10"><path d="M1 5.4L3.8 8.2L9 1.8" stroke="currentColor" stroke-width="1.7" fill="none"/></svg>`;
+const DOLLAR = `<span style="color:${C.acc}">$</span>`;
+function wrapCam(html, cam = {}) {
+  const {s = 1, tx = 0, ty = 0, r = 0, op = 1, extra = ''} = cam;
+  return `<div class="abs" style="inset:0;transform-origin:${ORIGIN};transform:translate(${tx}px,${ty}px) rotate(${r}deg) scale(${s});opacity:${op};${extra}">${html}</div>`;
+}
+function shake(f, f0, f1, amp, rotAmp = 0, seed = 1) {
+  if (f < f0 || f > f1) return {tx: 0, ty: 0, r: 0};
+  const k = (f - f0) / Math.max(1, f1 - f0);
+  const a = amp * Math.exp(-4 * k) * (f === f1 ? 0 : 1);
+  const R = mulberry(seed * 1000 + f);
+  return {tx: (R() * 2 - 1) * a, ty: (R() * 2 - 1) * a, r: (R() * 2 - 1) * rotAmp * Math.exp(-4 * k) * (f === f1 ? 0 : 1)};
+}
+function tinted(html, filt, dx, op) {
+  return `<div class="abs" style="inset:0;filter:url(#${filt});opacity:${op};transform:translateX(${dx}px)">${html}</div>`;
+}
+
+// ---------------------------------------------------------------- S1 / S12 hook layout
+const KICKER = 'NVIDIA, tokenized on Base.';
+const CMD0 = `$ cast code ${NVDA_SHORT}`;
+function cmdHTML(text, nChars, size, cursor) {
+  const t = text.slice(0, nChars);
+  const body = t.startsWith('$') ? DOLLAR + t.slice(1) : t;
+  const cur = cursor ? `<span style="display:inline-block;width:0.6em;height:1.05em;vertical-align:-0.18em;background:${C.acc};margin-left:0.05em"></span>` : '';
+  return body + cur;
+}
+function heroGroup(f, o = {}) {
+  // group: command (y640), 0xef (y860), ONE BYTE. (y1110). Group transform about (510, 875).
+  const {gs = 1, gy = 0, showCmd = true, showOneByte = false, oneByteScale = 1, heroScale = 1, split = 0, glow = true} = o;
+  let h = '';
+  if (glow) h += `<div class="abs" style="left:${CX - 1020}px;top:${860 - 560}px;width:2040px;height:1120px;background:radial-gradient(closest-side, rgba(109,0,26,.35), rgba(109,0,26,0))"></div>`;
+  if (showCmd) h += T(cmdHTML(CMD0, 99, 40, false), {y: 640, font: MONO, w: 400, size: 40, color: C.gray});
+  if (split) {
+    h += T('0xef', {y: 860, font: MONO, w: 400, size: 340, color: C.acc, scale: heroScale, tx: split, op: 0.6});
+    h += T('0xef', {y: 860, font: MONO, w: 400, size: 340, color: C.paper, scale: heroScale, tx: -split, op: 0.6});
+  }
+  h += T('0xef', {y: 860, font: MONO, w: 400, size: 340, color: C.paper, scale: heroScale});
+  if (showOneByte) h += T('ONE BYTE.', {y: 1110, font: ANTON, w: 400, size: 150, scale: oneByteScale, ls: 0.005, lh: 0.9});
+  return `<div class="abs" style="inset:0;transform-origin:510px 875px;transform:translateY(${gy}px) scale(${gs})">${h}</div>`;
+}
+const GROUP_TARGET_Y = 320 - 875;   // group centre moves to y 320
+const GROUP_TARGET_S = 0.42;
+
+function S1(f) {
+  let heroScale = 1, split = 0;
+  if (f === 1) { heroScale = 1.045; split = 6; }
+  if (f === 2) { heroScale = 1.0225; split = 6; }
+  let obs = 1;
+  if (f >= 40) obs = mix(1.08, 1.0, easeOut(lin(f, 40, 44)));
+  let html = T(KICKER, {y: 520, size: 52, w: 600});
+  html += heroGroup(f, {showOneByte: f >= 40, oneByteScale: obs, heroScale, split});
+  const sh1 = shake(f, 1, 8, 12, 0.4, 11), sh2 = shake(f, 40, 44, 4, 0, 12);
+  let s = 1;
+  if (f >= 4 && f < 44) s = mix(1, 1.008, lin(f, 4, 44));
+  if (f >= 44) s = mix(1.008, 1.025, lin(f, 44, 80));
+  return wrapCam(html, {s, tx: sh1.tx + sh2.tx, ty: sh1.ty + sh2.ty, r: sh1.r});
+}
+
+// ---------------------------------------------------------------- S2 proof
+function termLine(text, y, {x = 90, size = 34, color = C.gray, w = 400, n = 999, ls = 0} = {}) {
+  return T(cmdHTML(text, n, size, false), {x, y, font: MONO, w, size, color, ls});
+}
+function S2(f) {
+  const p = easeOut(lin(f, 80, 86));
+  let html = '';
+  // smear ghosts during the whip
+  if (f <= 83) for (let k = 1; k <= 4; k++) {
+    const pk = easeOut(lin(f - k * 0.6, 80, 86));
+    html += `<div class="abs" style="inset:0;opacity:.12">${heroGroup(f, {gy: GROUP_TARGET_Y * pk, gs: mix(1, GROUP_TARGET_S, pk), showOneByte: true})}</div>`;
+  }
+  html += heroGroup(f, {gy: GROUP_TARGET_Y * p, gs: mix(1, GROUP_TARGET_S, p), showOneByte: true});
+  const c1 = `$ cast call ${NVDA_SHORT} "symbol()(string)"`;
+  const c2 = `$ cast call ${NVDA_SHORT} "name()(string)"`;
+  if (f >= 80) html += termLine(c1, 700, {n: Math.ceil(c1.length * lin(f + 1, 80, 85))});
+  if (f >= 100) html += termLine('"NVDAc"', 756, {color: C.paper, w: 600});
+  if (f >= 120) html += termLine(c2, 846, {n: Math.ceil(c2.length * lin(f + 1, 120, 125))});
+  if (f >= 140) html += termLine('"NVIDIA Corporation"', 902, {color: C.paper, w: 600});
+  let ty = 0;
+  for (const fn of [100, 140]) if (f >= fn && f < fn + 3) ty += 2 * (1 - (f - fn) / 3);
+  return wrapCam(html, {s: mix(1, 1.015, lin(f, 86, 160)), ty});
+}
+
+// ---------------------------------------------------------------- S3 the weird part
+function S3(f) {
+  let html = '';
+  // anchor 0xef (hero only) at the S2 group position, then the drop
+  const dropP = easeIn(lin(f, 200, 212));
+  const startY = 320 + (860 - 875) * GROUP_TARGET_S;        // ≈ 313.7
+  const startSize = 340 * GROUP_TARGET_S;                    // ≈ 142.8
+  const endSize = 50, endY = 1252;
+  const size = mix(startSize, endSize, dropP), y = mix(startY, endY, dropP);
+  const words = [['A STOCK', 160, 667], ['WITH', 170, 820], ['NO CODE.', 180, 973]];
+  for (const [w, fw, wy] of words) if (f >= fw) html += T(w, {y: wy, font: ANTON, w: 400, size: 170, lh: 0.9, ls: 0.005, scale: f === fw ? 1.06 : 1});
+  if (f >= 200) {
+    html += T('B20 · built into the chain', {y: 1120, font: MONO, w: 400, size: 40, color: C.gray});
+    for (let i = 0; i < 5; i++) {
+      const bx = CX - 332 + i * 136, flash = (i === 2 && f === 212);
+      html += `<div class="abs" style="left:${bx}px;top:1280px;width:120px;height:40px;border:2px solid ${flash ? C.paper : C.i700};background:${flash ? C.paper : 'transparent'}"></div>`;
+    }
+  }
+  html += T('0xef', {y, font: MONO, w: 400, size, color: C.paper});
+  return wrapCam(html, {s: mix(1, 1.03, lin(f, 160, 240))});
+}
+
+// ---------------------------------------------------------------- S4 the break
+function S4core(f) {
+  let html = T('SO OUR TESTS<br>BROKE.', {y: 345, font: ANTON, w: 400, size: 120, lh: 0.9, ls: 0.005, extra: 'white-space:normal;'});
+  html += T(cmdHTML('$ forge test', Math.min(12, f - 240 + 1), 40, f < 260), {x: 90, y: 560, font: MONO, w: 400, size: 40, color: C.gray});
+  let term = '', row = 0;
+  FAILS.forEach((ln, i) => {
+    const fl = 260 + i * 5;
+    if (f >= fl) {
+      term += T(ICO_X + ln[0], {x: 66, y: 650 + row * 54, font: MONO, w: 400, size: 34, color: C.verm, ls: -0.025});
+      if (ln[1]) term += T('  ' + ln[1], {x: 66, y: 650 + (row + 1) * 54, font: MONO, w: 400, size: 34, color: C.verm, ls: -0.025});
+    }
+    row += ln.length;
+  });
+  // per-line 1-frame RGB split on the terminal block
+  const hitLine = FAILS.findIndex((_, i) => f === 260 + i * 5);
+  if (hitLine >= 0) html += tinted(term, 'tA', 4, 0.6) + tinted(term, 'tP', -4, 0.6);
+  html += term;
+  if (f >= 300) html += T(FAIL_SUMMARY, {y: 1190, size: 64, w: 700, color: C.verm});
+  return html;
+}
+function S4(f) {
+  let html = S4core(f);
+  let cam = {s: mix(1, 1.02, lin(f, 240, 310))};
+  const hitLine = FAILS.findIndex((_, i) => f === 260 + i * 5);
+  if (hitLine >= 0 || (f > 260 && f < 300 && (f - 260) % 5 === 1)) {
+    const R = mulberry(4000 + f); cam.tx = (R() * 2 - 1) * 3; cam.ty = (R() * 2 - 1) * 3;
+  }
+  if (f >= 305 && f <= 309) {
+    // horizontal slice tear
+    const base = wrapCam(html, cam);
+    const R = mulberry(5000 + f);
+    let tear = base;
+    for (let b = 0; b < 6; b++) {
+      const y0 = Math.floor(160 + R() * 1400), hh = Math.floor(20 + R() * 60), dx = Math.round((R() * 2 - 1) * 40);
+      const clip = `clip-path:inset(${y0}px 0 ${1920 - y0 - hh}px 0)`;
+      tear += `<div class="abs" style="inset:0;${clip}"><div class="abs" style="inset:0;background:${C.bg}"></div>`
+        + tinted(base, 'tA', dx + 8, 0.6) + tinted(base, 'tP', dx - 8, 0.6)
+        + `<div class="abs" style="inset:0;transform:translateX(${dx}px)">${base}</div></div>`;
+    }
+    return tear;
+  }
+  return wrapCam(html, cam);
+}
+
+// ---------------------------------------------------------------- S5 the turn
+function S5(f) {
+  let html = T('BASE HAS ITS<br>OWN FOUNDRY.', {y: 700, font: ANTON, w: 400, size: 130, lh: 0.9, ls: 0.005, extra: 'white-space:normal;'});
+  if (f >= 360) {
+    const cmd = '$ base-forge test';
+    const n = Math.min(cmd.length, f - 360 + 1);
+    const curOn = Math.floor((f - 360) / 10) % 2 === 0 || f < 377;
+    html += T(cmdHTML(cmd, n, 44, curOn), {y: 1000, font: MONO, w: 400, size: 44, color: C.gray});
+    if (f >= 380) {
+      const wFull = cmd.length * 44 * 0.6;
+      const wNow = wFull * lin(f, 380, 399);
+      html += `<div class="abs" style="left:${CX - wFull / 2 - 13}px;top:1036px;width:${wNow}px;height:1px;background:${C.paper}"></div>`;
+    }
+  }
+  return wrapCam(html, {s: mix(1, 1.06, easeInOut(lin(f, 320, 400)))});
+}
+
+// ---------------------------------------------------------------- S6–S7 the drop
+function passTerm(f, dim) {
+  let h = T(cmdHTML('$ base-forge test', 99, 34, false), {x: 66, y: 420, font: MONO, w: 400, size: 34, color: C.gray});
+  PASSES.forEach((ln, i) => {
+    const fl = 400 + i * 5;
+    if (f < fl) return;
+    const y = 476 + i * 52;
+    const bloom = f - fl < 6 ? 0.25 * (1 - (f - fl) / 6) : 0;
+    if (bloom > 0 && !dim) h += T(ICO_V + ln, {x: 66, y, font: MONO, w: 400, size: 34, color: C.jade, ls: -0.025, op: bloom, extra: 'filter:blur(20px);'});
+    h += T(ICO_V + ln, {x: 66, y, font: MONO, w: 400, size: 34, color: C.jade, ls: -0.025});
+  });
+  return dim ? `<div class="abs" style="inset:0;opacity:.25">${h}</div>` : h;
+}
+function goldRing(f) {
+  const r = 71, circ = 2 * Math.PI * r;
+  const p = easeInOut(lin(f, 480, 498));
+  const pc = easeOut(lin(f, 494, 500));
+  const checkLen = 110;
+  return `<svg class="abs" style="left:${CX - 79}px;top:${640 - 79}px" width="158" height="158" viewBox="0 0 158 158">
+    <circle cx="79" cy="79" r="${r}" fill="none" stroke="${C.gold}" stroke-width="8" stroke-dasharray="${circ}" stroke-dashoffset="${circ * (1 - p)}" transform="rotate(-90 79 79)" stroke-linecap="butt"/>
+    <path d="M48 81 L70 102 L112 58" fill="none" stroke="${C.paper}" stroke-width="8" stroke-dasharray="${checkLen}" stroke-dashoffset="${checkLen * (1 - pc)}"/></svg>`;
+}
+function S6(f) { return wrapCam(passTerm(f, false), {}); }
+function S7(f) {
+  let html = passTerm(f, true);
+  html += goldRing(f);
+  html += T(`${N_PASSED} passed`, {y: 860, size: 120, w: 700, color: C.jade});
+  html += T('0 failed.', {y: 975, size: 56, w: 600, color: C.gray});
+  if (f >= 520) html += T('ALL GREEN.', {y: 1180, font: ANTON, w: 400, size: 150, lh: 0.9, ls: 0.005, scale: f === 520 ? 1.05 : 1});
+  return {html, cam: {s: mix(1, 1.035, lin(f, 480, 560))}};
+}
+
+// ---------------------------------------------------------------- S8–S9 basket
+const CARD = {x: 90, y: 550, w: 840, h: 620};
+const CHIP_START = [[560, 330, -6], [96, 1470, 5], [600, 1540, -4]];
+const CHIP_ROW_Y = [800, 905, 1010];
+function chip(label, x, y, rot, tag) {
+  const tagH = tag ? `<span style="font-family:${MONO};font-weight:400;font-size:28px;color:${C.gray};margin-left:22px">${tag}</span>` : '';
+  return `<div class="abs" style="left:${x}px;top:${y}px;transform:translateY(-50%) rotate(${rot}deg);transform-origin:0 50%;display:flex;align-items:center;white-space:nowrap">
+    <span style="display:inline-block;font-family:${INTER};font-weight:600;font-size:44px;line-height:1;color:${C.paper};background:${C.i850};border:1px solid ${C.i800};border-radius:999px;padding:16px 34px">${label}</span>${tagH}</div>`;
+}
+function S8core(f) {
+  // card
+  let pulse = 1;
+  for (let i = 0; i < 3; i++) { const land = 580 + i * 10; if (f >= land && f < land + 3) pulse = Math.max(pulse, [1.01, 1.006, 1.002][f - land]); }
+  let card = `<div class="abs" style="left:${CARD.x}px;top:${CARD.y}px;width:${CARD.w}px;height:${CARD.h}px;border-radius:12px;overflow:hidden;
+    background:linear-gradient(160deg,#10223F 0%,#0A0A0A 85%);border:1px solid ${C.i800};transform:scale(${pulse});transform-origin:50% 50%">
+    <div class="abs" style="inset:0;opacity:.35;background:radial-gradient(ellipse 70% 50% at 78% 18%, rgba(62,111,184,.55), rgba(62,111,184,0) 70%), repeating-linear-gradient(115deg, rgba(62,111,184,.10) 0 2px, rgba(62,111,184,0) 2px 26px)"></div>`;
+  if (f >= 640) {
+    card += `<div class="abs" style="left:40px;top:36px;font-family:${ANTON};font-size:84px;line-height:1;color:${C.paper};letter-spacing:.005em;white-space:nowrap">ALLOY DEMO: BIG TECH</div>`;
+    card += `<div class="abs" style="left:42px;top:134px;font-family:${INTER};font-weight:500;font-size:28px;color:${C.i600}">aDEMO</div>`;
+  }
+  card += `</div>`;
+  let html = card;
+  CHIPS.forEach((c, i) => {
+    const fs = 570 + i * 10;
+    const p = easeInOut(lin(f, fs, fs + 10));
+    const [sx, sy, sr] = CHIP_START[i];
+    const ex = 136, ey = CHIP_ROW_Y[i];
+    const cx = (sx + ex) / 2 + (i % 2 ? 160 : -160), cy = (sy + ey) / 2;   // arc control point
+    const x = (1 - p) * (1 - p) * sx + 2 * (1 - p) * p * cx + p * p * ex;
+    const y = (1 - p) * (1 - p) * sy + 2 * (1 - p) * p * cy + p * p * ey;
+    html += chip(c, x, y, sr * (1 - p), i === 0 ? '0xef' : '');
+  });
+  if (f >= 660) {
+    const dotOn = (f - 660) % 20 < 10;
+    html += `<div class="abs" style="left:${CX}px;top:1250px;transform:translate(-50%,-50%);display:flex;align-items:center;gap:18px;background:${C.i900};border:1px solid ${C.i800};border-radius:999px;padding:16px 34px;white-space:nowrap">
+      <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${C.acc};opacity:${dotOn ? 1 : 0.35}"></span>
+      <span style="font-family:${INTER};font-weight:600;font-size:40px;line-height:1;color:${C.paper}">LIVE · TESTNET</span></div>`;
+  }
+  if (f >= 680) {
+    const c = `$ cast call ${BASKET_SHORT} "name()(string)"`;
+    const c2 = '  --rpc-url …sepolia.base.org';
+    const tot = c.length + c2.length, n = Math.ceil(tot * lin(f + 1, 680, 685));
+    html += termLine(c, 1356, {n: Math.min(n, c.length)});
+    if (n > c.length) html += termLine(c2, 1408, {n: n - c.length});
+    if (f >= 690) html += termLine('"Alloy Demo: Big Tech"', 1460, {color: C.paper, w: 600});
+  }
+  return html;
+}
+function S8cam(f) { return {s: mix(1, 1.02, lin(f, 566, 720))}; }
+
+// ---------------------------------------------------------------- S10 bust of bytes
+let BUST = null;
+function buildBust() {
+  const cw = 270, ch = 480, cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+  const g = cv.getContext('2d'); g.fillStyle = '#fff';
+  const p = new Path2D('M120 62 C165 55 205 75 214 112 L222 128 C228 142 236 154 246 166 L226 174 C228 178 230 184 226 190 C228 196 224 202 220 206 C226 216 222 232 206 238 C190 244 176 246 170 252 L176 300 C205 318 238 350 244 404 L36 404 C38 370 60 330 108 300 L112 262 C72 240 50 200 52 160 C50 105 80 66 120 62 Z');
+  g.fill(p);
+  for (const [x, y, r] of [[66, 116, 14], [80, 90, 15], [104, 72, 14], [132, 63, 13], [158, 63, 11], [56, 144, 12], [62, 172, 10]]) { g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); }
+  g.fillRect(70, 410, 160, 20); g.fillRect(56, 432, 188, 28);
+  const d = g.getImageData(0, 0, cw, ch).data, inside = (x, y) => x >= 0 && y >= 0 && x < cw && y < ch && d[(y * cw + x) * 4 + 3] > 128;
+  const edge = [], interior = [];
+  for (let y = 0; y < ch; y += 2) for (let x = 0; x < cw; x += 2) {
+    if (!inside(x, y)) continue;
+    (inside(x - 3, y) && inside(x + 3, y) && inside(x, y - 3) && inside(x, y + 3) ? interior : edge).push([x, y]);
+  }
+  const R = mulberry(777), pts = [];
+  const NE = 1500, NI = 900;
+  for (let i = 0; i < NE; i++) pts.push(edge[Math.floor(R() * edge.length)]);
+  for (let i = 0; i < NI; i++) pts.push(interior[Math.floor(R() * interior.length)]);
+  const X0 = CX - 270, Y0 = 860 - 480;
+  BUST = pts.map(([bx, by], i) => ({
+    tx: X0 + bx * 2 + (R() - 0.5) * 2, ty: Y0 + by * 2 + (R() - 0.5) * 2,
+    sx: CARD.x + R() * CARD.w, sy: CARD.y + R() * CARD.h,
+    ch: '0xef'[Math.floor(R() * 4)], size: 13 + Math.floor(R() * 8), op: 0.3 + R() * 0.4,
+    visor: by >= 118 && by <= 152 && bx > 60,
+  }));
+}
+function bustPositions(f) {
+  if (!BUST) buildBust();
+  const k = 120, c = 18, dt = 1 / 30, steps = Math.min(f, 800) - 720;
+  return BUST.map((q, i) => {
+    let x = q.sx, y = q.sy, vx = 0, vy = 0;
+    for (let s = 0; s < steps; s++) {
+      vx += (k * (q.tx - x) - c * vx) * dt; vy += (k * (q.ty - y) - c * vy) * dt; x += vx * dt; y += vy * dt;
+    }
+    const jj = Math.floor(f / 3);
+    x += (hash(i, jj) - 0.5) * 2; y += (hash(i + 99991, jj) - 0.5) * 2;
+    return [x, y];
+  });
+}
+function drawParticles(f) {
+  const cv = document.getElementById('parts'), g = cv.getContext('2d');
+  g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 1080, 1920);
+  if (f < 720 || f > 812) { cv.style.display = 'none'; return; }
+  cv.style.display = 'block';
+  // camera (match world cam)
+  let s = 1, r = 0;
+  if (f >= 760 && f < 800) { s = mix(1, 1.02, lin(f, 760, 800)); r = mix(0, 0.6, lin(f, 760, 800)); }
+  if (f >= 800) { s = 1.02; r = 0.6; }
+  g.translate(510, 890); g.rotate(r * Math.PI / 180); g.scale(s, s); g.translate(-510, -890);
+  const pos = bustPositions(f);
+  const explode = f >= 800 ? (f - 800) : -1;
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  BUST.forEach((q, i) => {
+    let [x, y] = pos[i], op = q.op;
+    if (explode >= 0) { const m = 0.22 * explode; x += (x - 510) * m; y += (y - 860) * m; op *= 1 - explode / 12; }
+    if (op <= 0) return;
+    g.globalAlpha = q.visor ? 0.9 * (explode >= 0 ? 1 - explode / 12 : 1) : op;
+    g.fillStyle = q.visor ? C.acc : C.paper;
+    g.font = `400 ${q.size}px 'JetBrains Mono'`;
+    g.fillText(q.ch, x, y);
+  });
+  g.globalAlpha = 1;
+  if (f >= 770 && f <= 785) {
+    // visor glint: a 2px paper line sweeping across the eye band
+    const X0 = CX - 270, Y0 = 860 - 480;
+    const gx = X0 + mix(60, 250, (f - 770) / 15) * 2;
+    g.fillStyle = C.paper; g.globalAlpha = 0.9;
+    g.fillRect(gx, Y0 + 118 * 2, 2, 34 * 2);
+    g.globalAlpha = 1;
+  }
+}
+
+// ---------------------------------------------------------------- S11 tagline
+function S11core(f, withBrand = true) {
+  let h = '';
+  const words = [['STORIES,', 800, 700], ['NOT', 820, 880], ['SYMBOLS.', 840, 1060]];
+  for (const [w, fw, y] of words) {
+    if (f < fw) continue;
+    const sc = f - fw < 3 ? mix(1.06, 1, (f - fw) / 3) : 1;
+    if (w === 'SYMBOLS.' && f === 840) {
+      h += T(w, {y, font: ANTON, w: 400, size: 190, lh: 0.9, ls: 0.005, scale: sc, color: C.acc, tx: 6, op: 0.6});
+      h += T(w, {y, font: ANTON, w: 400, size: 190, lh: 0.9, ls: 0.005, scale: sc, color: C.paper, tx: -6, op: 0.6});
+    }
+    h += T(w, {y, font: ANTON, w: 400, size: 190, lh: 0.9, ls: 0.005, scale: sc});
+  }
+  if (f >= 860) h += `<div class="abs" style="left:${CX - 150}px;top:1188px;width:300px;height:4px;background:${C.brand}"></div>`;
+  if (f >= 860 && withBrand) h += T('Alloy · build log 01', {y: 1240, size: 44, w: 600, color: C.gray});
+  return h;
+}
+function S11(f) {
+  let tx = 0, ty = 0;
+  for (const fw of [800, 820, 840]) { const sh = shake(f, fw, fw + 6, 5, 0, fw); tx += sh.tx; ty += sh.ty; }
+  return wrapCam(S11core(f), {s: mix(1, 1.02, lin(f, 800, 880)), tx, ty});
+}
+
+// ---------------------------------------------------------------- S12 outro → loop
+function S12(f) {
+  if (f < 900) {
+    const p = easeOut(lin(f, 880, 888));
+    const block = `<div class="abs" style="inset:0;transform-origin:510px 880px;transform:translateY(${-260 * p}px) scale(${mix(1, 0.55, p)})">${S11core(879, false)}</div>`;
+    return wrapCam(block + T('Testnet link in replies.', {y: 1320, size: 40, w: 500, color: C.gray}), {s: 1.02});
+  }
+  const n = f < 904 ? 0 : Math.min(CMD0.length, f - 904 + 1);
+  const curOn = f < 927 ? true : Math.floor((f - 927) / 10) % 2 === 0;
+  let html = T(KICKER, {y: 520, size: 52, w: 600});
+  html += `<div class="abs" style="inset:0;transform-origin:510px 875px">` +
+    T(cmdHTML(CMD0, n, 40, curOn), {y: 640, font: MONO, w: 400, size: 40, color: C.gray, extra: `text-align:left;left:${CX - CMD0.length * 12}px;width:auto;transform-origin:0 50%;`}) + `</div>`;
+  return wrapCam(html, {});
+}
+
+// ---------------------------------------------------------------- chyron, grain
+function chyron(f) {
+  if (f >= 310 && f < 320) return '';
+  const on = f % 80 < 10;
+  return `<div class="abs" style="left:36px;top:163px;width:10px;height:10px;background:${C.acc};opacity:${on ? 1 : 0}"></div>`
+    + `<div class="abs" style="left:60px;top:168px;transform:translateY(-50%);font-family:${INTER};font-weight:600;font-size:36px;line-height:1;letter-spacing:.08em;color:${C.gray};white-space:nowrap">BUILD LOG 01</div>`;
+}
+const grainCv = document.getElementById('grain'), gctx = grainCv.getContext('2d');
+const gimg = gctx.createImageData(1080, 1920);
+function grain(f) {
+  if (f >= 310 && f < 320) { grainCv.style.display = 'none'; return; }
+  grainCv.style.display = 'block';
+  const R = mulberry(90000 + f), d = gimg.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const n = R() * 2 - 1;
+    const v = n > 0 ? 255 : 0;
+    d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = Math.abs(n) * 0.04 * 255;
+  }
+  gctx.putImageData(gimg, 0, 0);
+}
+
+// ---------------------------------------------------------------- frame dispatcher
+function world(f) {
+  if (f < 80) return S1(f);
+  if (f < 160) return S2(f);
+  if (f < 240) return S3(f);
+  if (f < 310) return S4(f);
+  if (f < 320) return '';                                 // smash to black
+  if (f < 400) return S5(f);
+  if (f < 480) return S6(f);
+  if (f < 560) { const o = S7(f); return wrapCam(o.html, o.cam); }
+  if (f < 566) {
+    // the only whip: S7 out left, S8 in from the right, with ghosts
+    const p = easeInOut((f - 559) / 6);
+    const s7 = S7(559), out = s7.html, inn = S8core(f);
+    let h = '';
+    for (let k = 6; k >= 1; k--) {
+      const pk = easeInOut(clamp((f - 559) / 6 - k * 0.035));
+      h += `<div class="abs" style="inset:0;opacity:.12;transform:translateX(${-1080 * pk}px)">${wrapCam(out, s7.cam)}</div>`;
+      h += `<div class="abs" style="inset:0;opacity:.12;transform:translateX(${1080 - 1080 * pk}px)">${wrapCam(inn, S8cam(566))}</div>`;
+    }
+    h += `<div class="abs" style="inset:0;transform:translateX(${-1080 * p}px)">${wrapCam(out, s7.cam)}</div>`;
+    h += `<div class="abs" style="inset:0;transform:translateX(${1080 - 1080 * p}px)">${wrapCam(inn, S8cam(566))}</div>`;
+    return h;
+  }
+  if (f < 720) return wrapCam(S8core(f), S8cam(f));
+  if (f < 800) return '';                                  // particles only
+  if (f < 880) return S11(f);
+  return S12(f);
+}
+
+window.renderAt = function (t) {
+  const f = Math.max(0, Math.min(959, Math.round(t * 30)));
+  document.getElementById('world').innerHTML = world(f);
+  document.getElementById('chyron').innerHTML = chyron(f);
+  document.getElementById('vig').style.display = (f >= 310 && f < 320) ? 'none' : 'block';
+  drawParticles(f);
+  grain(f);
+  window.__frame = f;
+};
+window.renderAt(0);
+</script>
+</body>
+</html>

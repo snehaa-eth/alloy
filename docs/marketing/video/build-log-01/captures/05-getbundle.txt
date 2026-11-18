@@ -1,0 +1,15 @@
+$ cast call 0x60B0E5813dF4D7C5e602f78743c73CC90A63d36c "getBundle()(address[],uint256[])" --rpc-url https://sepolia.base.org
+[0xB200000000000000000000C9F680261469C1fdC4, 0xB2000000000000000000009A12E065827c618897, 0xB2000000000000000000003b1A4D4e4d56C3b39a]
+[18962564 [1.896e7], 7959618 [7.959e6], 10591030 [1.059e7]]
+$ cast call 0xB200000000000000000000C9F680261469C1fdC4 "symbol()(string)" --rpc-url https://sepolia.base.org
+"tGOOGLc"
+$ cast code 0xB200000000000000000000C9F680261469C1fdC4 --rpc-url https://sepolia.base.org
+0xef
+$ cast call 0xB2000000000000000000009A12E065827c618897 "symbol()(string)" --rpc-url https://sepolia.base.org
+"tMSFTc"
+$ cast code 0xB2000000000000000000009A12E065827c618897 --rpc-url https://sepolia.base.org
+0xef
+$ cast call 0xB2000000000000000000003b1A4D4e4d56C3b39a "symbol()(string)" --rpc-url https://sepolia.base.org
+"tTSLAc"
+$ cast code 0xB2000000000000000000003b1A4D4e4d56C3b39a --rpc-url https://sepolia.base.org
+0xef
