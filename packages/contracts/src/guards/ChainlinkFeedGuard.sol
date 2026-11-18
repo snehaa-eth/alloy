@@ -3,15 +3,11 @@ pragma solidity 0.8.30;
 
 import {FeedGuardBase} from "./FeedGuardBase.sol";
 import {IAggregatorV3} from "../interfaces/IAggregatorV3.sol";
-
-/// @notice Chainlink pause registry. UNVERIFIED: the exact function name on
-///         0x3f3E8cf41cdd3b1D118c16471aB0113DfDDd5CaD must be confirmed on a Base fork before mainnet
-///         (ARCHITECTURE §1). If it differs, deploy a tiny shim implementing this interface.
-interface IFeedPauseRegistry {
-    function isPaused(address feed) external view returns (bool);
-}
+import {IFeedPauseRegistry} from "../interfaces/IFeedPauseRegistry.sol";
 
 /// @notice Mainnet guard: base checks + Chainlink pause registry + L2 sequencer-uptime feed with grace period.
+/// @dev Multiplier check is always STRICT: verified on Base mainnet (NVDAc) that ERC-8056 `effectiveAt()` exists,
+///      so a token that cannot answer it fails closed.
 contract ChainlinkFeedGuard is FeedGuardBase {
     error SequencerDown();
     error SequencerGracePeriod();
@@ -25,9 +21,8 @@ contract ChainlinkFeedGuard is FeedGuardBase {
         address sequencerFeed_,
         uint256 gracePeriod_,
         uint256 maxAge_,
-        uint256 multiplierWindow_,
-        bool strictMultiplier_
-    ) FeedGuardBase(maxAge_, multiplierWindow_, strictMultiplier_) {
+        uint256 multiplierWindow_
+    ) FeedGuardBase(maxAge_, multiplierWindow_, true) {
         pauseRegistry = pauseRegistry_;
         sequencerFeed = sequencerFeed_;
         gracePeriod = gracePeriod_;
@@ -42,6 +37,6 @@ contract ChainlinkFeedGuard is FeedGuardBase {
 
     function _isPaused(address feed) internal view override returns (bool) {
         if (pauseRegistry == address(0)) return false;
-        return IFeedPauseRegistry(pauseRegistry).isPaused(feed);
+        return IFeedPauseRegistry(pauseRegistry).isOraclePaused(feed);
     }
 }

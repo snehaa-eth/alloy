@@ -15,7 +15,7 @@ import {SwapLib} from "./libraries/SwapLib.sol";
 /// @title Basket
 /// @notice Shared vault of B20 stock tokens with an ERC-20 receipt (the basket token). Deployed as an EIP-1167
 ///         clone by `BasketFactory`. Issue/redeem are in-kind and oracle-free (except the TVL-cap read on issue).
-///         Rebalances are executed by the creator or keeper, encoded by the vault itself through allow-listed
+///         Rebalances are executed ONLY by the protocol keeper (creators can only propose recipes), encoded by the vault itself through allow-listed
 ///         adapters, and must pass oracle-guarded loss caps and the band rule.
 /// @dev Accounting is in RAW B20 balances; feeds already report price x multiplier, so multiplier changes never
 ///      touch share math. `unitsPerShare` is never stored: every amount is derived from live balances.
@@ -45,7 +45,7 @@ contract Basket is IBasket, ERC20, ReentrancyGuardTransient {
     error NotFactory();
     error AlreadyInitialized();
     error NotCreator();
-    error NotCreatorOrKeeper();
+    error NotKeeper();
     error InvalidParams();
     error InvalidWeights();
     error ZeroAmount();
@@ -115,8 +115,9 @@ contract Basket is IBasket, ERC20, ReentrancyGuardTransient {
         _;
     }
 
-    modifier onlyCreatorOrKeeper() {
-        if (msg.sender != creator && msg.sender != IBasketFactory(factory).keeper()) revert NotCreatorOrKeeper();
+    /// @dev Only the protocol keeper (rotatable by the factory owner) executes rebalances / removals.
+    modifier onlyKeeper() {
+        if (msg.sender != IBasketFactory(factory).keeper()) revert NotKeeper();
         _;
     }
 
@@ -317,7 +318,7 @@ contract Basket is IBasket, ERC20, ReentrancyGuardTransient {
 
     // ------------------------------------------------------------------ rebalance
     /// @inheritdoc IBasket
-    function executeRebalance(Trade[] calldata trades) external nonReentrant onlyCreatorOrKeeper {
+    function executeRebalance(Trade[] calldata trades) external nonReentrant onlyKeeper {
         IBasketFactory f = IBasketFactory(factory);
         if (f.paused()) revert ProtocolPaused();
         if (lastRebalance != 0 && block.timestamp < uint256(lastRebalance) + REBALANCE_COOLDOWN) {
@@ -427,7 +428,7 @@ contract Basket is IBasket, ERC20, ReentrancyGuardTransient {
     // ------------------------------------------------------------------ remove component
     /// @inheritdoc IBasket
     /// @dev Only when target == 0 and value < $1. Dust goes to the protocol treasury.
-    function removeComponent(uint8 i) external nonReentrant onlyCreatorOrKeeper {
+    function removeComponent(uint8 i) external nonReentrant onlyKeeper {
         uint256 n = _comps.length;
         if (i >= n || n == 1 || _targetBps[i] != 0 || _pending.executableAt != 0) revert CannotRemove();
         address token = _comps[i];

@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alloy UX Map</title>
+<style>
+:root{
+  --bg:#f7f7f5; --panel:#ffffff; --ink:#1d1d1f; --mut:#62626a; --line:#d6d6d2; --accent:#3a3a40;
+  --happy:#ffffff; --edge:#f3f3f0; --warnbg:#fbf6e9;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#141416; --panel:#1c1c1f; --ink:#ececea; --mut:#a0a0a6; --line:#3a3a40; --accent:#d0d0d4; --edge:#232327; --warnbg:#2a2618; }
+}
+:root[data-theme="dark"]{ --bg:#141416; --panel:#1c1c1f; --ink:#ececea; --mut:#a0a0a6; --line:#3a3a40; --accent:#d0d0d4; --edge:#232327; --warnbg:#2a2618; }
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{padding:28px 16px 12px;max-width:1200px;margin:0 auto}
+h1{font-size:28px;margin:0 0 4px;letter-spacing:-.3px}
+header p{color:var(--mut);margin:0 0 14px;max-width:820px}
+nav.idx{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+nav.idx ul{list-style:none;margin:0 auto;padding:10px 16px;display:flex;gap:6px;flex-wrap:wrap;max-width:1200px}
+nav.idx a{display:inline-block;padding:4px 10px;border:1px solid var(--line);border-radius:999px;color:var(--ink);text-decoration:none;font-size:13px;background:var(--panel)}
+nav.idx a:hover{border-color:var(--accent)}
+main{max-width:1200px;margin:0 auto;padding:0 16px 60px}
+section{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin:22px 0;scroll-margin-top:64px}
+section h2{margin:0 0 4px;font-size:20px}
+section .lede{color:var(--mut);margin:0 0 12px;font-size:14px;max-width:860px}
+.diagram{overflow-x:auto;padding:8px 0}
+.diagram .mermaid{min-width:560px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--mut);margin:6px 0 0}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:18px;height:12px;border:1.5px solid var(--accent);border-radius:3px;display:inline-block;background:var(--happy)}
+.sw.e{border-style:dashed;background:var(--edge)}
+.sw.w{background:var(--warnbg)}
+.sw.d{transform:rotate(45deg);width:11px;height:11px}
+table{border-collapse:collapse;width:100%;font-size:13px;margin-top:8px}
+th,td{border-bottom:1px solid var(--line);text-align:left;padding:6px 8px;vertical-align:top}
+th{color:var(--mut);font-weight:600}
+.tw{overflow-x:auto}
+.entry{font-size:13px;color:var(--mut);margin:0 0 12px}
+.node{display:inline-block;border:1.5px solid var(--accent);border-radius:999px;padding:2px 10px;color:var(--ink)}
+.tree{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tree .col{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg)}
+.tree .tab{font-weight:700;border:1.5px solid var(--accent);border-radius:6px;padding:4px 8px;display:inline-block;margin-bottom:6px}
+.tree .tab.cond{border-style:dashed}
+.tree ul{margin:0;padding-left:16px;font-size:13px}
+.tree li{margin:3px 0}
+.tree li.sh{list-style:none;margin-left:-14px;border:1px dashed var(--accent);border-radius:6px;padding:2px 6px}
+.bar{display:inline-block;height:10px;background:var(--accent);border-radius:3px;vertical-align:middle;max-width:100px}
+.jt td:first-child{white-space:nowrap}
+@media (max-width:900px){ .tree{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:520px){ .tree{grid-template-columns:1fr} }
+footer{color:var(--mut);font-size:12px;max-width:1200px;margin:0 auto;padding:0 16px 40px}
+#errs{color:#b00020;font-size:13px}
+@media (max-width:640px){ h1{font-size:22px} section{padding:14px} }
+</style>
+</head>
+<body>
+<header>
+  <h1>Alloy UX map</h1>
+  <p>Sitemap and main flows as diagrams. Boxes are steps, diamonds are decisions, dashed boxes are edge or failure states, amber boxes are market/system conditions. Neutral styling on purpose: this is a map, not UI. The full reasoning, states tables and sources are in <code>UX_MAP.md</code>.</p>
+  <div class="legend">
+    <span><i class="sw"></i>Step / screen</span>
+    <span><i class="sw d"></i>Decision</span>
+    <span><i class="sw e"></i>Edge / failure state</span>
+    <span><i class="sw w"></i>Market / system condition</span>
+  </div>
+  <div id="errs" role="status"></div>
+</header>
+<nav class="idx" aria-label="Index">
+  <ul>
+    <li><a href="#principles">0 Principles</a></li>
+    <li><a href="#sitemap">1 Sitemap</a></li>
+    <li><a href="#journey">2 Follower journey</a></li>
+    <li><a href="#signup">3 Sign-up</a></li>
+    <li><a href="#funding">4 Funding</a></li>
+    <li><a href="#buy">5 Buy</a></li>
+    <li><a href="#exit">6 Exit: sell / stocks / claim</a></li>
+    <li><a href="#notice">7 Recipe-change notice</a></li>
+    <li><a href="#trim">8 Drift trim + conditions</a></li>
+    <li><a href="#create">9 Create basket</a></li>
+    <li><a href="#propose">10 Propose / cancel</a></li>
+    <li><a href="#judge">11 Judge 2-min path</a></li>
+    <li><a href="#notify">12 Notification map</a></li>
+  </ul>
+</nav>
+<main>
+
+<section id="principles">
+  <h2>0 · Principles: say less, colour with purpose</h2>
+  <p class="lede">One idea per screen. Numbers and visuals over sentences. Explanations behind a tap. Max one helper line (≤ 8 words) per block; labels 1–3 words.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Screen</th><th>Word budget</th><th>Meaning carried by</th></tr></thead>
+    <tbody>
+      <tr><td>Basket card</td><td>≤ 12</td><td>Cover colour, 3 stock logos, PnL pair, avatar + stake</td></tr>
+      <tr><td>Basket page above the fold</td><td>≤ 25</td><td>Price, chart, PnL pair, stake chip</td></tr>
+      <tr><td>Buy sheet</td><td>≤ 20</td><td>Amount, presets, logo row with $, fee chip</td></tr>
+      <tr><td>Exit sheet</td><td>≤ 20</td><td>USDC / Stocks toggle, slider, result number</td></tr>
+      <tr><td>Success</td><td>≤ 10</td><td>Check in basket colour, amount, logo row</td></tr>
+      <tr><td>Recipe-change sheet</td><td>≤ 30</td><td>Countdown, before→after bars, creator's quote</td></tr>
+      <tr><td>Activity item / push</td><td>≤ 12 / ≤ 15</td><td>Type icon, before→after chips, $ cost</td></tr>
+      <tr><td>Add money route</td><td>≤ 6</td><td>Exchange and method logos (UPI, PIX, QRIS)</td></tr>
+      <tr><td>Empty / error state</td><td>≤ 10–12 + 1 action</td><td>Accent illustration or icon, one number</td></tr>
+      <tr><td>Create step</td><td>≤ 15</td><td>Live share-card preview, weight bar</td></tr>
+    </tbody>
+  </table></div>
+  <div class="tw"><table>
+    <thead><tr><th>Colour moment (palette is the visual team's)</th><th>Where</th></tr></thead>
+    <tbody>
+      <tr><td>Basket identity colour + cover art</td><td>Card, page header, share/OG card, Portfolio row, Activity</td></tr>
+      <tr><td>Stock logos instead of ticker text</td><td>Cards, What's inside, Buy, Withdraw</td></tr>
+      <tr><td>Composition donut / bars in stock colours</td><td>Basket page, Create weights, Change before→after</td></tr>
+      <tr><td>Two-hue follower vs creator chart lines; gain/loss only on numbers</td><td>Charts, PnL pair</td></tr>
+      <tr><td>Success colour moment (no confetti)</td><td>Buy, Create, Claim</td></tr>
+      <tr><td>Status signals: market pill, countdown, held-for-you, test ribbon</td><td>Global</td></tr>
+      <tr><td>Provider / exchange / payment-method logos</td><td>Add money</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="sitemap">
+  <h2>1 · Sitemap and nav model</h2>
+  <p class="lede">Four tabs: Explore, Portfolio, Activity, Me. Studio appears only after you create a basket. Sheets (dashed) open over the current screen and return you to it. Logged-out visitors land on Landing or a shared basket page; judges enter at <code>/try</code>.</p>
+  <div class="entry"><span class="node">Landing (web, logged out)</span> → Explore &nbsp;·&nbsp; <span class="node">Shared link /b/:addr</span> → Basket page &nbsp;·&nbsp; <span class="node">/try (testnet judge path)</span> → demo Basket page</div>
+  <div class="tree">
+    <div class="col"><div class="tab">Explore</div>
+      <ul>
+        <li>Search: baskets, stocks, creators</li>
+        <li>Theme chips · Sort</li>
+        <li><b>Basket page</b> /b/:addr
+          <ul>
+            <li>Hero: price, chart, range</li>
+            <li>Did followers win? (follower vs creator PnL)</li>
+            <li>Skin in the game (creator stake)</li>
+            <li>Pending change card (if any)</li>
+            <li>What's inside: target vs now</li>
+            <li>How it's looked after (mode)</li>
+            <li>What changed and why (feed)</li>
+            <li>Details: contract, bands, feeds, cap</li>
+            <li class="sh">Buy sheet → Add money (if short)</li>
+            <li class="sh">Exit sheet: Get USDC | Get the stocks</li>
+            <li class="sh">Change sheet: keep / sell / stocks</li>
+            <li class="sh">Share sheet</li>
+          </ul></li>
+        <li>Creator page /c/:addr</li>
+        <li>Stock page (light)</li>
+        <li>"Build a basket" in header</li>
+      </ul></div>
+    <div class="col"><div class="tab">Portfolio</div>
+      <ul>
+        <li>Total (USD, ≈ local) + since-joined</li>
+        <li>Baskets → Basket page</li>
+        <li>Stocks (withdrawn): Sell · Send</li>
+        <li>Cash (USDC): Add · Send out</li>
+        <li>Held for you (owed) → Claim</li>
+        <li>Row badges: Changing in 14h</li>
+      </ul>
+      <div class="tab" style="margin-top:14px">Activity</div>
+      <ul>
+        <li><b>Needs you</b>: open change notices, claims</li>
+        <li><b>Updates</b>: trims, changes executed or cancelled, market notes</li>
+        <li><b>Receipts</b>: buy, sell, withdraw, claim, with tx links</li>
+      </ul></div>
+    <div class="col"><div class="tab">Me</div>
+      <ul>
+        <li class="sh">Add money: faucet (test) · send from exchange · local money · other ways</li>
+        <li>Account address (Base) · Send out</li>
+        <li>Notifications: email, push, Telegram</li>
+        <li>Display currency</li>
+        <li>Build a basket → Create flow</li>
+        <li>Help · How it works · Fees · Legal · Not for US persons</li>
+        <li>Sign out</li>
+      </ul></div>
+    <div class="col"><div class="tab cond">Studio (creators only)</div>
+      <ul>
+        <li>Overview: AUM, fees earned, followers</li>
+        <li>Basket → Propose change → Pending (countdown) → Cancel with reason</li>
+        <li>Suggestions (AI, labelled)</li>
+        <li>Share kit</li>
+      </ul>
+      <div class="tab" style="margin-top:14px">Full-screen flows</div>
+      <ul>
+        <li>Create: Idea → Stocks → Weights → Strategy &amp; fee → Seed → Share</li>
+        <li>/try judge tour (testnet)</li>
+      </ul></div>
+  </div>
+  <p class="lede" style="margin-top:12px">Global on every screen: market status pill (local time) · testnet ribbon "Test mode · play money" · one pending-action banner (change &lt; 24h, claim, cap/paused).</p>
+</section>
+
+<section id="journey">
+  <h2>2 · First-time follower journey (feeling and drop-off)</h2>
+  <p class="lede">Asha, first-time investor in India. Feeling per stage (1 = anxious, 5 = confident). Funding is the cliff; full doing / thinking / feeling / pain / opportunity tables for all four journeys are in UX_MAP.md §4.</p>
+  <div class="tw"><table class="jt">
+    <thead><tr><th>Stage</th><th>Doing</th><th style="min-width:140px">Feeling</th><th>Main pain</th></tr></thead>
+    <tbody><tr><td>1. Discover</td><td>Taps creator's X link</td><td><span class="bar" style="width:60%"></span> <small>3/5</small></td><td>Slow page, crypto look</td></tr><tr><td>2. Understand</td><td>Reads followers vs creator PnL, stake</td><td><span class="bar" style="width:80%"></span> <small>4/5</small></td><td>Jargon, USD-only</td></tr><tr><td>3. Decide</td><td>Taps Buy ($5)</td><td><span class="bar" style="width:80%"></span> <small>4/5</small></td><td>Tokenized vs shares</td></tr><tr><td>4. Sign up</td><td>Email code, not-US check</td><td><span class="bar" style="width:60%"></span> <small>3/5</small></td><td>SMS delays, in-app browser</td></tr><tr><td>5. Fund</td><td>Needs USDC on Base</td><td><span class="bar" style="width:20%"></span> <small>1/5</small></td><td>HIGHEST DROP-OFF: no UPI path, wrong network</td></tr><tr><td>6. Wait</td><td>USDC on its way</td><td><span class="bar" style="width:40%"></span> <small>2/5</small></td><td>Exchange delays</td></tr><tr><td>7. Buy</td><td>Confirms $5</td><td><span class="bar" style="width:60%"></span> <small>3/5</small></td><td>Quote moves, slippage</td></tr><tr><td>8. Own</td><td>Sees slice of 5 companies</td><td><span class="bar" style="width:100%"></span> <small>5/5</small></td><td>Token units mean nothing</td></tr><tr><td>9. First trim</td><td>Reads why NVDA was trimmed</td><td><span class="bar" style="width:80%"></span> <small>4/5</small></td><td>'Did I lose money?'</td></tr><tr><td>10. Notice</td><td>24h recipe change</td><td><span class="bar" style="width:60%"></span> <small>3/5</small></td><td>Pressure, time zones</td></tr><tr><td>11. Sell</td><td>Sells 30% to USDC</td><td><span class="bar" style="width:80%"></span> <small>4/5</small></td><td>Off-ramp to INR is outside Alloy</td></tr></tbody>
+  </table></div>
+</section>
+
+<section id="signup">
+  <h2>3 · Sign-up / login</h2>
+  <p class="lede">Triggered only by a money action. Returns to the exact action that triggered it.</p>
+  <div class="diagram"><pre class="mermaid">
+flowchart TD
+  T(["Money action: Buy, Create, Add money, Watch"]) --> S{"Signed in?"}
+  S -- yes --> AT{"Attested not-US?"}
+  S -- no --> IAB{"In-app browser? (X, IG, Telegram)"}
+  IAB -- yes --> OB["Hide Google; offer Open in Chrome/Safari"] --> M
+  IAB -- no --> M["Make an account: email (default), phone, Google, passkey"]
+  M --> OTP["Enter code"]
+  OTP --> OK{"Code OK?"}
+  OK -- no --> E1["Wrong or expired: keep field, resend after 30s"]:::edge --> OTP
+  OK -- "no SMS after 45s" --> E2["Offer email instead"]:::edge --> M
+  OK -- yes --> AT
+  AT -- no --> ATT["One quick check: not a US person, allowed where I live"]
+  ATT --> D{"Accepts?"}
+  D -- no --> E3["Browse only; no funding or buying"]:::edge
+  D -- yes --> R(["Resume original action with state kept"])
+  AT -- yes --> R
+  M -. "Privy down" .-> E4["Sign-in is down; browsing still works"]:::edge
+  R -. "session expires later" .-> E5["Re-auth sheet over current screen, then resume"]:::edge
+  classDef edge fill:#f3f3f0,stroke:#3a3a40,stroke-dasharray:5 4,color:#1d1d1f;
+  </pre></div>
+</section>
+
+<section id="funding">
+  <h2>4 · Funding: testnet faucet vs mainnet routes</h2>
+  <p class="lede">Opened inline from Buy when short (keeps the amount), or from Portfolio/Me. Route A (send USDC on Base from an exchange) is primary on mainnet because on-ramp coverage for India and Nigeria is patchy.</p>
+  <div class="diagram"><pre class="mermaid">
+flowchart TD
+  A(["Add money: you need $X more"]) --> ENV{"Environment?"}
+  ENV -- "Base Sepolia (test)" --> F["Get 1,000 test dollars"]
+  F --> FR["Relayer calls dripTo(you): no gas for you"]
+  FR --> FQ{"Result"}
+  FQ -- ok --> DONE
+  FQ -- "already today" --> F1["Next refill in 7h; top-up path for judges"]:::edge
+  FQ -- "daily cap / relayer down" --> F2["Test money out; ops alert"]:::edge
+  ENV -- "Base mainnet" --> RT{"Pick a route (region-aware)"}
+  RT -- "A: Send from exchange or app" --> SA["Pick source: Binance, Coinbase, Bybit, OKX, wallet"]
+  SA --> SB["Asset USDC · Network BASE · address + QR · copy"]
+  SB --> W["Waiting for your USDC (live listener)"]
+  W --> WQ{"What arrived?"}
+  WQ -- "USDC on Base" --> DONE
+  WQ -- "USDT or ETH on Base" --> W1["We got USDT, not USDC: swap or instructions"]:::edge
+  WQ -- "nothing after 10 min" --> W2["Still waiting; leave and get notified"]:::edge
+  WQ -- "below needed" --> W3["Credited; add $Y more"]:::edge
+  SB -. "sent on wrong network" .-> W4["Not visible to us; recovery help article"]:::edge
+  RT -- "B: Buy with local money" --> OR["Country → providers that support it: UPI/IMPS, bank, PIX, QRIS, card"]
+  OR --> ORQ{"Provider available?"}
+  ORQ -- no --> O1["Say so plainly; offer A or C"]:::edge
+  ORQ -- yes --> OM["Show fee, minimum, KYC level before opening"]
+  OM --> OW["Provider widget (KYC in provider)"]
+  OW --> OQ{"Outcome"}
+  OQ -- paid --> W
+  OQ -- "KYC failed or pending" --> O2["That's the provider, not us; keep app usable"]:::edge
+  OQ -- "card declined" --> O3["Suggest local method or route A"]:::edge
+  RT -- "C: Other ways" --> P2P["P2P guidance link-out with safety checklist"]
+  DONE(["Balance updated → back to Buy with amount kept"])
+  classDef edge fill:#f3f3f0,stroke:#3a3a40,stroke-dasharray:5 4,color:#1d1d1f;
+  </pre></div>
+</section>
+
+<section id="buy">
+  <h2>5 · Buy</h2>
+  <p class="lede">One sheet is the review. Tap to confirm with the amount in the button. Simulate before any write so most failures never reach a signed transaction.</p>
+  <div class="diagram"><pre class="mermaid">
+flowchart TD
+  B0(["Buy on basket page"]) --> AU{"Signed in + attested?"}
+  AU -- no --> SU["Sign-up flow"] --> B1
+  AU -- yes --> B1["Buy sheet: keypad, presets $5 $25 $100 Max, fee in $ per month"]
+  B1 --> CAP{"Basket room left?"}
+  CAP -- "full" --> C1["Full for now ($5k beta cap): Watch / similar baskets"]:::edge
+  CAP -- "partial" --> C2["Clamp: only $640 left, buy $640?"]:::edge --> AM
+  CAP -- yes --> AM{"Amount ≥ $5 and ≤ balance?"}
+  AM -- "below $5" --> A1["Minimum is $5"]:::edge --> B1
+  AM -- "short" --> A2["You have $3.20: Add $1.80"] --> FUND["Add money"] --> B1
+  AM -- ok --> MK{"Market / system state"}
+  MK -- "closed" --> M1["Amber: prices wider until 8:00 PM · Remind me at open"]:::cond --> Q
+  MK -- "global pause" --> M2["New buys paused; sell and withdraw still work"]:::edge
+  MK -- "pending recipe change" --> M3["Inline: changes in 14h, see change"]:::cond --> Q
+  MK -- open --> Q["Quote: what you'll own per stock, impact, slippage"]
+  Q --> SIM{"Simulate"}
+  SIM -- "PolicyForbids" --> S1["One stock can't be bought right now; nothing sent"]:::edge
+  SIM -- ok --> CF["Confirm: Buy $25"]
+  CF --> TX{"Transaction"}
+  TX -- success --> OK(["You own a slice of 5 companies + receipt link → notification opt-in (first buy)"])
+  TX -- "slippage revert" --> X1["Prices moved over 0.5%; nothing spent; try again"]:::edge
+  TX -- "pending over 30s" --> X2["Still confirming; leave, we'll tell you"]:::edge --> OK
+  TX -- "unknown / RPC timeout" --> X3["Checking by tx hash; no second submit"]:::edge
+  TX -- "generic fail" --> X4["Didn't go through; your USDC is still there"]:::edge
+  classDef edge fill:#f3f3f0,stroke:#3a3a40,stroke-dasharray:5 4,color:#1d1d1f;
+  classDef cond fill:#fbf6e9,stroke:#3a3a40,color:#1d1d1f;
+  </pre></div>
+</section>
+
+<section id="exit">
+  <h2>6 · Exit: sell %, withdraw in-kind, claim owed</h2>
+  <p class="lede">One Exit sheet with two equal options. Withdraw in-kind can never be paused; a blocked stock transfer becomes "held for you", not "failed".</p>
+  <div class="diagram"><pre class="mermaid">
+flowchart TD
+  E0(["Sell on basket page / Portfolio row / change notice"]) --> E1["Exit sheet: slider 25 50 75 All"]
+  E1 --> MODE{"How do you want it?"}
+  MODE -- "Get USDC (default)" --> S1["≈ $37.92 USDC · you keep $88.48 · no exit fee"]
+  S1 --> SC{"Checks"}
+  SC -- "market closed" --> SM["Amber: wider prices; suggest Get the stocks"]:::cond --> SCF
+  SC -- "impact over 1%" --> SI["Warn: smaller amount or Get the stocks"]:::edge --> SCF
+  SC -- "dust left under $0.50" --> SD["Suggest Sell all"]:::edge --> SCF
+  SC -- ok --> SCF["Confirm: Sell 30%"]
+  SCF --> STX{"Tx"}
+  STX -- ok --> SOK(["Sold. $37.88 in your account · Send to exchange"])
+  STX -- "slippage" --> SX["Nothing was sold; try again"]:::edge
+  STX -- "component can't be swapped" --> SX2["Offer Get the stocks instead"]:::edge --> W1
+  MODE -- "Get the stocks" --> W1["You'll receive: 5 stock tokens with $ values · won't be rebalanced"]
+  W1 --> WCF["Confirm: Get the stocks (works 24/7, even when paused)"]
+  WCF --> WR{"Each token transfer"}
+  WR -- "all ok" --> WOK(["5 stock tokens in Portfolio > Stocks"])
+  WR -- "some blocked (B20 policy)" --> OW["4 of 5 came through; AMZNc is held for you"]:::edge
+  OW --> CL["Held for you row + Activity: Needs you"]
+  CL --> CLA["Claim"]
+  CLA --> CLQ{"Transfer now allowed?"}
+  CLQ -- yes --> CLOK(["Moved to Stocks"])
+  CLQ -- no --> CLN["Still can't send; kept for you, no expiry"]:::edge
+  WOK --> NX["Per token: Sell to USDC (stretch) · Send"]
+  classDef edge fill:#f3f3f0,stroke:#3a3a40,stroke-dasharray:5 4,color:#1d1d1f;
+  classDef cond fill:#fbf6e9,stroke:#3a3a40,color:#1d1d1f;
+  </pre></div>
+</section>
+
+<section id="notice">
+  <h2>7 · Recipe-change notice and the 24h window (follower)</h2>
+  <p class="lede">The one time Alloy interrupts holders. Doing nothing means staying in. Exits are equal-weight and one tap.</p>
+  <div class="diagram"><pre class="mermaid">
+flowchart TD
+  P(["Creator proposes: RecipeProposed (24h, or 10 min on demo baskets)"]) --> N["Notify holders + watchers: in-app Needs you, email, push/Telegram if on"]
+  N --> V["Change sheet: before/after, quoted reason, what moves for your $, est. cost, time in local zone"]
+  V --> CH{"Your choice"}
+  CH -- "Keep (or do nothing)" --> K["Stay in; reminders stop if chosen explicitly"]
+  CH -- "Sell" --> SL["Exit sheet, Get USDC, 100% prefilled"]
+  CH -- "Get the stocks" --> WD["Exit sheet, Get the stocks, 100% prefilled"]
+  K --> RM{"Chosen explicitly?"}
+  RM -- no --> R2["One reminder at T-2h"]
+  RM -- yes --> WAIT
+  R2 --> WAIT{"What happens next"}
+  WAIT -- "creator cancels" --> CN["Cancelled with reason; nothing changes"]:::edge
+  WAIT -- "time reached, market open, feeds healthy" --> EXE["Keeper executes; Rebalanced"]
+  WAIT -- "time reached, market closed or feed paused/stale" --> WT["Due, waiting for market or healthy prices; exits stay open"]:::cond --> EXE
+  EXE --> DN(["Done: cost $6.10 (0.14%); your $126 is on the new recipe"])
+  SL --> LFT(["You left before the change; no more notices"])
+  WD --> LFT
+  classDef edge fill:#f3f3f0,stroke:#3a3a40,stroke-dasharray:5 4,color:#1d1d1f;
+  classDef cond fill:#fbf6e9,stroke:#3a3a40,color:#1d1d1f;
+  </pre></div>
+</section>
+
+<section id="trim">
+  <h2>8 · Drift trim and market / feed conditions</h2>
+  <p class="lede">Trims are executed only by Alloy's keeper, never need user action, and are explained after the fact. Conditions below decide what still works.</p>
+  <div class="diagram"><pre class="mermaid">
+flowchart TD
+  K0(["Keeper loop every 60s"]) --> MD{"Basket mode"}
+  MD -- "Balanced" --> B1{"Any stock outside band (5 pts / 25%)?"}
+  MD -- "Let Winners Run" --> B2{"Any stock over 40% cap?"}
+  MD -- "Trend-aware" --> B3{"Outside band AND 2 closes below 50-day MA?"}
+  B1 -- no --> NONE["Nothing to do"]
+  B2 -- no --> NONE
+  B3 -- no --> NONE
+  B1 -- yes --> G
+  B2 -- yes --> G
+  B3 -- yes --> G{"Guards: market open, feeds fresh and unpaused, no split within a day, loss caps, 1 per day"}
+  G -- "all pass" --> T["Execute trim (chunked if large)"]
+  G -- "fail" --> DF["Deferred; Details shows: Rebalance waiting + reason"]:::cond
+  DF -- "over 24h" --> DN["One honest in-app note to holders"]:::edge
+  T --> FD["Feed item: Trimmed NVDA 41 to 40%. Reason. Cost $ for basket and for you"]
+  FD --> AC["Activity Updates + weekly digest; push off by default"]
+  T -- "partial" --> PT["Trimmed part way; more tomorrow"]:::edge
+  </pre></div>
+  <div class="tw"><table>
+    <thead><tr><th>Condition</th><th>Buy</th><th>Sell</th><th>Get the stocks</th><th>Rebalance</th><th>User sees</th></tr></thead>
+    <tbody>
+      <tr><td>Market open, feeds healthy</td><td>Yes</td><td>Yes</td><td>Yes</td><td>Yes</td><td>Open pill, closes 2:30 AM (local)</td></tr>
+      <tr><td>Market closed / holiday</td><td>Yes, warn</td><td>Yes, warn</td><td>Yes</td><td>Waits</td><td>Amber pill with local opening time; flat dashed chart</td></tr>
+      <tr><td>Feed stale (&gt;25h) or paused</td><td>Yes</td><td>Yes</td><td>Yes</td><td>Blocked</td><td>Details: rebalances paused for this stock's price source</td></tr>
+      <tr><td>Split / multiplier change within a day</td><td>Yes</td><td>Yes</td><td>Yes</td><td>Blocked</td><td>"TSLA split scheduled; rebalances wait"</td></tr>
+      <tr><td>Global pause</td><td>No</td><td>Yes</td><td>Yes</td><td>No</td><td>Banner: new buys paused</td></tr>
+      <tr><td>Base sequencer down</td><td colspan="4">Transactions can't land</td><td>"Base is having trouble. Your money is safe."</td></tr>
+      <tr><td>Our API / indexer down</td><td colspan="4">Chain reads for balances; quotes may be disabled</td><td>"Some numbers may be out of date (12 min)"</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="create">
+  <h2>9 · Create a basket (creator)</h2>
+  <p class="lede">Five steps, one idea per screen, sign-in deferred to the seed step so creators can design first.</p>
+  <div class="diagram"><pre class="mermaid">
+flowchart TD
+  C0(["Build a basket: landing, Explore header, empty search, Me"]) --> C1["1 Idea: name, ticker, thesis 280, story toggle"]
+  C1 --> C1q{"Story basket?"}
+  C1q -- yes --> C1s["Source + disclosure date required; auto Not affiliated"] --> C2
+  C1q -- no --> C2["2 Pick 2 to 10 stocks (explain short list)"]
+  C1 -. "ticker taken / impersonating name" .-> C1e["Inline guidance: name the source, not the person"]:::edge
+  C2 --> C3["3 Weights: typed %, split evenly, total 100"]
+  C3 -. "one stock over 40%" .-> C3w["Warn, don't block"]:::edge
+  C3 --> C4["4 Strategy: Balanced / Let Winners Run / Trend-aware · fee 1% fixed, you keep 80%"]
+  C4 --> C5["5 Seed at least $10 · summary · notice rule"]
+  C5 --> AU{"Signed in + attested + funded?"}
+  AU -- "not signed in" --> SU["Sign-up"] --> C5
+  AU -- "short" --> FU["Add money inline"] --> C5
+  AU -- yes --> TX{"Create tx: clone + init + seed"}
+  TX -- ok --> LV(["Live: share card · Share on X · copy link · go to basket"])
+  TX -- "seed slippage" --> TXe["Nothing created; try again"]:::edge
+  LV --> ST["Studio tab appears"]
+  classDef edge fill:#f3f3f0,stroke:#3a3a40,stroke-dasharray:5 4,color:#1d1d1f;
+  </pre></div>
+</section>
+
+<section id="propose">
+  <h2>10 · Propose and cancel a recipe change (creator)</h2>
+  <p class="lede">Creators only propose or cancel, always with a reason. Execution is Alloy's keeper's job.</p>
+  <div class="diagram"><pre class="mermaid">
+flowchart TD
+  P0(["Studio → basket → Propose a change (or AI suggestion → Review)"]) --> P1["Edit New weights"]
+  P1 --> P2["Reason, required, max 140 chars (becomes feed line, notice text, reasonHash)"]
+  P2 --> P3["Preview exactly what followers see: timing in their zones, est. cost"]
+  P3 -. "too big for one day" .-> P3w["May take 2 to 3 days at current liquidity"]:::edge
+  P3 -. "one already pending" .-> P3r["Replaces pending; followers get a new notice (confirm contract)"]:::edge
+  P3 --> P4["Send 24h notice: proposeRecipe"]
+  P4 --> P5["Pending card with countdown"]
+  P5 --> P6{"Before execution"}
+  P6 -- "Cancel" --> P7["Cancel reason required → RecipeCancelled → followers told once"]:::edge
+  P6 -- "time reached" --> P8{"Market open + feeds healthy?"}
+  P8 -- no --> P9["Due, waiting for market open"]:::cond --> P8
+  P8 -- yes --> P10(["Executed by keeper: cost, followers who stayed vs left"])
+  classDef edge fill:#f3f3f0,stroke:#3a3a40,stroke-dasharray:5 4,color:#1d1d1f;
+  classDef cond fill:#fbf6e9,stroke:#3a3a40,color:#1d1d1f;
+  </pre></div>
+</section>
+
+<section id="judge">
+  <h2>11 · Judge: the 2-minute path on Base Sepolia</h2>
+  <p class="lede">A dedicated route with automatic test money, a pre-seeded basket with history, an open 10-minute demo change, and a testnet-only Demo lab. Every step shows a basescan link.</p>
+  <div class="diagram"><pre class="mermaid">
+flowchart LR
+  J0(["0:00 /try · Test mode ribbon"]) --> J1["0:10 Email code → account"]
+  J1 --> J2["Auto 1,000 test dollars via relayer dripTo"]
+  J2 --> J3["0:30 Demo basket: history, 1+ trim, 10-min change pending"]
+  J3 --> J4["0:45 Buy $100 → what you own per stock"]
+  J4 --> J5["1:05 Open pending change: keep / sell / stocks"]
+  J5 --> J6["1:20 Get the stocks 30% → 5 tokens in Portfolio"]
+  J6 --> J7{"1:40 Demo lab? (optional)"}
+  J7 -- yes --> J8["Move NVDA +20% → keeper trims in 1 to 2 min → feed item"]
+  J7 -- skip --> J9
+  J8 --> J9(["2:00 End card: 4 on-chain actions with tx links · Build your own · repo"])
+  J2 -. "faucet used today" .-> Je1["Top-up via relayer (we control tUSDC)"]:::edge
+  J8 -. "basket already rebalanced today" .-> Je2["Hand out a fresh demo basket from a pool"]:::edge
+  J4 -. "RPC slow" .-> Je3["Optimistic pending state; never double submit"]:::edge
+  classDef edge fill:#f3f3f0,stroke:#3a3a40,stroke-dasharray:5 4,color:#1d1d1f;
+  </pre></div>
+</section>
+
+<section id="notify">
+  <h2>12 · Notification and trust map</h2>
+  <p class="lede">Notify on changes to what you own. Never nudge trading. Launch channels: in-app Activity and email; push and Telegram next. Ask for push permission after the first buy, with a pre-prompt.</p>
+  <div class="diagram"><pre class="mermaid">
+flowchart LR
+  subgraph EV["On-chain / system events"]
+    e1["RecipeProposed"]
+    e2["T-2h before execution"]
+    e3["RecipeCancelled"]
+    e4["Rebalanced after proposal"]
+    e5["Rebalanced drift trim"]
+    e6["Redeemed with owed"]
+    e7["USDC arrived"]
+    e8["Creator sold 20%+ of stake"]
+    e9["Basket room opened"]
+    e10["Global pause"]
+    e11["Fees accrued (weekly)"]
+  end
+  subgraph CHN["Channels"]
+    ia["In-app Activity"]
+    em["Email"]
+    pu["Push (opt-in)"]
+    tg["Telegram (next)"]
+    dg["Weekly digest"]
+  end
+  e1 --> ia & em & pu & tg
+  e2 --> pu & tg
+  e3 --> ia & em & pu
+  e4 --> ia & em & pu
+  e5 --> ia & dg
+  e6 --> ia & em
+  e7 --> ia & pu
+  e8 --> ia & em
+  e9 --> em & pu
+  e10 --> ia & em
+  e11 --> dg
+  </pre></div>
+  <div class="tw"><table>
+    <thead><tr><th>Never send</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>"Prices are moving, buy now", "others are buying", streaks, rank changes, confetti</td><td>Gamification was flagged by regulators (Robinhood); our audience is new to investing; it erodes the "we explain, we don't push" promise.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+</main>
+<footer>Alloy UX map v1 · 2026-11-19 · Companion to docs/design/ux/UX_MAP.md · Not UI.</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>
+(function(){
+  var errs = document.getElementById('errs');
+  if (typeof mermaid === 'undefined') { errs.textContent = 'Diagrams need the Mermaid CDN (offline?). Text versions are in UX_MAP.md.'; return; }
+  var dark = false;
+  try { dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.getAttribute('data-theme') !== 'light'; } catch(e) {}
+  mermaid.initialize({ startOnLoad:false, theme: dark ? 'dark' : 'neutral', securityLevel:'strict', flowchart:{ htmlLabels:true, curve:'basis', useMaxWidth:false }, journey:{ useMaxWidth:true } });
+  mermaid.run({ querySelector: '.mermaid' }).then(function(){
+    document.documentElement.setAttribute('data-rendered', String(document.querySelectorAll('.mermaid svg').length));
+  }).catch(function(e){
+    errs.textContent = 'Diagram error: ' + (e && e.message ? e.message : e);
+    document.documentElement.setAttribute('data-rendered', 'error');
+  });
+})();
+</script>
+</body>
+</html>

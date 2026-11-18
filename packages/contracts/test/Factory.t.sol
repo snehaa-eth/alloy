@@ -243,11 +243,13 @@ contract FactoryTest is Fixture {
 
     function test_keeperRotation_appliesToExistingBaskets() public {
         Basket b = _create(creator, _params3(), 1000e6);
+        vm.expectEmit(address(factory));
+        emit BasketFactory.KeeperSet(asha);
         vm.prank(owner);
         factory.setKeeper(asha);
         _setPrice(0, 150e8);
         vm.prank(keeper);
-        vm.expectRevert(Basket.NotCreatorOrKeeper.selector);
+        vm.expectRevert(Basket.NotKeeper.selector);
         b.executeRebalance(_trade(0, 1, 0.4e8));
         vm.prank(asha);
         b.executeRebalance(_trade(0, 1, 0.4e8));

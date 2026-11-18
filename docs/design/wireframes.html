@@ -9,26 +9,26 @@
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
-  --ink0:#000;--ink950:#0B0B0C;--ink900:#141416;--ink850:#1C1C1F;--ink800:#26262A;--ink700:#3A3A40;--ink600:#6B6B70;--ink500:#5C5C62;--ink400:#8A8A90;--ink300:#B3B3B8;--ink200:#DADAD7;--ink100:#ECEBE8;--ink50:#F6F5F3;--white:#fff;
-  --bg950:#2A000A;--bg900:#4A0012;--brand:#6D001A;--bg700:#8C1230;--bg600:#A30027;--rose:#F07A8F;--bg100:#F6E6EA;--bg50:#FBF3F5;
-  --gain:#0F7A3D;--loss:#C2410C;--warn:#8A5A00;--gainD:#2BD67B;--lossD:#FF6A3D;--warnD:#F2B33D;
+  --ink900:#141416;--ink850:#1C1C1F;--ink800:#26262A;--ink700:#3A3A40;--ink600:#6B6B70;--ink500:#5C5C62;--ink400:#9A9894;--ink300:#C9C7C3;--ink200:#DADAD7;--ink100:#ECEBE8;--ink50:#F6F5F3;
+  --page:#0A0A0A;--paper:#F2F0ED;
+  --tx:#0A0A0A;--tx2:#5C5C62;--bd:#DADAD7;--bdi:#5C5C62;--acc:#6D001A;--link:#6D001A;--gain:#0E7A52;--loss:#C2410C;--warn:#8A5A00;--pri:#6D001A;--onpri:#fff;--s1:#fff;--s2:#F6F5F3;--tint:#F6E6EA;--brtx:#6D001A;--brbd:#6D001A;--brand:#6D001A;--accent:#C41A42;--tintD:#2A000A;--tintL:#F6E6EA;
   --display:'Anton',Impact,'Arial Narrow',sans-serif;
   --ui:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
   --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;background:#E9E8E5;color:#000;font:15px/1.45 var(--ui);font-feature-settings:"tnum" 1,"cv11" 1}
+body{margin:0;background:#E9E8E5;color:#0A0A0A;font:15px/1.45 var(--ui);font-feature-settings:"tnum" 1,"cv11" 1}
 a{color:inherit}
 .wrap{max-width:1320px;margin:0 auto;padding:0 16px}
 /* page chrome */
-.top{background:#000;color:#fff;padding:40px 0 28px}
+.top{background:var(--page);color:var(--paper);padding:40px 0 28px}
 .top h1{font:400 64px/0.9 var(--display);text-transform:uppercase;margin:0 0 8px;letter-spacing:.5px}
-.top h1 em{font-style:normal;color:var(--rose)}
+.top h1 em{font-style:normal;color:transparent;-webkit-text-stroke:1.5px var(--paper)}
 .top p{color:var(--ink300);max-width:760px;margin:0 0 20px}
 .idx{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
-.idx a{display:inline-block;padding:6px 12px;border:1px solid var(--ink700);border-radius:999px;color:#fff;text-decoration:none;font-size:13px}
-.idx a:hover{border-color:var(--rose);color:var(--rose)}
+.idx a{display:inline-block;padding:6px 12px;border:1px solid var(--ink600);border-radius:999px;color:var(--paper);text-decoration:none;font-size:13px}
+.idx a:hover{border-color:var(--paper);background:var(--paper);color:var(--page)}
 .legend{font-size:12px;color:var(--ink400);margin-top:16px}
 section.s{padding:48px 0 24px;border-bottom:1px solid #d4d3cf}
 .s>.wrap>h2{font:400 40px/1 var(--display);text-transform:uppercase;margin:0 0 6px}
@@ -42,9 +42,20 @@ section.s{padding:48px 0 24px;border-bottom:1px solid #d4d3cf}
 .notes li::before{counter-increment:n;content:counter(n);position:absolute;left:0;top:1px}
 .notes li::before,.n{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--brand);color:#fff;font:700 10px/1 var(--ui)}
 .n{vertical-align:middle;margin:0 2px;flex:none}
-/* frames */
-.frame{background:#fff;border:1px solid #bdbcb8;overflow:hidden;position:relative}
-.mob{width:390px;max-width:100%;border-radius:32px;border:8px solid #111;min-height:780px;display:flex;flex-direction:column}
+.frame .n{background:#3A3A40;box-shadow:0 0 0 1.5px var(--paper)}
+.frame.lt .n{background:#0A0A0A;box-shadow:none}
+/* frames: DARK is the default theme (TOKENS v0.2). Add .lt for the light option. */
+.frame{
+  --bgc:#0A0A0A;--tx:#F2F0ED;--tx2:#9A9894;--s1:#141416;--s2:#1C1C1F;--sheet:#0F0F10;--bd:#26262A;--bdi:#6B6B70;
+  --pri:#F2F0ED;--onpri:#0A0A0A;--acc:#C41A42;--link:#F2F0ED;--tint:#2A000A;--brtx:#F2F0ED;--brbd:#6D001A;
+  --gain:#3DBE8B;--loss:#FF6A3D;--warn:#F2B33D;--warnbg:#1F1806;--warnbd:#5A4410;--ph1:#141416;--ph2:#1C1C1F;
+  background:var(--bgc);color:var(--tx);border:1px solid #bdbcb8;overflow:hidden;position:relative}
+.frame.lt{
+  --bgc:#FFFFFF;--tx:#0A0A0A;--tx2:#5C5C62;--s1:#FFFFFF;--s2:#F6F5F3;--sheet:#FFFFFF;--bd:#DADAD7;--bdi:#5C5C62;
+  --pri:#6D001A;--onpri:#FFFFFF;--acc:#6D001A;--link:#6D001A;--tint:#F6E6EA;--brtx:#6D001A;--brbd:#6D001A;
+  --gain:#0E7A52;--loss:#C2410C;--warn:#8A5A00;--warnbg:#FBF0D9;--warnbd:#E2C27A;--ph1:#f1f0ed;--ph2:#e6e5e1}
+.dk{}
+.mob{width:390px;max-width:100%;border-radius:32px;border:8px solid #2A2A2E;min-height:780px;display:flex;flex-direction:column}
 .mob.short{min-height:0}
 .d{width:1200px;border-radius:12px}
 .scrollx{max-width:100%;overflow-x:auto;padding-bottom:8px}
@@ -53,13 +64,13 @@ section.s{padding:48px 0 24px;border-bottom:1px solid #d4d3cf}
 .scr{padding:12px 16px 16px;flex:1;display:flex;flex-direction:column;gap:14px}
 .bar{display:flex;justify-content:space-between;align-items:center}
 .logo{font:400 22px/1 var(--display);text-transform:uppercase;letter-spacing:1px}
-.logo b{display:inline-block;width:10px;height:10px;background:var(--brand);margin-left:3px;vertical-align:top}
-.ico{width:28px;height:28px;border-radius:50%;border:1.5px solid #000;display:inline-flex;align-items:center;justify-content:center;font-size:12px}
-.tabbar{display:flex;justify-content:space-around;border-top:1px solid var(--ink200);padding:10px 0 18px;font-size:11px;color:var(--ink500);background:#fff;margin-top:auto}
+.logo b{display:inline-block;width:10px;height:10px;background:var(--acc);margin-left:3px;vertical-align:top}
+.ico{width:28px;height:28px;border-radius:50%;border:1.5px solid currentColor;display:inline-flex;align-items:center;justify-content:center;font-size:12px}
+.tabbar{display:flex;justify-content:space-around;border-top:1px solid var(--bd);padding:10px 0 18px;font-size:11px;color:var(--tx2);background:var(--bgc);margin-top:auto}
 .tabbar span{display:flex;flex-direction:column;align-items:center;gap:4px}
 .tabbar span::before{content:"";width:20px;height:20px;border-radius:6px;border:1.5px solid currentColor}
-.tabbar .on{color:var(--brand);font-weight:600}
-.tabbar .on::before{background:var(--brand);border-color:var(--brand)}
+.tabbar .on{color:var(--tx);font-weight:600}
+.tabbar .on::before{background:var(--acc);border-color:var(--acc)}
 /* type */
 .disp{font:400 40px/0.95 var(--display);text-transform:uppercase;letter-spacing:.3px;margin:0}
 .disp.xl{font-size:56px;line-height:.9}
@@ -67,104 +78,92 @@ section.s{padding:48px 0 24px;border-bottom:1px solid #d4d3cf}
 .ttl{font:600 20px/1.25 var(--ui);margin:0}
 .num{font:600 40px/1 var(--ui);letter-spacing:-.5px}
 .num.s{font-size:28px}
-.mut{color:var(--ink500)}
+.mut{color:var(--tx2)}
 .sm{font-size:13px}
 .xs{font-size:11px;letter-spacing:.02em}
-.kick{font:500 11px var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--ink500)}
+.kick{font:500 11px var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--tx2)}
 .mono{font-family:var(--mono);font-size:12px}
 .gain{color:var(--gain);font-weight:600}
 .loss{color:var(--loss);font-weight:600}
 .warn{color:var(--warn);font-weight:600}
+.outline{color:transparent;-webkit-text-stroke:2px var(--tx)}
 p{margin:0}
 /* components */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:44px;padding:0 18px;border-radius:6px;border:1.5px solid #000;background:#fff;font:600 15px var(--ui);color:#000;white-space:nowrap}
-.btn.p{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:44px;padding:0 18px;border-radius:6px;border:1.5px solid var(--tx);background:transparent;font:600 15px var(--ui);color:var(--tx);white-space:nowrap}
+.btn.p{background:var(--pri);border-color:var(--pri);color:var(--onpri)}
 .btn.blk{display:flex;width:100%;height:52px}
-.btn.g{border-color:var(--ink200)}
+.btn.g{border-color:var(--bdi)}
 .btn.sm{height:34px;font-size:13px;padding:0 12px}
 .btn.hold{position:relative;overflow:hidden}
-.btn.hold::after{content:"";position:absolute;left:0;top:0;bottom:0;width:38%;background:rgba(255,255,255,.18)}
-.link{color:var(--brand);font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.btn.hold::after{content:"";position:absolute;left:0;bottom:0;height:3px;width:38%;background:var(--acc)}
+.link{color:var(--link);font-weight:600;text-decoration:underline;text-underline-offset:3px}
 .chips{display:flex;gap:8px;overflow:hidden;flex-wrap:nowrap}
-.chip{padding:6px 12px;border:1px solid var(--ink200);border-radius:999px;font-size:13px;white-space:nowrap}
-.chip.on{background:#000;color:#fff;border-color:#000}
-.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11px var(--ui);background:var(--ink100)}
-.pill.br{background:var(--bg100);color:var(--brand)}
-.pill.wn{background:#FBF0D9;color:var(--warn)}
+.chip{padding:6px 12px;border:1px solid var(--bdi);border-radius:999px;font-size:13px;white-space:nowrap}
+.chip.on{background:var(--tx);color:var(--bgc);border-color:var(--tx)}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11px var(--ui);background:var(--s2)}
+.pill.br{background:var(--tint);color:var(--brtx);box-shadow:inset 0 0 0 1px var(--brbd)}
+.pill.wn{background:var(--warnbg);color:var(--warn)}
 .pill .dot{width:7px;height:7px;border-radius:50%;background:currentColor}
-.card{border:1px solid var(--ink200);border-radius:12px;padding:14px;background:#fff}
-.card.t{background:var(--ink50)}
-.card.br{border-color:var(--brand);background:var(--bg50)}
-.hr{height:1px;background:var(--ink200);margin:2px 0}
+.card{border:1px solid var(--bd);border-radius:12px;padding:14px;background:var(--s1)}
+.card.t{background:var(--s2)}
+.card.br{border-color:var(--brbd);border-left:3px solid var(--acc);background:var(--tint)}
+.hr{height:1px;background:var(--bd);margin:2px 0}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .stat b{display:block;font:600 17px var(--ui)}
-.stat span{font-size:12px;color:var(--ink500)}
-.ph{background:repeating-linear-gradient(45deg,#f1f0ed,#f1f0ed 8px,#e6e5e1 8px,#e6e5e1 16px);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#777;font-size:12px;text-align:center}
-.av{width:28px;height:28px;border-radius:50%;background:#cfcfcc;display:inline-block;flex:none}
+.stat span{font-size:12px;color:var(--tx2)}
+.ph{background:repeating-linear-gradient(45deg,var(--ph1),var(--ph1) 8px,var(--ph2) 8px,var(--ph2) 16px);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--tx2);font-size:12px;text-align:center}
+.av{width:28px;height:28px;border-radius:50%;background:var(--bdi);display:inline-block;flex:none}
 .flex{display:flex;align-items:center;gap:8px}
 .between{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .col{display:flex;flex-direction:column;gap:6px}
 table.t{width:100%;border-collapse:collapse;font-size:13px}
-table.t th{text-align:left;font-weight:500;color:var(--ink500);font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:6px 0;border-bottom:1px solid var(--ink200)}
-table.t td{padding:8px 0;border-bottom:1px solid var(--ink100)}
+table.t th{text-align:left;font-weight:500;color:var(--tx2,#5C5C62);font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:6px 0;border-bottom:1px solid var(--bd,#DADAD7)}
+table.t td{padding:8px 0;border-bottom:1px solid var(--bd,#ECEBE8)}
 table.t td:not(:first-child),table.t th:not(:first-child){text-align:right}
 .bars{display:flex;height:8px;border-radius:4px;overflow:hidden;gap:2px}
-.bars i{display:block;background:#000}
-.bars i:nth-child(2){background:#444}.bars i:nth-child(3){background:#777}.bars i:nth-child(4){background:#aaa}.bars i:nth-child(5){background:#ccc}
+.bars i{display:block;background:currentColor}
+.bars i:nth-child(2){opacity:.72}.bars i:nth-child(3){opacity:.52}.bars i:nth-child(4){opacity:.36}.bars i:nth-child(5){opacity:.22}
 .slider{position:relative;height:28px;margin:6px 0}
-.slider .tr{position:absolute;left:0;right:0;top:12px;height:4px;background:var(--ink200);border-radius:2px}
-.slider .fl{position:absolute;left:0;top:12px;height:4px;background:var(--brand);border-radius:2px}
-.slider .th{position:absolute;top:2px;width:24px;height:24px;border-radius:50%;background:#fff;border:3px solid var(--brand);margin-left:-12px}
-.ticks{display:flex;justify-content:space-between;font-size:12px;color:var(--ink500)}
-.ticks .on{color:#000;font-weight:600}
+.slider .tr{position:absolute;left:0;right:0;top:12px;height:4px;background:var(--bd);border-radius:2px}
+.slider .fl{position:absolute;left:0;top:12px;height:4px;background:var(--acc);border-radius:2px}
+.slider .th{position:absolute;top:2px;width:24px;height:24px;border-radius:50%;background:var(--tx);border:3px solid var(--acc);margin-left:-12px}
+.ticks{display:flex;justify-content:space-between;font-size:12px;color:var(--tx2)}
+.ticks .on{color:var(--tx);font-weight:600}
 .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;text-align:center;font:500 22px var(--ui)}
 .keypad span{padding:10px 0}
-.dim{background:rgba(0,0,0,.45);flex:1;display:flex;flex-direction:column;justify-content:flex-end}
-.sheet{background:#fff;border-radius:20px 20px 0 0;padding:10px 16px 20px;display:flex;flex-direction:column;gap:14px}
-.grab{width:40px;height:4px;border-radius:2px;background:var(--ink200);margin:0 auto 4px}
-.banner{border:1.5px solid var(--brand);background:var(--bg100);border-radius:10px;padding:12px}
-.banner .h{font-weight:700;color:var(--brand)}
-.wbanner{border:1.5px solid #E2C27A;background:#FBF0D9;border-radius:10px;padding:10px 12px;font-size:13px}
-.feed{border-left:2px solid var(--ink200);margin-left:6px;padding-left:14px;display:flex;flex-direction:column;gap:14px}
+.dim{background:rgba(0,0,0,.6);flex:1;display:flex;flex-direction:column;justify-content:flex-end}
+.frame.lt .dim{background:rgba(0,0,0,.45)}
+.sheet{background:var(--sheet);border-top:1px solid var(--bd);border-radius:20px 20px 0 0;padding:10px 16px 20px;display:flex;flex-direction:column;gap:14px}
+.grab{width:40px;height:4px;border-radius:2px;background:var(--bdi);margin:0 auto 4px}
+.banner{border:1.5px solid var(--brbd);border-left:4px solid var(--acc);background:var(--tint);border-radius:10px;padding:12px}
+.banner .h{font-weight:700;color:var(--brtx)}
+.wbanner{border:1.5px solid var(--warnbd);background:var(--warnbg);border-radius:10px;padding:10px 12px;font-size:13px}
+.feed{border-left:2px solid var(--bd);margin-left:6px;padding-left:14px;display:flex;flex-direction:column;gap:14px}
 .feed .it{position:relative}
-.feed .it::before{content:"";position:absolute;left:-21px;top:4px;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid #000}
-.feed .it.rc::before{background:var(--brand);border-color:var(--brand)}
-.feed .it.pd::before{background:#fff;border-color:var(--brand);border-style:dashed}
-.q{border-left:3px solid var(--brand);padding:2px 0 2px 10px;font-style:italic}
+.feed .it::before{content:"";position:absolute;left:-21px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--bgc);border:2px solid var(--tx)}
+.feed .it.rc::before{background:var(--acc);border-color:var(--acc)}
+.feed .it.pd::before{background:var(--bgc);border-color:var(--acc);border-style:dashed}
+.q{border-left:3px solid var(--acc);padding:2px 0 2px 10px;font-style:italic}
 .steps{display:flex;gap:4px}
-.steps i{flex:1;height:4px;border-radius:2px;background:var(--ink200)}
-.steps i.on{background:var(--brand)}
-.field{border:1.5px solid var(--ink600);border-radius:6px;padding:10px 12px;font-size:15px}
-.field.ph2{color:var(--ink500)}
+.steps i{flex:1;height:4px;border-radius:2px;background:var(--bd)}
+.steps i.on{background:var(--acc)}
+.field{border:1.5px solid var(--bdi);border-radius:6px;padding:10px 12px;font-size:15px}
+.field.ph2{color:var(--tx2)}
 .lbl{font:500 13px var(--ui);margin-bottom:4px;display:block}
-.radio{border:1.5px solid var(--ink200);border-radius:10px;padding:12px;display:flex;gap:10px}
-.radio.on{border-color:var(--brand);background:var(--bg50)}
-.radio .o{width:18px;height:18px;border-radius:50%;border:2px solid var(--ink600);flex:none;margin-top:2px}
-.radio.on .o{border:6px solid var(--brand)}
-.sticky{border-top:1px solid var(--ink200);padding:12px 16px 20px;background:#fff;display:flex;gap:10px;align-items:center;margin-top:auto}
+.radio{border:1.5px solid var(--bdi);border-radius:10px;padding:12px;display:flex;gap:10px}
+.radio.on{border-color:var(--tx);background:var(--s1)}
+.radio .o{width:18px;height:18px;border-radius:50%;border:2px solid var(--bdi);flex:none;margin-top:2px}
+.radio.on .o{border:6px solid var(--acc)}
+.sticky{border-top:1px solid var(--bd);padding:12px 16px 20px;background:var(--bgc);display:flex;gap:10px;align-items:center;margin-top:auto}
 .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:24px}
 .empty .ph{width:120px;height:120px;border-radius:50%}
-/* dark variants */
-.dk{background:#000;color:#fff}
-.dk .mut{color:var(--ink400)}
-.dk .kick{color:var(--ink400)}
-.dk .btn{background:transparent;color:#fff;border-color:#fff}
-.dk .btn.p{background:var(--brand);border-color:var(--brand)}
-.dk .card{background:var(--ink900);border-color:var(--ink800)}
-.dk .gain{color:var(--gainD)}.dk .loss{color:var(--lossD)}
-.dk .chip{border-color:var(--ink700)}
-.dk .ph{background:repeating-linear-gradient(45deg,#141416,#141416 8px,#1C1C1F 8px,#1C1C1F 16px);color:#777}
-.dk .tabbar{background:#000;border-color:var(--ink800);color:var(--ink400)}
-.dk .tabbar .on{color:var(--rose)}.dk .tabbar .on::before{background:var(--rose);border-color:var(--rose)}
-.dk .link{color:var(--rose)}
 /* desktop specifics */
-.dnav{display:flex;justify-content:space-between;align-items:center;padding:18px 40px;border-bottom:1px solid var(--ink200)}
+.dnav{display:flex;justify-content:space-between;align-items:center;padding:18px 40px;border-bottom:1px solid var(--bd)}
 .dnav nav{display:flex;gap:28px;font-size:14px}
-.dk .dnav{border-color:var(--ink800)}
 .hero{display:grid;grid-template-columns:1.25fr 1fr;gap:40px;padding:56px 40px 40px;align-items:end}
 .hero h2{font:400 120px/.86 var(--display);text-transform:uppercase;margin:0;letter-spacing:.5px}
-.hero h2 span{color:var(--rose)}
+.hero h2 span{color:transparent;-webkit-text-stroke:2.5px var(--tx)}
 .vert{writing-mode:vertical-rl;transform:rotate(180deg);font:400 14px var(--display);letter-spacing:.3em;text-transform:uppercase;color:var(--ink600)}
 .bandw{padding:40px}
 .trio{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
@@ -208,45 +207,46 @@ table.t td:not(:first-child),table.t th:not(:first-child){text-align:right}
 <!-- ============ 0 TOKENS ============ -->
 <section class="s" id="tokens"><div class="wrap">
   <h2>0 · Palette &amp; type</h2>
-  <p class="lede">From the Project CAESAR moodboard. Burgundy is brand, never "loss". Loss is vermilion and gain is green, and both always carry ▲/▼ and a sign. Full ratios are in TOKENS.md.</p>
-  <p class="cap">Brand + neutrals</p>
+  <p class="lede"><b>v0.2 palette (founder decisions).</b> Dark is the default. Burgundy stays under 10% of any screen. Primary buttons on dark are off-white with black text. #6D001A is only for big brand surfaces; small accents on dark use #C41A42. Gain is jade, loss is vermilion, and there's no pink. All frames below are dark unless captioned "light option". Full ratios are in TOKENS.md §4.</p>
+  <p class="cap">Neutrals (warm)</p>
   <div class="row" style="gap:12px">
-    <div class="swatch"><div style="background:#000"></div><p><b>ink-0</b><br>#000000<br>dark bg</p></div>
-    <div class="swatch"><div style="background:#141416"></div><p><b>ink-900</b><br>#141416<br>dark surface</p></div>
-    <div class="swatch"><div style="background:#26262A"></div><p><b>ink-800</b><br>#26262A<br>dark border</p></div>
-    <div class="swatch"><div style="background:#8A8A90"></div><p><b>ink-400</b><br>#8A8A90<br>6.12:1 on black</p></div>
-    <div class="swatch"><div style="background:#5C5C62"></div><p><b>ink-500</b><br>#5C5C62<br>6.64:1 on white</p></div>
-    <div class="swatch"><div style="background:#F6F5F3"></div><p><b>ink-50 "smoke"</b><br>#F6F5F3<br>light bg</p></div>
-    <div class="swatch"><div style="background:#fff"></div><p><b>white</b><br>#FFFFFF</p></div>
+    <div class="swatch"><div style="background:#0A0A0A"></div><p><b>bg</b><br>#0A0A0A<br>dark default</p></div>
+    <div class="swatch"><div style="background:#141416"></div><p><b>surface-1</b><br>#141416</p></div>
+    <div class="swatch"><div style="background:#1C1C1F"></div><p><b>surface-2</b><br>#1C1C1F</p></div>
+    <div class="swatch"><div style="background:#26262A"></div><p><b>border</b><br>#26262A<br>decorative</p></div>
+    <div class="swatch"><div style="background:#6B6B70"></div><p><b>border-input</b><br>#6B6B70 · 3.74:1</p></div>
+    <div class="swatch"><div style="background:#9A9894"></div><p><b>text-2</b><br>#9A9894 · 6.88:1</p></div>
+    <div class="swatch"><div style="background:#F2F0ED"></div><p><b>paper (text + primary)</b><br>#F2F0ED · 17.41:1</p></div>
+    <div class="swatch"><div style="background:#F6F5F3"></div><p><b>light bg "smoke"</b><br>#F6F5F3</p></div>
   </div>
-  <p class="cap" style="margin-top:18px">Burgundy ramp</p>
+  <p class="cap" style="margin-top:18px">Burgundy: two jobs</p>
   <div class="row" style="gap:12px">
-    <div class="swatch"><div style="background:#2A000A"></div><p><b>burgundy-950</b><br>#2A000A<br>dark notice bg</p></div>
-    <div class="swatch"><div style="background:#4A0012"></div><p><b>burgundy-900</b><br>#4A0012<br>pressed</p></div>
-    <div class="swatch"><div style="background:#6D001A"></div><p><b>burgundy-800 BRAND</b><br>#6D001A<br>white on it 12.61:1</p></div>
-    <div class="swatch"><div style="background:#8C1230"></div><p><b>burgundy-700</b><br>#8C1230<br>hover</p></div>
-    <div class="swatch"><div style="background:#A30027"></div><p><b>burgundy-600</b><br>#A30027<br>focus (light)</p></div>
-    <div class="swatch"><div style="background:#F07A8F"></div><p><b>rose-300</b><br>#F07A8F<br>accent text on dark 7.89:1</p></div>
-    <div class="swatch"><div style="background:#F6E6EA"></div><p><b>burgundy-100</b><br>#F6E6EA<br>light notice bg</p></div>
+    <div class="swatch"><div style="background:#2A000A"></div><p><b>burgundy-950</b><br>#2A000A<br>dark notice fill</p></div>
+    <div class="swatch"><div style="background:#6D001A"></div><p><b>BRAND #6D001A</b><br>big surfaces only<br>paper on it 11.09:1</p></div>
+    <div class="swatch"><div style="background:#C41A42"></div><p><b>accent #C41A42</b><br>small UI on dark<br>3.37:1 on bg</p></div>
+    <div class="swatch"><div style="background:#B5123A"></div><p><b>#B5123A (proposed)</b><br>2.93:1 on #0A0A0A: fails<br>3.11 only on #000</p></div>
+    <div class="swatch"><div style="background:#F6E6EA"></div><p><b>burgundy-100</b><br>#F6E6EA<br>light notice tint</p></div>
   </div>
-  <p class="cap" style="margin-top:18px">Signals (light / dark)</p>
+  <p class="cap" style="margin-top:18px">Signals (dark / light)</p>
   <div class="row" style="gap:12px">
-    <div class="swatch"><div style="background:#0F7A3D"></div><p><b>gain light</b><br>#0F7A3D · 5.42:1</p></div>
-    <div class="swatch"><div style="background:#2BD67B"></div><p><b>gain dark</b><br>#2BD67B · 11.01:1</p></div>
+    <div class="swatch"><div style="background:#3DBE8B"></div><p><b>gain jade</b><br>#3DBE8B · 8.43:1</p></div>
+    <div class="swatch"><div style="background:#0E7A52"></div><p><b>gain light</b><br>#0E7A52 · 5.35:1</p></div>
+    <div class="swatch"><div style="background:#FF6A3D"></div><p><b>loss</b><br>#FF6A3D · 6.96:1</p></div>
     <div class="swatch"><div style="background:#C2410C"></div><p><b>loss light</b><br>#C2410C · 5.18:1</p></div>
-    <div class="swatch"><div style="background:#FF6A3D"></div><p><b>loss dark</b><br>#FF6A3D · 7.38:1</p></div>
+    <div class="swatch"><div style="background:#F2B33D"></div><p><b>warn</b><br>#F2B33D · 10.64:1</p></div>
     <div class="swatch"><div style="background:#8A5A00"></div><p><b>warn light</b><br>#8A5A00 · 5.93:1</p></div>
-    <div class="swatch"><div style="background:#F2B33D"></div><p><b>warn dark</b><br>#F2B33D · 11.29:1</p></div>
   </div>
   <div class="row" style="margin-top:18px;gap:12px">
-    <div class="card dk" style="width:300px;border-radius:12px">
-      <p class="kick">Never</p><p style="color:#6D001A;font-weight:700">Burgundy text on black: 1.67:1</p>
-      <p class="sm mut" style="margin-top:6px">On dark, use rose #F07A8F for text, or white on a burgundy fill.</p>
+    <div class="frame" style="width:320px;border-radius:12px;padding:16px">
+      <p class="kick">Dark: primary, secondary, accent</p>
+      <div class="flex" style="margin-top:10px"><span class="btn p sm">Buy $25</span><span class="btn sm">Build a basket</span><span class="loss">▼ −1.8%</span><span class="gain">▲ +4.2%</span></div>
+      <div class="flex" style="margin-top:12px"><span class="chip on">3M</span><span class="chip">1Y</span><span style="display:inline-block;width:60px;height:4px;background:#C41A42;border-radius:2px"></span><span class="xs mut">accent progress</span></div>
+      <p class="xs mut" style="margin-top:10px">No burgundy button on dark: #6D001A on #0A0A0A is 1.57:1.</p>
     </div>
-    <div class="card" style="width:300px">
-      <p class="kick">Side by side</p>
-      <div class="flex" style="margin-top:6px"><span class="btn p sm">Buy $25</span><span class="loss">▼ −1.8%</span><span class="gain">▲ +4.2%</span></div>
-      <p class="sm mut" style="margin-top:6px">Loss reads orange-red and the button reads wine. No confusion.</p>
+    <div class="frame lt" style="width:320px;border-radius:12px;padding:16px">
+      <p class="kick">Light option</p>
+      <div class="flex" style="margin-top:10px"><span class="btn p sm">Buy $25</span><span class="btn sm">Build</span><span class="loss">▼ −1.8%</span><span class="gain">▲ +4.2%</span></div>
+      <p class="xs mut" style="margin-top:10px">On light, burgundy fills are fine: white on #6D001A is 12.61:1. Links are burgundy.</p>
     </div>
   </div>
   <p class="cap" style="margin-top:22px">Type: Pairing A (recommended) Anton + Inter (tnum) + JetBrains Mono</p>
@@ -268,7 +268,7 @@ table.t td:not(:first-child),table.t th:not(:first-child){text-align:right}
   <p class="lede">The only screen that leans fully into the CAESAR mood: black, huge condensed type, a vertical kicker, and one statue/smoke image slot. Everything after the fold is calm product.</p>
   <p class="cap">Desktop · 1200</p>
   <div class="scrollx"><div class="frame d dk">
-    <div class="dnav"><span class="logo">Alloy<b></b></span><nav><span>Explore</span><span>Build a basket</span><span>How it works</span></nav><span class="flex"><span class="pill" style="background:#1C1C1F;color:#F2B33D"><span class="dot"></span>US market closed · opens 8:00 PM</span><span class="btn sm">Sign in</span></span></div>
+    <div class="dnav"><span class="logo">Alloy<b></b></span><nav><span>Explore</span><span>Build a basket</span><span>How it works</span></nav><span class="flex"><span class="pill wn"><span class="dot"></span>US market closed · opens 8:00 PM</span><span class="btn sm">Sign in</span></span></div>
     <div class="hero">
       <div class="flex" style="align-items:flex-end;gap:20px">
         <span class="vert">Tokenized US stocks · On Base</span>
@@ -290,9 +290,9 @@ table.t td:not(:first-child),table.t th:not(:first-child){text-align:right}
     <div class="bandw" style="background:#0B0B0C">
       <p class="kick">Live baskets <span class="n">4</span></p>
       <div class="trio" style="margin-top:14px">
-        <div class="card"><p class="disp m">The AI Build-Out</p><p class="sm mut">Chips, clouds and the companies paying for both.</p><div class="bars" style="margin:12px 0"><i style="width:35%;background:#fff"></i><i style="width:25%"></i><i style="width:20%"></i><i style="width:12%"></i><i style="width:8%"></i></div><div class="between sm"><span>Followers <b class="gain">+11.8%</b></span><span class="mut">Creator +12.4% · 1M</span></div></div>
-        <div class="card"><p class="disp m">Capitol Tech</p><p class="sm mut">Tech that shows up most in congressional disclosures.</p><div class="bars" style="margin:12px 0"><i style="width:30%;background:#fff"></i><i style="width:30%"></i><i style="width:20%"></i><i style="width:20%"></i></div><div class="between sm"><span>Followers <b class="loss">−2.1%</b></span><span class="mut">Creator −1.6% · 1M</span></div></div>
-        <div class="card"><p class="disp m">Big Tech, Trimmed</p><p class="sm mut">The giants, with no one stock above 20%.</p><div class="bars" style="margin:12px 0"><i style="width:20%;background:#fff"></i><i style="width:20%"></i><i style="width:20%"></i><i style="width:20%"></i><i style="width:20%"></i></div><div class="between sm"><span>Followers <b class="gain">+4.0%</b></span><span class="mut">Creator +4.3% · 1M</span></div></div>
+        <div class="card"><p class="disp m">The AI Build-Out</p><p class="sm mut">Chips, clouds and the companies paying for both.</p><div class="bars" style="margin:12px 0"><i style="width:35%"></i><i style="width:25%"></i><i style="width:20%"></i><i style="width:12%"></i><i style="width:8%"></i></div><div class="between sm"><span>Followers <b class="gain">+11.8%</b></span><span class="mut">Creator +12.4% · 1M</span></div></div>
+        <div class="card"><p class="disp m">Capitol Tech</p><p class="sm mut">Tech that shows up most in congressional disclosures.</p><div class="bars" style="margin:12px 0"><i style="width:30%"></i><i style="width:30%"></i><i style="width:20%"></i><i style="width:20%"></i></div><div class="between sm"><span>Followers <b class="loss">−2.1%</b></span><span class="mut">Creator −1.6% · 1M</span></div></div>
+        <div class="card"><p class="disp m">Big Tech, Trimmed</p><p class="sm mut">The giants, with no one stock above 20%.</p><div class="bars" style="margin:12px 0"><i style="width:20%"></i><i style="width:20%"></i><i style="width:20%"></i><i style="width:20%"></i><i style="width:20%"></i></div><div class="between sm"><span>Followers <b class="gain">+4.0%</b></span><span class="mut">Creator +4.3% · 1M</span></div></div>
       </div>
     </div>
     <div class="bandw">
@@ -306,7 +306,7 @@ table.t td:not(:first-child),table.t th:not(:first-child){text-align:right}
     </div>
     <div class="bandw" style="background:#6D001A;display:flex;justify-content:space-between;align-items:center">
       <div><p style="font:400 56px/.9 var(--display);text-transform:uppercase">Got a thesis? Bottle it.</p><p style="color:#F6E6EA;margin-top:8px">Pick up to 10 stocks, set the weights, seed it with $10. Earn 1% a year on everything that follows you.</p></div>
-      <span class="btn" style="background:#fff;color:#6D001A;border-color:#fff;height:52px">Build a basket</span>
+      <span class="btn p" style="height:52px">Build a basket</span>
     </div>
     <div class="bandw" style="padding-top:20px;padding-bottom:24px;border-top:1px solid #26262A"><p class="xs mut">Alloy gives you tokenized stock exposure, not shares. Not available to US persons. Nothing here is investment advice, and baskets can lose value. Alloy is independent and not endorsed by any exchange, issuer or network. <span class="n">5</span></p></div>
   </div></div>
@@ -319,7 +319,7 @@ table.t td:not(:first-child),table.t th:not(:first-child){text-align:right}
         <div class="bar"><span class="logo">Alloy<b></b></span><span class="btn sm">Sign in</span></div>
         <div class="ph" style="height:220px">BUST + SMOKE (cropped tight)</div>
         <p class="kick">Tokenized US stocks · On Base</p>
-        <p class="disp xl">Invest in stories, <span style="color:var(--rose)">not symbols.</span></p>
+        <p class="disp xl">Invest in stories, <span class="outline">not symbols.</span></p>
         <p class="mut">Baskets of US stocks built around one idea. Start with $5. We rebalance, you watch.</p>
         <span class="btn p blk">Explore baskets</span>
         <span class="btn blk">Build a basket</span>
@@ -332,7 +332,7 @@ table.t td:not(:first-child),table.t th:not(:first-child){text-align:right}
     </div></div>
     <div class="notes"><h4>Landing notes</h4><ol>
       <li>Headline option 1 is shown (it's already the X bio). Alternatives: "BUY THE WHOLE IDEA." / "ONE TAP. A WHOLE THEME." Anton at 120px carries the moodboard on its own, so there's no need for gradient tricks.</li>
-      <li>Two CTAs only. Explore is the burgundy fill; Build is the outline. Visitors can browse without signing up (Robinhood/feel.cash pattern) and only sign up at Buy.</li>
+      <li>Two CTAs only. Explore is the primary (off-white fill on dark; burgundy would be 1.57:1); Build is the outline. Visitors can browse without signing up (Robinhood/feel.cash pattern) and only sign up at Buy.</li>
       <li>One art slot, art-directed (bust, headset, silk, smoke). It's the only "decorative" asset in the product. Keep it off product screens.</li>
       <li>Live cards show <b>follower</b> return first and creator return second, so the main differentiator appears above the fold.</li>
       <li>Legal is written as plain sentences, not a disclaimer block. No "backed by" or "partnered with" anywhere (ARCH §7).</li>
@@ -365,7 +365,7 @@ table.t td:not(:first-child),table.t th:not(:first-child){text-align:right}
         <div class="grab"></div>
         <p class="ttl">One quick check</p>
         <p class="mut">Alloy isn't available to US persons (US citizens, residents, or anyone acting for one).</p>
-        <div class="flex card t" style="align-items:flex-start"><span style="width:20px;height:20px;border:2px solid #000;border-radius:4px;flex:none"></span><span class="sm">I'm not a US person, and tokenized stocks are allowed where I live. <span class="n">2</span></span></div>
+        <div class="flex card t" style="align-items:flex-start"><span style="width:20px;height:20px;border:2px solid var(--bdi);border-radius:4px;flex:none"></span><span class="sm">I'm not a US person, and tokenized stocks are allowed where I live. <span class="n">2</span></span></div>
         <span class="btn p blk">Confirm</span>
         <span class="link sm" style="text-align:center">Why we ask</span>
       </div></div>
@@ -444,10 +444,10 @@ table.t td:not(:first-child),table.t th:not(:first-child){text-align:right}
       <div class="scr">
         <div class="bar"><span class="ico">←</span><span class="flex"><span class="ico">↗</span><span class="ico">⋯</span></span></div>
         <p class="disp">The AI Build-Out</p>
-        <p class="sm mut">by <b style="color:#000">@kavya</b> · Balanced · 1%/yr</p>
+        <p class="sm mut">by <b style="color:var(--tx)">@kavya</b> · Balanced · 1%/yr</p>
         <div><p class="num">$10.84</p><p class="sm"><span class="gain">▲ +8.4%</span> <span class="mut">· 3M · per token</span></p></div>
-        <svg viewBox="0 0 358 120" width="100%" height="120" aria-label="NAV chart"><polyline fill="none" stroke="#000" stroke-width="2" points="0,95 30,90 60,92 90,80 120,84 150,70 180,72 210,60 240,64 270,48 300,52 330,38 358,30"/><polyline fill="none" stroke="#8A8A90" stroke-width="1.5" stroke-dasharray="4 3" points="0,95 30,89 60,90 90,78 120,81 150,67 180,69 210,57 240,60 270,45 300,48 330,35 358,27"/><line x1="150" y1="0" x2="150" y2="120" stroke="#6D001A" stroke-dasharray="2 3"/><circle cx="150" cy="70" r="4" fill="#6D001A"/></svg>
-        <div class="between xs mut"><span>— Followers &nbsp; - - Creator &nbsp; <span style="color:#6D001A">● rebalance</span> <span class="n">1</span></span><span>Past performance isn't a promise.</span></div>
+        <svg viewBox="0 0 358 120" width="100%" height="120" aria-label="NAV chart"><polyline fill="none" stroke="currentColor" stroke-width="2" points="0,95 30,90 60,92 90,80 120,84 150,70 180,72 210,60 240,64 270,48 300,52 330,38 358,30"/><polyline fill="none" stroke="#8A8A90" stroke-width="1.5" stroke-dasharray="4 3" points="0,95 30,89 60,90 90,78 120,81 150,67 180,69 210,57 240,60 270,45 300,48 330,35 358,27"/><line x1="150" y1="0" x2="150" y2="120" stroke="var(--acc)" stroke-dasharray="2 3"/><circle cx="150" cy="70" r="4" fill="var(--acc)"/></svg>
+        <div class="between xs mut"><span>— Followers &nbsp; - - Creator &nbsp; <span><span style="color:var(--acc)">●</span> rebalance</span> <span class="n">1</span></span><span>Past performance isn't a promise.</span></div>
         <div class="chips"><span class="chip">1W</span><span class="chip">1M</span><span class="chip on">3M</span><span class="chip">1Y</span><span class="chip">All</span></div>
         <div class="card br">
           <p class="ttl" style="font-size:17px">Did followers win too? <span class="n">2</span></p>
@@ -493,7 +493,7 @@ table.t td:not(:first-child),table.t th:not(:first-child){text-align:right}
       <div class="sticky"><div style="flex:1"><p class="xs mut">From $5 · fee covered by us <span class="n">6</span></p></div><span class="btn p" style="height:52px;padding:0 40px">Buy</span></div>
     </div></div>
     <div class="notes"><h4>Basket detail notes</h4><ol>
-      <li>The NAV line is black, not green or red, so burgundy stays the brand. A dashed creator line runs on the same chart. Burgundy ticks mark rebalances; tap one for its reason.</li>
+      <li>The NAV line is off-white, not green or red, so the screen doesn't flip colour daily. A dashed creator line runs on the same chart. Small accent (#C41A42) ticks mark rebalances; tap one for its reason.</li>
       <li>The hero card is "Did followers win too?" The gap gets an honest explanation. If followers trail by more than 5%, the copy says so plainly (COPY §5).</li>
       <li>Creator stake in $ and as % of the basket. If the creator sells, the line changes and followers get notified.</li>
       <li>Target vs Now teaches drift without the word "drift". Tokenized-exposure line sits next to the holdings, where the claim is made.</li>
@@ -508,8 +508,8 @@ table.t td:not(:first-child),table.t th:not(:first-child){text-align:right}
     <div class="banner" style="margin:20px 40px 0;display:flex;justify-content:space-between;align-items:center"><div><p class="h">Recipe change in 14h 22m</p><p class="sm">TSLA 15% → 0%. AMZN 10% → 25%. "Moving to the company renting the GPUs."</p></div><div class="flex"><span class="btn sm g">See change</span><span class="btn sm">Sell before it happens</span></div></div>
     <div class="dgrid">
       <div class="col" style="gap:20px">
-        <div class="between" style="align-items:flex-end"><div><p class="kick">Basket · AIB · Balanced</p><p class="disp" style="font-size:72px">The AI Build-Out</p><p class="mut">by <b style="color:#000">@kavya</b> · 212 followers · 1% a year</p></div><div style="text-align:right"><p class="num" style="font-size:48px">$10.84</p><p><span class="gain">▲ +8.4%</span> <span class="mut">3M</span></p></div></div>
-        <div class="card"><svg viewBox="0 0 740 220" width="100%" height="220"><polyline fill="none" stroke="#000" stroke-width="2" points="0,180 60,170 120,175 180,150 240,158 300,130 360,134 420,110 480,118 540,90 600,96 660,70 740,58"/><polyline fill="none" stroke="#8A8A90" stroke-width="1.5" stroke-dasharray="5 4" points="0,180 60,168 120,171 180,146 240,153 300,124 360,128 420,104 480,111 540,84 600,89 660,64 740,52"/><line x1="300" y1="0" x2="300" y2="220" stroke="#6D001A" stroke-dasharray="2 3"/><line x1="540" y1="0" x2="540" y2="220" stroke="#6D001A" stroke-dasharray="2 3"/></svg>
+        <div class="between" style="align-items:flex-end"><div><p class="kick">Basket · AIB · Balanced</p><p class="disp" style="font-size:72px">The AI Build-Out</p><p class="mut">by <b style="color:var(--tx)">@kavya</b> · 212 followers · 1% a year</p></div><div style="text-align:right"><p class="num" style="font-size:48px">$10.84</p><p><span class="gain">▲ +8.4%</span> <span class="mut">3M</span></p></div></div>
+        <div class="card"><svg viewBox="0 0 740 220" width="100%" height="220"><polyline fill="none" stroke="currentColor" stroke-width="2" points="0,180 60,170 120,175 180,150 240,158 300,130 360,134 420,110 480,118 540,90 600,96 660,70 740,58"/><polyline fill="none" stroke="#8A8A90" stroke-width="1.5" stroke-dasharray="5 4" points="0,180 60,168 120,171 180,146 240,153 300,124 360,128 420,104 480,111 540,84 600,89 660,64 740,52"/><line x1="300" y1="0" x2="300" y2="220" stroke="var(--acc)" stroke-dasharray="2 3"/><line x1="540" y1="0" x2="540" y2="220" stroke="var(--acc)" stroke-dasharray="2 3"/></svg>
           <div class="between"><div class="chips"><span class="chip">1W</span><span class="chip">1M</span><span class="chip on">3M</span><span class="chip">1Y</span><span class="chip">All</span></div><span class="xs mut">Past performance isn't a promise. Prices frozen since close, 2:30 AM IST.</span></div></div>
         <div class="grid2" style="grid-template-columns:1.2fr 1fr">
           <div class="card br"><p class="ttl" style="font-size:17px">Did followers win too?</p><div class="grid2" style="margin-top:8px"><div><p class="xs mut">Followers (avg)</p><p class="gain" style="font-size:30px">+11.8%</p></div><div><p class="xs mut">Creator</p><p style="font-size:30px;font-weight:600">+12.4%</p></div></div><p class="sm mut">Followers trail by 0.6% since launch. That's the fee plus timing.</p></div>
@@ -561,8 +561,8 @@ table.t td:not(:first-child),table.t th:not(:first-child){text-align:right}
         <p class="xs mut" style="text-align:center">You get tokenized stock exposure, not shares. Baskets can go down.</p>
       </div></div>
     </div></div>
-    <div><p class="cap">5b · Breakdown open + price moved</p>
-    <div class="frame mob short" style="min-height:640px">
+    <div><p class="cap">5b · Breakdown + price moved · light option</p>
+    <div class="frame mob short lt" style="min-height:640px">
       <div class="sb"><span>9:41</span><i>●●● ▮</i></div>
       <div class="dim"><div class="sheet">
         <div class="grab"></div>
@@ -611,8 +611,8 @@ table.t td:not(:first-child),table.t th:not(:first-child){text-align:right}
       <div class="dim"><div class="sheet">
         <div class="grab"></div>
         <div class="between"><p class="ttl">Sell The AI Build-Out</p><span class="ico">×</span></div>
-        <p class="sm mut">You have <b style="color:#000">$126.40</b> (11.66 AIB)</p>
-        <div style="text-align:center"><p class="num" style="font-size:52px">30%</p><p class="mut">≈ <b style="color:#000">$37.92</b> USDC</p></div>
+        <p class="sm mut">You have <b style="color:var(--tx)">$126.40</b> (11.66 AIB)</p>
+        <div style="text-align:center"><p class="num" style="font-size:52px">30%</p><p class="mut">≈ <b style="color:var(--tx)">$37.92</b> USDC</p></div>
         <div class="slider"><div class="tr"></div><div class="fl" style="width:30%"></div><div class="th" style="left:30%"></div></div>
         <div class="ticks"><span>0</span><span>25%</span><span class="on">·</span><span>50%</span><span>75%</span><span>All</span></div>
         <p class="xs mut">Snaps to 25 · 50 · 75 · All. Drag for anything in between. <span class="n">1</span></p>
@@ -681,7 +681,7 @@ table.t td:not(:first-child),table.t th:not(:first-child){text-align:right}
           <div class="between"><p class="h">Recipe change in 14h 22m</p><span class="n">1</span></div>
           <p class="sm" style="margin-top:4px">TSLA 15% → 0%. AMZN 10% → 25%.</p>
           <p class="q sm" style="margin-top:6px">"Moving to the company renting the GPUs."</p>
-          <div class="flex" style="margin-top:10px"><span class="btn sm g" style="background:#fff">See change</span><span class="btn sm">Sell before it happens</span></div>
+          <div class="flex" style="margin-top:10px"><span class="btn sm p">See change</span><span class="btn sm">Sell before it happens</span></div>
         </div>
         <p class="disp">The AI Build-Out</p>
         <p class="ttl" style="font-size:17px;margin-top:8px">What changed and why</p>
@@ -708,7 +708,7 @@ table.t td:not(:first-child),table.t th:not(:first-child){text-align:right}
       </div></div>
     </div></div>
     <div class="notes"><h4>Notice notes</h4><ol>
-      <li>Burgundy banner = "the creator is doing something". It's a brand colour, not an alarm. The countdown is in the user's local time zone.</li>
+      <li>Notice banner = "the creator is doing something": a dark burgundy tint with an accent edge. It's brand, not an alarm. The countdown is in the user's local time zone.</li>
       <li>Drift trims are labelled "Automatic" and need no notice. Each still gets a reason and a cost, in $ and %.</li>
       <li>AI-originated changes keep their label in the feed forever (ARCH §7).</li>
       <li>Three explicit choices; "Keep my basket" is the default and needs no action. The exits are equal-weight outline buttons, so there's no dark pattern in either direction.</li>
@@ -804,11 +804,12 @@ table.t td:not(:first-child),table.t th:not(:first-child){text-align:right}
     <div class="frame mob short dk" style="min-height:700px">
       <div class="sb"><span>9:41</span><i>●●● ▮</i></div>
       <div class="scr" style="justify-content:center">
-        <div style="background:#6D001A;border-radius:12px;padding:20px;color:#fff">
-          <p class="kick" style="color:#F6E6EA">Alloy · new basket</p>
-          <p class="disp" style="font-size:48px;margin-top:6px">The AI Build-Out is live.</p>
-          <p style="margin-top:10px;color:#F6E6EA">NVDA · MSFT · GOOGL · AMZN</p>
-          <p class="sm" style="margin-top:14px;color:#F6E6EA">@kavya put in $50</p>
+        <div style="border:1px solid var(--bd);border-radius:12px;overflow:hidden;background:var(--s1)">
+          <p class="kick" style="background:#6D001A;color:var(--paper);padding:12px 20px">Alloy · new basket</p>
+          <div style="padding:16px 20px 20px">
+          <p class="disp" style="font-size:48px">The AI Build-Out is live.</p>
+          <p style="margin-top:10px" class="mut">NVDA · MSFT · GOOGL · AMZN</p>
+          <p class="sm" style="margin-top:14px">@kavya put in $50</p></div>
         </div>
         <p class="mut">You're the first holder. Share it and see who follows. <span class="n">7</span></p>
         <span class="btn p blk">Share on X</span><span class="btn blk">Go to basket</span>
@@ -821,7 +822,7 @@ table.t td:not(:first-child),table.t th:not(:first-child){text-align:right}
       <li>"See how" opens a simulated chart comparing the 3 modes on the creator's own picks. It teaches the strategies with their own picks.</li>
       <li>The fee is fixed at 1% in v2 and shown as "you keep 80%". Fee choice is OPEN_QUESTIONS #4.</li>
       <li>Seed framed as conviction. The $10 minimum comes from the contract's dead-share lock.</li>
-      <li>The share card is burgundy, the one big brand moment after the landing page. The OG image uses the same layout.</li>
+      <li>The share card is dark with a burgundy header band, the one brand moment after the landing page, kept under 10% of the screen. The OG image uses the same layout.</li>
     </ol></div>
   </div>
 </div></section>
@@ -848,7 +849,7 @@ table.t td:not(:first-child),table.t th:not(:first-child){text-align:right}
         </div>
         <div class="between"><p class="ttl" style="font-size:17px">Suggestions</p><span class="pill br">AI</span></div>
         <div class="card" style="border-style:dashed">
-          <p class="xs" style="color:var(--brand);font-weight:600">AI-suggested. Not investment advice. You decide. <span class="n">2</span></p>
+          <p class="xs" style="color:var(--tx);font-weight:600">AI-suggested. Not investment advice. You decide. <span class="n">2</span></p>
           <p style="margin-top:6px"><b>Trim TSLA 15% → 8%, add to AMZN.</b></p>
           <p class="sm mut" style="margin-top:4px">Why: TSLA closed below its 50-day average twice. AMZN is under target by 4 points.</p>
           <p class="xs mut" style="margin-top:4px">Based on prices to Nov 18.</p>
@@ -895,9 +896,9 @@ table.t td:not(:first-child),table.t th:not(:first-child){text-align:right}
       <div class="scr">
         <div class="between"><p class="ttl">Portfolio</p><span class="pill wn"><span class="dot"></span>Closed · 3h 12m</span></div>
         <div><p class="num">$342.18</p><p class="sm"><span class="gain">▲ $4.21 (1.2%)</span> <span class="mut">today</span> · <span class="gain">▲ $22.18</span> <span class="mut">all time</span></p><p class="xs mut">≈ ₹28,740 <span class="n">1</span></p></div>
-        <svg viewBox="0 0 358 70" width="100%" height="70"><polyline fill="none" stroke="#000" stroke-width="2" points="0,60 40,55 80,58 120,45 160,48 200,35 240,38 280,25 320,28 358,18"/></svg>
+        <svg viewBox="0 0 358 70" width="100%" height="70"><polyline fill="none" stroke="currentColor" stroke-width="2" points="0,60 40,55 80,58 120,45 160,48 200,35 240,38 280,25 320,28 358,18"/></svg>
         <div class="chips"><span class="chip on">Baskets</span><span class="chip">Stocks</span><span class="chip">Cash</span></div>
-        <div class="banner sm"><b style="color:var(--brand)">The AI Build-Out</b> changes in 14h. <span class="link">See change</span> <span class="n">2</span></div>
+        <div class="banner sm"><b>The AI Build-Out</b> changes in 14h. <span class="link">See change</span> <span class="n">2</span></div>
         <div class="card"><div class="between"><div><b>The AI Build-Out</b><p class="xs mut">11.66 AIB · Balanced</p></div><div style="text-align:right"><b>$126.40</b><p class="gain sm">▲ 5.3%</p></div></div></div>
         <div class="card"><div class="between"><div><b>Big Tech, Trimmed</b><p class="xs mut">2.10 BTT</p></div><div style="text-align:right"><b>$3.78</b><p class="loss sm">▼ 2.4%</p></div></div></div>
         <div class="card t"><div class="between"><div><b>USDC</b><p class="xs mut">Cash, ready to invest</p></div><div class="flex"><b>$212.00</b><span class="btn sm g">Add</span></div></div></div>
@@ -922,15 +923,15 @@ table.t td:not(:first-child),table.t th:not(:first-child){text-align:right}
     <div class="frame mob dk">
       <div class="sb"><span>9:41</span><i>●●● ▮</i></div>
       <div class="scr">
-        <div class="bar"><span class="ico" style="border-color:#fff">←</span><span class="pill" style="background:#1C1C1F;color:#F2B33D"><span class="dot"></span>US market closed · opens 8:00 PM IST</span></div>
+        <div class="bar"><span class="ico">←</span><span class="pill wn"><span class="dot"></span>US market closed · opens 8:00 PM IST</span></div>
         <p class="disp">The AI Build-Out</p>
         <div><p class="num">$10.84</p><p class="sm mut">Prices frozen since close, 2:30 AM IST <span class="n">1</span></p></div>
-        <svg viewBox="0 0 358 100" width="100%" height="100"><polyline fill="none" stroke="#fff" stroke-width="2" points="0,80 40,72 80,76 120,60 160,64 200,50 240,54 270,40"/><polyline fill="none" stroke="#fff" stroke-width="2" stroke-dasharray="3 4" points="270,40 358,40"/></svg>
-        <div class="card" style="border-color:#5a4410;background:#1a1405">
-          <p style="color:#F2B33D;font-weight:600">US market's closed</p>
-          <p class="sm" style="color:#ddd;margin-top:4px">You can still sell, but prices can be wider until it opens. Withdrawing stocks has no price impact. <span class="n">2</span></p>
+        <svg viewBox="0 0 358 100" width="100%" height="100"><polyline fill="none" stroke="currentColor" stroke-width="2" points="0,80 40,72 80,76 120,60 160,64 200,50 240,54 270,40"/><polyline fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 4" points="270,40 358,40"/></svg>
+        <div class="card" style="border-color:var(--warnbd);background:var(--warnbg)">
+          <p class="warn">US market's closed</p>
+          <p class="sm" style="margin-top:4px">You can still sell, but prices can be wider until it opens. Withdrawing stocks has no price impact. <span class="n">2</span></p>
         </div>
-        <div class="card"><div class="between sm"><span class="mut">Selling 30%</span><b>≈ $37.40</b></div><div class="between sm"><span class="mut">Price impact</span><span style="color:#F2B33D">0.9% (wider than usual)</span></div></div>
+        <div class="card"><div class="between sm"><span class="mut">Selling 30%</span><b>≈ $37.40</b></div><div class="between sm"><span class="mut">Price impact</span><span class="warn">0.9% (wider than usual)</span></div></div>
         <div class="grid2"><span class="btn p">Sell anyway</span><span class="btn">Withdraw stocks</span></div>
         <p class="xs mut">Rebalances wait for the market. Next check at open. <span class="n">3</span></p>
         <p class="xs mut">US market closed for Thanksgiving, Nov 26. Opens Fri, Nov 27, 8:00 PM IST (half day).</p>

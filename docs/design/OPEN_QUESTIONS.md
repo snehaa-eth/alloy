@@ -12,10 +12,17 @@ Each question comes with a recommendation, so a "yes, go" is enough. Ordered by 
 - **Recommendation: (a).** It's the one thing no competitor shows side by side, and it's the hook of the demo ("copy-traders lose while leaders win"). It does mean we must publish uncomfortable gaps too.
 - **Needs from you:** confirm we'll show the gap honestly even on our own seed baskets. The copy for a gap over 5% is in COPY §5.
 
-### 2. Dark mode default, or light?
-- **Recommendation:** dark by default (matches CAESAR, Robinhood-at-night, crypto norms), with a light "smoke" theme in settings.
-- **Landing hero:** always black.
-- **Trade-off:** light is slightly easier to read in sunlight on cheap phones, a real factor in our markets. Both token sets are ready (TOKENS §3).
+### 2. ~~Dark mode default, or light?~~ **Decided 2026-11-19**
+- **Dark is the default; light is an option.**
+- Palette v0.2:
+  - bg #0A0A0A, text #F2F0ED,
+  - off-white primary buttons,
+  - burgundy at most 10% of any screen,
+  - accent #C41A42,
+  - jade gain,
+  - no pink.
+- Applied in TOKENS.md, wireframes and the prototype.
+- **Still open:** the founder suggested #B5123A for small accents. It measures 2.93:1 on #0A0A0A, which fails 3:1, so I used #C41A42 (3.37:1). Confirm or pick another shade that passes.
 
 ### 3. Default sort on Explore
 - **Options:**

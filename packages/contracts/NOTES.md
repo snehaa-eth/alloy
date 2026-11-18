@@ -12,10 +12,12 @@ frozen event ABI for the indexer, gas numbers, TODOs and open risks.
   and its `ERC20` stores name/symbol the way a clone needs.
 - **Smoke test** (`test/Smoke.t.sol`): create a B20 asset through `0xB20f…`, mint, transfer, `updateMultiplier`.
   It passes in-process; the token's code is `0xef`.
-- **Caveat found:** the base-forge v1.1.0 precompile does **not** serve the ERC-8056 scheduled-multiplier surface.
+- **Caveat found:** the base-forge v1.1.0 precompile (and the local base-anvil Sepolia fork) does **not** serve the
+  ERC-8056 scheduled-multiplier surface.
   `effectiveAt()`, `newUIMultiplier()`, `uiMultiplier()` and `updateUIMultiplier()` revert with their own selector.
   `multiplier()` and `updateMultiplier()` work. The tests therefore check the pending-multiplier guard with
-  `vm.mockCall`. Mainnet support must be confirmed on a fork (see TODO).
+  `vm.mockCall`. **Base mainnet does serve them** (lead verified on NVDAc with cast: `uiMultiplier()` =
+  1000537939576369481, `effectiveAt()` = 0, `newUIMultiplier()` works). Hence the guard modes below.
 
 ## Units
 
@@ -32,6 +34,11 @@ frozen event ABI for the indexer, gas numbers, TODOs and open risks.
 - At seed, 1 share = $1.
 
 ## Decisions and deviations
+
+0. **Keeper-only execution** (founder decision, 2026-11-19). Only `factory.keeper()` may call `executeRebalance`
+   (drift trims *and* due-recipe execution) and `removeComponent`. Creators can only `proposeRecipe(w, reasonHash)`
+   and `cancelRecipe()` (→ `RecipeCancelled`) before execution. Error: `NotKeeper()`. The owner rotates the keeper
+   with `setKeeper` (emits `KeeperSet`); baskets read it live. The 1/day limit and all guards are unchanged.
 
 1. **Seeding happens in the factory, not through the router.**
    - `issue` needs `ts > 0`, so the first mint has to be privileged.
@@ -97,11 +104,13 @@ frozen event ABI for the indexer, gas numbers, TODOs and open risks.
     - `FeedGuardBase` checks: `answer > 0`, `updatedAt ≤ maxAge` (25h) and not in the future, and pending multiplier
       (`effectiveAt()` within ±1 day).
     - If `effectiveAt()` is unavailable, the multiplier check fails closed only when `strictMultiplier` is set.
-    - `SimpleFeedGuard` (testnet) adds an owner pause flag per feed.
-    - `ChainlinkFeedGuard` adds the sequencer-uptime feed plus grace period, and the pause registry.
-    - The registry interface `isPaused(address)` is **unverified**.
-15. **`removeComponent`** is callable by the creator or keeper.
-    - It requires target == 0, no pending recipe, and value < $1 at the raw feed price.
+    - `SimpleFeedGuard` (testnet): `strictMultiplier = false`; adds an owner pause flag per feed and an optional
+      pause registry (`IFeedPauseRegistry.isOraclePaused(feed)` = testnet-env `MockFeedPauseRegistry`).
+    - `ChainlinkFeedGuard` (mainnet): `strictMultiplier` is **always true** (hard-coded; mainnet B20 serves
+      `effectiveAt()`), plus sequencer-uptime feed + grace period and the pause registry.
+    - The mainnet registry function name (`isOraclePaused` assumed, matching the testnet mock) is **unverified**.
+15. **`removeComponent`**.
+    - Keeper only. It requires target == 0, no pending recipe, and value < $1 at the raw feed price.
     - Dust goes to the treasury, or to the creator if there is no treasury.
     - It reorders by swap-and-pop, so the keeper must re-read `components()`.
 16. Solady's implicit Permit2 infinite allowance is **disabled** on basket shares.
@@ -146,16 +155,45 @@ From `base-forge test --gas-report`, with the B20 precompile gas as modelled by 
 | Function | Median gas | Max gas |
 |---|---|---|
 | `Factory.createBasket` | 863k | — |
-| `Router.buy` | 543k | — |
+| `Router.buy` | 523k | 562k |
 | `Router.sell` | 466k | — |
 | `Basket.issue` | 229k | — |
 | `Basket.redeem` | 55k | 194k |
-| `Basket.executeRebalance` (1 trade, 2 hops) | 319k | 572k |
+| `Basket.executeRebalance` (1 trade, 2 hops; mock venue) | 314k | 572k |
+| `executeRebalance` on Sepolia fork, real Uniswap v3 | 477k | — |
 | `accrueFee` | 9k | 53k |
 | `proposeRecipe` | 100k | — |
 | `claimOwed` | 22k | — |
 
 Per-test numbers are in `.gas-snapshot`.
+
+## Base Sepolia deploy + fork validation
+
+- `script/DeployAlloy.s.sol` (chain 84532 only). It reads `../testnet-env/deployments/84532.json` and deploys:
+  - `SimpleFeedGuard`, reading `MockFeedPauseRegistry`, with max age 25h;
+  - `UniswapV3Adapter`, using SwapRouter02 `0x94cC…2bc4`;
+  - `BasketFactory`, with tUSDC as the quote asset, treasury = deployer, and keeper = `KEEPER_ADDRESS` or the
+    deployer;
+  - `AlloyRouter`.
+- It allow-lists all 6 stocks with their feed and `poolData = abi.encode(uint24(500))`, then writes
+  `deployments/84532.json`. The `demo` flag is per basket and always allowed.
+- Validated on a local `base-anvil --fork-url https://sepolia.base.org` with `--unlocked`; nothing was broadcast to a
+  public network.
+- That fork run's output is `deployments/84532.fork.json` (`"network": "local-fork"`; addresses are fork-only).
+  **`deployments/84532.json` does not exist yet**; it is created by the real deploy.
+- `script/DemoBasket.s.sol` ran on the fork with a fresh address. All 7 txs had status 1:
+  - It took the faucet drip, then created "Alloy Demo: Big Tech" (40/30/30 tGOOGLc/tMSFTc/tTSLAc, demo) with a
+    100 tUSDC seed, giving 99.9 creator shares and NAV $99.944 (0.06% cost).
+  - Buy: 50 tUSDC gave 49.994 shares.
+  - Sell 30% (14.998 shares) gave 14.984909 tUSDC against an oracle-expected 14.989954 (3.4 bps).
+  - The router ended with a zero balance.
+- Follow-up calls on the same fork:
+  - The creator's `executeRebalance` reverted with `NotKeeper`.
+  - The keeper's 0.01 tGOOGLc→tMSFTc trade through the real pools succeeded (476k gas).
+- `test/fork/UniswapFork.t.sol` repeats this flow through real Uniswap pools. It is skipped unless `FORK_RPC_URL` is
+  set, and passes against the local fork.
+- ABIs: `./script/export-abi.sh` writes `abi/*.json`: Factory, Basket, Router, both adapters, both guards, and the
+  interfaces.
 
 ## TODO
 
@@ -167,12 +205,10 @@ Per-test numbers are in `.gas-snapshot`.
    - Confirm the pause-registry function name on `0x3f3E…5CaD`; if it differs, deploy a shim.
    - Confirm the sequencer-uptime feed address.
    - Confirm all feed addresses and that each has 8 decimals.
-3. Confirm that mainnet B20 serves `effectiveAt()`. If it does, deploy `ChainlinkFeedGuard` with
-   `strictMultiplier = true`.
-4. Real Uniswap v3 integration test, once `packages/testnet-env` pools exist. Only `UniswapV3Adapter` encoding is
-   unit-tested so far, against a recording mock router.
+3. ~~Confirm that mainnet B20 serves `effectiveAt()`~~. Done: it does, and `ChainlinkFeedGuard` is strict.
+4. Real Uniswap v3 test: done as a fork test (opt-in via `FORK_RPC_URL`). Add it to CI with a pinned block.
 5. Add the remaining pieces:
-   - a deploy script (no broadcasting done here),
+   - a mainnet deploy script (Aerodrome + `ChainlinkFeedGuard`),
    - sdk ABI codegen,
    - moving ownership to a Safe,
    - a re-seed path for baskets with `ts == dead`,
@@ -184,14 +220,15 @@ Per-test numbers are in `.gas-snapshot`.
 - **Owner trust.** The factory owner can change the adapter/pool, feed or guard for live baskets. This can't steal
   directly, because loss caps and `minOut` still apply, but a malicious guard returning fake prices could make
   value-losing rebalances pass. Mitigation: a Safe owner and a timelock on `allow` / `setFeedGuard`.
-- **Creator/keeper extraction.** An executor that sandwiches its own rebalances can leak up to 150 bps per trade, and
+- **Keeper extraction.** The keeper is now the single executor; if its key is compromised, an attacker sandwiching
+  rebalances can leak up to 150 bps per trade, and
   about 300 bps per week through the decaying budget (roughly 15%/yr worst case).
 - **All-or-nothing band rule plus the 150 bps cap.** On thin pools (Aerodrome TVL $0.3–1.8M) a large recipe change may
   be impossible in one transaction, leaving it stuck until the TVL cap or the trade size shrinks.
   The $5k cap keeps this manageable.
 - **Feed-based reads on issue and router buy.** The TVL cap and the USDC split mean issue/buy revert if a feed answers
   ≤ 0. Redeem and sell are unaffected.
-- **Fail-open multiplier check** in non-strict mode while the multiplier view is missing. An instant `updateMultiplier`
+- **Fail-open multiplier check on testnet** (`SimpleFeedGuard` is non-strict; mainnet `ChainlinkFeedGuard` is strict). An instant `updateMultiplier`
   (deprecated failsafe) cannot be detected at all, and the feed lags it. Rebalances right after an unannounced split
   could then trade on wrong prices; the loss cap bounds the damage.
 - **USDC is assumed to be $1** inside rebalance hop `minOut`s.

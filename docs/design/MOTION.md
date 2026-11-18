@@ -25,7 +25,11 @@ Research ran on 2026-11-19 via web search. Items marked *(verify)* are from prod
    - Nothing over 400ms stands between a tap and the next action.
    - Scroll stays native (no scroll-jacking).
 6. **Reduced motion is a first-class design**, not "animations off". Every spec below lists its reduced variant.
-7. **Cheap phones first.**
+7. **Motion never adds burgundy area.**
+   - Animated accents (progress, ticks, rings, the hold bar) use the small accent #C41A42.
+   - Large animated surfaces stay neutral, so no screen goes over the 10% burgundy rule mid-animation.
+   - Prototype viewports measure at most 2.3%.
+8. **Cheap phones first.**
    - Animate `transform` and `opacity` only.
    - Parallax is off on low-power devices.
    - Art is lazy-loaded.
@@ -189,7 +193,7 @@ Each spec gives **Full** motion, then **Reduced** (`prefers-reduced-motion: redu
   - Hero number and date follow the finger.
   - The line right of the finger dims to 30%.
   - A vertical hairline and dot track the line.
-  - At rebalance markers, a burgundy tick grows and the reason tooltip appears.
+  - At rebalance markers, an accent (#C41A42) tick grows and the reason tooltip appears.
   - **Haptic tick:** `navigator.vibrate(4)` each time the scrub crosses a day boundary on Android/Chrome. iOS Safari has no vibrate API, so it shows a visual tick only. Haptics must be user-toggleable (Me > Haptics).
   - Release: the number springs back to the current price over 200ms.
 - **Live number tickers**
@@ -219,14 +223,15 @@ Each spec gives **Full** motion, then **Reduced** (`prefers-reduced-motion: redu
   - The thumb snaps to 25/50/75/All with a 4ms vibrate on each snap.
   - The readout swaps instantly.
 - **Hold to confirm**
-  - On press, a fill sweeps left → right across the button, linear, 600ms.
+  - The button is off-white (#F2F0ED) with black text, the dark-mode primary.
+  - On press, a darkening sweep plus a 4px accent (#C41A42) bar move left → right across the button, linear, 600ms.
   - Releasing early reverses the fill over 150ms and shows the hint "Keep holding to confirm".
   - When complete:
     - a 10ms vibrate,
     - the button morphs into a spinner pill reading "Buying… usually 5 seconds",
     - on receipt, a check mark draws (600ms) and the facts appear: "You're in. 2.30 AIB tokens added."
   - Keyboard: holding Space or Enter does the same, for accessibility.
-- **Success**: no confetti. A single subtle burgundy ring expands once behind the check (300ms, opacity 0.3 → 0).
+- **Success**: no confetti. A single subtle accent (#C41A42) ring expands once behind the check (300ms, opacity 0.3 → 0).
 - **Reduced**
   - The sheet fades in instead of sliding.
   - The hold fill is a stepped progress bar with the text "Hold… 3, 2, 1" (still a hold, so still safe).
@@ -235,10 +240,10 @@ Each spec gives **Full** motion, then **Reduced** (`prefers-reduced-motion: redu
 ### 5.6 Rebalance feed
 - **Full**
   - A new item slides down from the top, pushing older items with a layout animation (200ms).
-  - The timeline dot fills burgundy for recipe changes.
+  - The timeline dot fills with the accent (#C41A42) for recipe changes.
   - A pending item has a dashed ring that slowly rotates (8s loop; stops at reduced).
   - Expanding an item reveals the cost breakdown (height animation 200ms).
-- **Reduced**: instant insert with a 1s background highlight (burgundy-50).
+- **Reduced**: instant insert with a 1s background highlight (burgundy-950 `#2A000A` on dark).
 
 ### 5.7 Page transitions (Next.js App Router)
 - **Full**
@@ -259,13 +264,13 @@ Each spec gives **Full** motion, then **Reduced** (`prefers-reduced-motion: redu
 ### 5.9 Pull to refresh (mobile web)
 - **Full**
   - Native overscroll where available, with the Alloy square mark rotating 0→90° in proportion to the pull.
-  - At the threshold it fills burgundy and a 4ms vibrate fires.
+  - At the threshold it fills with the accent (#C41A42) and a 4ms vibrate fires.
   - On release the square spins (linear, 600ms loop) until done.
   - The "Updated just now" label fades in.
 - **Reduced**: the square fills with no rotation, and the spinner becomes a dotted progress line.
 
 ### 5.10 Creator launch moment (the one celebration)
-- **Full**: the share card rises 24px while a white smoke layer fades from 0.6 → 0 across it (900ms, once). Then the "Share on X" button pulses once (scale 1 → 1.03 → 1).
+- **Full**: the share card (dark, with a burgundy header band) rises 24px while an off-white smoke layer fades from 0.6 → 0 across it (900ms, once). Then the "Share on X" button pulses once (scale 1 → 1.03 → 1).
 - **Reduced**: the card fades in.
 
 ---

@@ -12,6 +12,13 @@ base-forge build
 base-forge test          # B20 precompiles run in-process (foundry.toml: base = true)
 base-forge snapshot --no-match-contract BasketInvariantTest
 base-forge fmt
+./script/export-abi.sh   # abi/*.json for packages/sdk
+
+# Base Sepolia (validate on a local fork first; see NOTES.md)
+base-anvil --fork-url https://sepolia.base.org --port 8546 --auto-impersonate
+OUT_JSON=deployments/84532.fork.json NETWORK_LABEL=local-fork \
+  base-forge script script/DeployAlloy.s.sol --rpc-url local_fork --broadcast --unlocked --sender <DEPLOYER>
+FORK_RPC_URL=http://127.0.0.1:8546 base-forge test --mc UniswapForkTest
 ```
 
 Stock `forge` cannot run B20 precompiles; always use `base-forge`.

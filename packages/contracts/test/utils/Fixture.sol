@@ -54,7 +54,7 @@ abstract contract Fixture is Test {
             stocks[i].grantRole(B20Constants.MINT_ROLE, address(adapter));
         }
 
-        guard = new SimpleFeedGuard(owner, 25 hours);
+        guard = new SimpleFeedGuard(owner, 25 hours, address(0));
         factory = new BasketFactory(owner, address(usdc), keeper, treasury, address(guard));
         router = new AlloyRouter(address(factory));
         vm.startPrank(owner);
@@ -200,6 +200,13 @@ abstract contract Fixture is Test {
         }
         b.issue(shares, who);
         vm.stopPrank();
+    }
+
+    /// @dev base-forge v1.1.0 lacks ERC-8056 views; mainnet has them. Mock `effectiveAt() = 0` (none pending).
+    function _mockNoPendingMultiplier() internal {
+        for (uint256 i; i < stocks.length; ++i) {
+            vm.mockCall(address(stocks[i]), abi.encodeWithSignature("effectiveAt()"), abi.encode(uint256(0)));
+        }
     }
 
     function _trade(uint8 from, uint8 to, uint256 amt) internal pure returns (IBasket.Trade[] memory t) {

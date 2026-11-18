@@ -43,13 +43,38 @@ contract RebalanceTest is Fixture {
         assertEq(usdc.balanceOf(address(b)), 0);
     }
 
-    function test_creatorCanRebalance_othersCannot() public {
+    function test_onlyKeeperCanRebalance_notCreator() public {
         _drift();
         vm.prank(asha);
-        vm.expectRevert(Basket.NotCreatorOrKeeper.selector);
+        vm.expectRevert(Basket.NotKeeper.selector);
         b.executeRebalance(_trade(0, 1, 0.4e8));
         vm.prank(creator);
+        vm.expectRevert(Basket.NotKeeper.selector);
         b.executeRebalance(_trade(0, 1, 0.4e8));
+        vm.prank(creator);
+        vm.expectRevert(Basket.NotKeeper.selector);
+        b.removeComponent(0);
+        vm.prank(keeper);
+        b.executeRebalance(_trade(0, 1, 0.4e8));
+    }
+
+    function test_creatorCannotExecuteDueRecipe_keeperCan() public {
+        uint16[] memory w = new uint16[](3);
+        w[0] = 5000;
+        w[1] = 2500;
+        w[2] = 2500;
+        vm.prank(creator);
+        b.proposeRecipe(w, keccak256("r"));
+        _warp(24 hours);
+        IBasket.Trade[] memory t = new IBasket.Trade[](2);
+        t[0] = IBasket.Trade({from: 1, to: 0, amountIn: 1e8});
+        t[1] = IBasket.Trade({from: 2, to: 0, amountIn: 0.25e8});
+        vm.prank(creator);
+        vm.expectRevert(Basket.NotKeeper.selector);
+        b.executeRebalance(t);
+        vm.prank(keeper);
+        b.executeRebalance(t);
+        assertEq(b.targets()[0], 5000);
     }
 
     function test_cooldown_oncePerDay() public {
@@ -123,7 +148,8 @@ contract RebalanceTest is Fixture {
     }
 
     function test_pendingMultiplier_reverts_chainlinkGuard() public {
-        ChainlinkFeedGuard cg = new ChainlinkFeedGuard(address(0), address(0), 0, 25 hours, 1 days, false);
+        ChainlinkFeedGuard cg = new ChainlinkFeedGuard(address(0), address(0), 0, 25 hours, 1 days);
+        _mockNoPendingMultiplier();
         vm.prank(owner);
         factory.setFeedGuard(address(cg));
         _drift();
@@ -145,7 +171,7 @@ contract RebalanceTest is Fixture {
     }
 
     function test_strictMultiplier_failsClosedWhenUnknown() public {
-        ChainlinkFeedGuard cg = new ChainlinkFeedGuard(address(0), address(0), 0, 25 hours, 1 days, true);
+        ChainlinkFeedGuard cg = new ChainlinkFeedGuard(address(0), address(0), 0, 25 hours, 1 days);
         vm.prank(owner);
         factory.setFeedGuard(address(cg));
         vm.prank(keeper);
@@ -386,7 +412,7 @@ contract RebalanceTest is Fixture {
 
         stocks[2].mint(address(b), 1e5); // dust donation, $0.20
         vm.prank(asha);
-        vm.expectRevert(Basket.NotCreatorOrKeeper.selector);
+        vm.expectRevert(Basket.NotKeeper.selector);
         b.removeComponent(2);
         vm.prank(keeper);
         vm.expectRevert(Basket.CannotRemove.selector);
