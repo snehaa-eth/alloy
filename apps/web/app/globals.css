@@ -1328,3 +1328,73 @@ body:has(.cs) .a-gl { z-index: 30; }
 
 /* portfolio+create+activity · nav legibility: scrolled content must never read through the solid nav (all pages) */
 .a-nav[data-solid="true"] { background: #000; }
+
+/* waitlist (/waitlist) ------------------------------------------------------------------------------------
+ * Sign-up card, pill fields (copper ring on focus). */
+@layer components {
+  .wl-card {
+    position: relative; padding: 26px; border-radius: 26px; border: 1px solid var(--line);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012)), rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 40px 80px -40px rgba(0, 0, 0, 0.9);
+  }
+  @media (min-width: 768px) { .wl-card { padding: 30px; } }
+  .wl-field {
+    display: flex; align-items: center; gap: 12px; height: 52px; padding: 0 20px; border-radius: 999px;
+    border: 1px solid var(--line2); background: rgba(243, 241, 238, 0.025); cursor: text;
+    transition: border-color 0.3s var(--ease), box-shadow 0.3s var(--ease), background-color 0.3s;
+  }
+  .wl-field:hover { border-color: rgba(243, 241, 238, 0.32); }
+  .wl-field:focus-within { border-color: var(--copper); box-shadow: 0 0 0 4px rgba(var(--copper-rgb), 0.16); background: rgba(243, 241, 238, 0.035); }
+  .wl-field[data-error="true"] { border-color: var(--loss); box-shadow: none; }
+  .wl-field__icon { display: inline-flex; color: var(--dim); transition: color 0.3s; }
+  .wl-field:focus-within .wl-field__icon { color: var(--ink); }
+  .wl-field input { flex: 1; min-width: 0; height: 100%; background: transparent; border: 0; outline: none; color: var(--ink); font: 400 15px var(--font-ui), system-ui, sans-serif; }
+  .wl-field input::placeholder { color: var(--dim); }
+  .wl-field input:focus-visible { outline: none; }
+}
+
+/* waitlist variants: glass bar (A), deep card (B), live price strip */
+@layer components {
+  .wl-bar {
+    display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 999px; border: 1px solid var(--line2);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015)), rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(22px) saturate(1.2); -webkit-backdrop-filter: blur(22px) saturate(1.2);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 30px 80px -30px rgba(0, 0, 0, 0.95);
+  }
+  .wl-bar .wl-field { border-color: transparent; background: transparent; height: 52px; }
+  .wl-bar .wl-field:hover { border-color: var(--line); }
+  .wl-bar .wl-field:focus-within { border-color: var(--copper); background: rgba(243, 241, 238, 0.03); }
+  .wl-bar .wl-grow { flex: 1 1 0; min-width: 0; }
+  .wl-bar .wl-grow + .wl-grow { position: relative; }
+  .wl-bar .wl-grow + .wl-grow::before { content: ""; position: absolute; left: -5px; top: 14px; bottom: 14px; width: 1px; background: var(--line); }
+  .wl-bar__label { display: none; }
+  .wl-bar--done { border-radius: 28px; padding: 28px; justify-content: center; }
+  @media (max-width: 767px) {
+    .wl-bar { flex-direction: column; align-items: stretch; border-radius: 26px; padding: 18px; gap: 10px; }
+    .wl-bar .wl-field { border-color: var(--line2); background: rgba(243, 241, 238, 0.025); }
+    .wl-bar .wl-grow { flex: none; }
+    .wl-bar .wl-grow + .wl-grow::before { display: none; }
+    .wl-bar__label { display: block; text-align: left; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.3em; color: var(--mute); padding: 2px 4px 6px; }
+    .wl-bar .wl-join { width: 100%; }
+  }
+  .wl-card--deep {
+    border-color: rgba(243, 241, 238, 0.14);
+    background:
+      radial-gradient(120% 80% at 50% -20%, rgba(243, 241, 238, 0.09), transparent 60%),
+      radial-gradient(80% 60% at 100% 120%, rgba(var(--copper-rgb), 0.07), transparent 60%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), rgba(6, 6, 6, 0.7);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.02), 0 50px 100px -40px rgba(0, 0, 0, 1), 0 0 120px -60px rgba(243, 241, 238, 0.15);
+  }
+  .wl-check { background: radial-gradient(circle at 35% 30%, rgba(243, 241, 238, 0.25), rgba(243, 241, 238, 0.04)); box-shadow: inset 0 0 0 1px var(--line2); }
+  .wl-strip { height: 58px; }
+  .wl-strip::after { content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 12%; background: linear-gradient(90deg, transparent, #000); pointer-events: none; }
+  .wl-strip__tag { position: absolute; left: 0; top: 0; bottom: 0; z-index: 1; display: inline-flex; align-items: center; gap: 8px; padding: 0 28px 0 clamp(16px, 6vw, 96px); background: #000; box-shadow: 30px 0 30px #000; font-size: 10.5px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
+  @media (max-width: 767px) { .wl-strip__tag { padding-right: 16px; box-shadow: 18px 0 18px #000; } .wl-strip__tag span { display: none; } }
+  .wl-strip__track { display: flex; width: max-content; animation: wl-marquee 60s linear infinite; }
+  .wl-strip:hover .wl-strip__track { animation-play-state: paused; }
+  .wl-strip__run { display: flex; align-items: center; flex: none; }
+}
+@keyframes wl-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .wl-strip__track { animation: none; } .wl-strip { overflow-x: auto; } }
+.wl-bar .wl-field[data-error="true"], .wl-field[data-error="true"] { border-color: var(--loss); box-shadow: none; }

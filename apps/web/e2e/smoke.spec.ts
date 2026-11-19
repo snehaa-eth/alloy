@@ -7,7 +7,7 @@ import { caption, check, keyShot, noHorizontalOverflow, watchErrors } from "./he
 const AI = "0xA6665F87702Ba1cDeF544E890147B2b5d305Cec3";
 const ROUTES: [string, number][] = [
   ["/", 200], ["/explore", 200], [`/b/${AI}`, 200], ["/portfolio", 200], ["/activity", 200], ["/create", 200],
-  ["/creator/alloy_fi", 200], ["/creator/meera_invests", 200], ["/me", 200], ["/nope-e2e-404", 404],
+  ["/creator/alloy_fi", 200], ["/creator/meera_invests", 200], ["/me", 200], ["/waitlist", 200], ["/nope-e2e-404", 404],
 ];
 
 let page: Page;
@@ -229,4 +229,31 @@ test("test mode menu", async ({}, info) => {
   });
   await keyShot(page, info, "test-menu");
   await page.keyboard.press("Escape");
+});
+
+// /waitlist (WAITLIST_MODE=on sends every page here in production; locally the flag is unset so the routes above load).
+// Client-side validation only: no sign-up is written.
+test("waitlist renders and validates the sign-up", async ({}, info) => {
+  await page.goto("/waitlist");
+  await settle(1500);
+  await caption(page, `Step ${n()}: waitlist sign-up validation`);
+  await check(page, info, "waitlist headline + form", async () => {
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Stocks,");
+    await expect(page.getByLabel("Email")).toBeVisible();
+    await expect(page.getByLabel("X handle (optional)")).toBeVisible();
+    await expect(page.getByTestId("join-note")).toHaveText("One email when your spot opens. No spam, ever.");
+  });
+  await check(page, info, "waitlist rejects a bad email", async () => {
+    await page.getByLabel("Email").fill("not-an-email");
+    await page.getByRole("button", { name: /Join the waitlist/ }).click();
+    await expect(page.getByTestId("join-note")).toHaveText("That email doesn't look right.");
+  });
+  await check(page, info, "waitlist rejects a bad X handle", async () => {
+    await page.getByLabel("Email").fill("someone@example.com");
+    await page.getByLabel("X handle (optional)").fill("not a handle!");
+    await page.getByRole("button", { name: /Join the waitlist/ }).click();
+    await expect(page.getByTestId("join-note")).toContainText("X handles are letters");
+  });
+  if (isPhone()) await check(page, info, "waitlist no horizontal overflow", () => noHorizontalOverflow(page));
+  await keyShot(page, info, "waitlist");
 });

@@ -52,33 +52,43 @@ export function AppShell({ children }: { children: ReactNode }) {
   const path = usePathname() ?? "/";
   const full = FULLSCREEN.some((p) => path.startsWith(p));
   const landing = path === "/";
+  /** Private-preview pages (waitlist): wordmark only, no app nav, tab bar, status strip or app footer. */
+  const bare = path.startsWith("/waitlist");
   const solid = useSolidNav(landing);
   return (
     <StatusProvider>
       <MetalCanvasProvider>
         <InAppBar />
-        <header className="a-nav" data-over={landing ? "true" : undefined} data-solid={solid || !landing ? "true" : "false"}>
+        <header className="a-nav" data-over={landing || bare ? "true" : undefined} data-solid={solid || (!landing && !bare) ? "true" : "false"}>
           <div className="relative flex h-16 items-center justify-between gap-3 px-[var(--gut)] md:h-[76px]">
-            <Link href="/" className="flex h-9 items-center no-underline" aria-label="Alloy home">
+            <Link href={bare ? "/waitlist" : "/"} className="flex h-9 items-center no-underline" aria-label="Alloy home">
               <BrandMark />
             </Link>
-            <nav className="a-links absolute left-1/2 hidden -translate-x-1/2 items-center gap-1.5 text-[13.5px] lg:flex" aria-label="Main">
-              {LINKS.map((t) => (
-                <Link key={t.href} href={t.href} aria-current={t.match(path) ? "page" : undefined}>
-                  {t.label}
-                </Link>
-              ))}
-            </nav>
-            {/* Same actions on every page and size: Test mode pill + Sign in, or Test mode pill + wallet menu. */}
-            <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
-              <AccountButton />
-            </div>
+            {bare ? (
+              <a href="https://x.com/alloy_fi" target="_blank" rel="noreferrer" className="a-btn a-btn--line a-btn--sm">
+                Follow @alloy_fi
+              </a>
+            ) : (
+              <>
+              <nav className="a-links absolute left-1/2 hidden -translate-x-1/2 items-center gap-1.5 text-[13.5px] lg:flex" aria-label="Main">
+                {LINKS.map((t) => (
+                  <Link key={t.href} href={t.href} aria-current={t.match(path) ? "page" : undefined}>
+                    {t.label}
+                  </Link>
+                ))}
+              </nav>
+              {/* Same actions on every page and size: Test mode pill + Sign in, or Test mode pill + wallet menu. */}
+              <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
+                <AccountButton />
+              </div>
+              </>
+            )}
           </div>
-          {!landing && <StatusStrip />}
+          {!landing && !bare && <StatusStrip />}
         </header>
-        <main className={"relative z-[1] " + (full || landing ? "min-h-[calc(100dvh-64px)]" : "min-h-[calc(100dvh-64px)] pb-24 md:pb-8")}>{children}</main>
+        <main className={"relative z-[1] " + (full || landing || bare ? "min-h-[calc(100dvh-64px)]" : "min-h-[calc(100dvh-64px)] pb-24 md:pb-8")}>{children}</main>
         {/* Phone tab bar on app pages (not on the landing or full-screen flows). */}
-        {!full && !landing && (
+        {!full && !landing && !bare && (
           <nav className="c-nav fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)] md:hidden" aria-label="Main">
             {TABS.map((t) => {
               const I = t.icon;
@@ -92,7 +102,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </nav>
         )}
         {/* The landing draws its own footer. */}
-        {!full && !landing && (
+        {!full && !landing && !bare && (
           <div className="hidden md:block">
             <SiteFooter />
           </div>
