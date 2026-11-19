@@ -26,7 +26,7 @@ Alloy is a "smallcase for web3": curated, thematic baskets of tokenized U.S. sto
 - `docs/ARCHITECTURE.md` (design) and `docs/STAGES.md` (build plan).
 - **Before the first push of this layout:** set the Vercel Root Directory to `apps/web` (crates-ui) and `apps/api` (crates-mantle), or the deploys break.
 - Contracts toolchain: `base-forge` / `base-anvil` / `base-cast` (Base Foundry, in ~/.foundry/bin). Stock forge 1.1.0 cannot run B20 precompiles.
-- GitHub: https://github.com/snehaa-eth/crates (branch `main`).
+- GitHub: https://github.com/snehaa-eth/alloy (branch `main`). Renamed from `crates` on 2026-11-20; old URLs redirect.
 
 ## Rebrand status (commit 9f3bb7e "Rebrand Crates to Alloy")
 Done:
@@ -42,7 +42,7 @@ Deliberately NOT changed, because renaming would break the API or data:
 Still TODO:
 1. The logo images `public/assets/logo_crates.svg` and `public/assets/crates.png` still show the old Crates logo. They need new Alloy artwork.
 2. Vercel domain is still `crates-ui.vercel.app`. Consider adding an alias such as `alloy-fi.vercel.app` or a custom domain.
-3. GitHub repo is still named `crates`. Renaming it keeps redirects from the old name working.
+3. ~~GitHub repo rename~~ done 2026-11-20 (`crates` → `alloy`).
 4. Optional: rename internal identifiers and routes crate→basket in a coordinated frontend+backend+DB change.
 
 ## Working rules

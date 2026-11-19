@@ -98,7 +98,7 @@ export function TryScreen({ demo, others }: { demo: LoadedBasket; others: Loaded
             <ButtonLink href="/create" variant="secondary">
               Build your own
             </ButtonLink>
-            <a className="c-link self-start" href="https://github.com/snehaa-eth/crates" target="_blank" rel="noreferrer">
+            <a className="c-link self-start" href="https://github.com/snehaa-eth/alloy" target="_blank" rel="noreferrer">
               <Github size={14} aria-hidden /> Source code
             </a>
             {!acct.signedIn && (
