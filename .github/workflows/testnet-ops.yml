@@ -1,0 +1,61 @@
+# Base Sepolia (testnet) background jobs, replacing the laptop bot:
+#   1. price-sync: mirrors real stock prices onto the mock feeds (+ heartbeat, pool arb)
+#   2. keeper: one pass of rebalances / scheduled recipe changes
+# Both sign with the testnet deployer key (it is factory.keeper()). Testnet only — never a mainnet key.
+name: testnet-ops
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "price-sync mode (mirror | hold)"
+        default: "mirror"
+      dry_run:
+        description: "dry run (no txs)"
+        default: "0"
+
+# One run at a time: both jobs share one key, so overlapping runs would clash on nonces.
+concurrency:
+  group: testnet-ops
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  RPC_URL: https://sepolia.base.org
+
+jobs:
+  ops:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Price sync
+        working-directory: packages/testnet-env/bot
+        env:
+          BOT_PK: ${{ secrets.TESTNET_DEPLOYER_PK }}
+          MODE: ${{ github.event.inputs.mode || 'mirror' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || '0' }}
+        run: |
+          pnpm install --frozen-lockfile --ignore-workspace
+          pnpm once
+
+      - name: Keeper (one pass)
+        if: always()
+        working-directory: apps/worker
+        env:
+          KEEPER_PK: ${{ secrets.TESTNET_DEPLOYER_PK }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || '0' }}
+        run: |
+          pnpm install --frozen-lockfile --ignore-workspace
+          node --import tsx services/keeper/index.ts --once
