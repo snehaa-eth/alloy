@@ -18,7 +18,6 @@ import { useWallet } from "@/lib/hooks/use-wallet";
 import { useFaucet } from "@/lib/hooks/use-basket-tx";
 import { useFaucetStatus } from "@/lib/hooks/use-reads";
 import { formatFixed, formatUsd6 } from "@/lib/units";
-import { describeTxError } from "@/lib/tx";
 import { cn } from "@/lib/utils";
 import { CreatorAvatar } from "./v5/parts";
 
@@ -89,11 +88,11 @@ function useFaucetAction() {
   const faucet = useFaucet();
   const run = async () => {
     if (!w.authenticated) return w.login();
+    // useFaucet already shows the success and error toasts; don't add a second one here.
     try {
       await faucet.mutateAsync();
-      toast.success("Test USDC added");
-    } catch (e) {
-      toast.error(describeTxError(e));
+    } catch {
+      /* already reported by useFaucet */
     }
   };
   return { run, pending: faucet.isPending };

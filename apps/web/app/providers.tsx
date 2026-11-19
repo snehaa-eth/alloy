@@ -35,7 +35,7 @@ export function Providers({ children }: { children: ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <WagmiProvider config={wagmiConfig}>
           <MotionRoot>{children}</MotionRoot>
-          <Toaster position="top-center" richColors closeButton />
+          <Toaster position="bottom-right" richColors closeButton visibleToasts={3} />
         </WagmiProvider>
       </QueryClientProvider>
     </PrivyProvider>
