@@ -10,7 +10,7 @@ import { MetalBasket, type MetalState } from "../metal/MetalBasket";
 import { tintCss } from "../metal/palette";
 import type { Recipe } from "../metal/shape";
 import { OdometerOnView, WordReveal } from "../motion/alloy-motion";
-import { checkInput, joinWaitlist } from "./api";
+import { checkInput, joinWaitlist, warmWaitlistApi } from "./api";
 import { cn } from "@/lib/utils";
 
 export const X_URL = "https://x.com/alloy_fi";
@@ -70,6 +70,7 @@ function useJoin() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<{ field: "email" | "handle" | "form"; msg: string } | null>(null);
   const [done, setDone] = useState<Done | null>(null);
+  useEffect(() => warmWaitlistApi(), []);
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (busy) return;

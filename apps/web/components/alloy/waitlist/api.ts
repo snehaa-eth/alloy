@@ -28,13 +28,22 @@ export async function joinWaitlist(email: string, handle: string): Promise<JoinR
   }
   const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
   const source = (params?.get("ref") || params?.get("utm_source") || "waitlist").toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 40) || "waitlist";
-  try {
-    const res = await fetch(`${API_BASE_URL}/waitlist`, {
+  // Cold starts (serverless wake-up + DB connect) can take a while: wait longer and retry once on network errors.
+  const send = () =>
+    fetch(`${API_BASE_URL}/waitlist`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({ email: email.trim(), ...(h ? { xHandle: h } : {}), source, ...(referrer ? { referrer } : {}) }),
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(25_000),
     });
+  try {
+    let res: Response;
+    try {
+      res = await send();
+    } catch {
+      await new Promise((r) => setTimeout(r, 800));
+      res = await send();
+    }
     const json = (await res.json().catch(() => null)) as { data?: { position?: number; alreadyJoined?: boolean } } | null;
     if (res.status === 429) return { ok: false, error: "Too many tries. Give it a minute." };
     if (res.status === 400) return { ok: false, error: "That email doesn't look right." };
@@ -43,5 +52,14 @@ export async function joinWaitlist(email: string, handle: string): Promise<JoinR
     return { ok: true, position: typeof pos === "number" && pos > 0 ? pos : null, already: Boolean(json?.data?.alreadyJoined) };
   } catch {
     return { ok: false, error: "Couldn't reach us. Check your connection and try again." };
+  }
+}
+
+/** Fire-and-forget ping so the API is awake by the time someone hits Join. */
+export function warmWaitlistApi() {
+  try {
+    void fetch(`${API_BASE_URL}/waitlist/count`, { method: "GET", cache: "no-store" }).catch(() => {});
+  } catch {
+    /* ignore */
   }
 }
