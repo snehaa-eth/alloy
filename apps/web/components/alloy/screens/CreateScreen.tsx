@@ -370,7 +370,7 @@ function Shell({ step, onBack, children }: { step: number; onBack?: () => void; 
         <span className="t-mono c2">{step < STEPS.length ? `${step + 1}/${STEPS.length}` : "Live"}</span>
       </div>
       {children}
-      {step >= STEPS.length && <ButtonLink href="/" variant="secondary">Explore</ButtonLink>}
+      {step >= STEPS.length && <ButtonLink href="/explore" variant="secondary">Explore</ButtonLink>}
     </div>
   );
 }

@@ -49,7 +49,7 @@ export function ActivityScreen({ items }: { items: LoadedBasket[] }) {
         <Skeleton className="mt-4 h-[320px] w-full" />
       ) : tab === "needs" ? (
         needs.length === 0 ? (
-          <EmptyState icon={Inbox} line="Changes to your baskets show up here." action={<ButtonLink href="/">Explore</ButtonLink>} />
+          <EmptyState icon={Inbox} line="Changes to your baskets show up here." action={<ButtonLink href="/explore">Explore</ButtonLink>} />
         ) : (
           <div className="mt-4 flex flex-col gap-4">
             {needs.map(({ it, c }, i) => {
@@ -120,7 +120,7 @@ export function ActivityScreen({ items }: { items: LoadedBasket[] }) {
           </div>
         )
       ) : receipts.length === 0 ? (
-        <EmptyState icon={ReceiptText} line="Receipts land here after your first buy." action={<ButtonLink href="/">Explore</ButtonLink>} />
+        <EmptyState icon={ReceiptText} line="Receipts land here after your first buy." action={<ButtonLink href="/explore">Explore</ButtonLink>} />
       ) : (
         <div className="mt-2 flex flex-col">
           {receipts.map(({ it, e }) => (

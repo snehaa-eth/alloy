@@ -1,9 +1,8 @@
 import { loadAll } from "@/components/alloy/load";
-import { ExploreView } from "@/components/alloy/screens/ExploreView";
+import { Landing } from "@/components/alloy/v5/Landing";
 
-export default async function ExplorePage() {
-  const items = await loadAll();
-  return <ExploreView views={items.map((i) => i.v)} />;
+export default async function HomePage() {
+  return <Landing items={await loadAll()} />;
 }
 
 /** Live chain data: re-read at most every 30s. */

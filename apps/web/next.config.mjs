@@ -22,8 +22,8 @@ const nextConfig = {
     // v1 routes -> v2
     return [
       { source: "/home", destination: "/", permanent: false },
-      { source: "/discover", destination: "/", permanent: false },
-      { source: "/discover/:id", destination: "/", permanent: false },
+      { source: "/discover", destination: "/explore", permanent: false },
+      { source: "/discover/:id", destination: "/explore", permanent: false },
       { source: "/orders", destination: "/portfolio", permanent: false },
       { source: "/auth", destination: "/", permanent: false },
       { source: "/onboarding", destination: "/", permanent: false },

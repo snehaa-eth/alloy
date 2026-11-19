@@ -65,7 +65,7 @@ export function TryScreen({ demo, others }: { demo: LoadedBasket; others: Loaded
             { k: "Then", v: "get stocks" },
           ]}
           action={<ButtonLink href={`${base}?buy=100`}>Buy $100</ButtonLink>}
-          footLink={others.length ? <QuietLink href="/">Other demos</QuietLink> : undefined}
+          footLink={others.length ? <QuietLink href="/explore">Other demos</QuietLink> : undefined}
           footMeta={change ? <Countdown to={change.executableAt ?? change.at} dueLabel="due · market open" /> : "Base Sepolia"}
         />
 

@@ -73,7 +73,7 @@ export function PortfolioScreen({ items }: { items: LoadedBasket[] }) {
           <Skeleton className="h-16 w-full" />
         </div>
       ) : held.length === 0 ? (
-        <EmptyState icon={Compass} line="Start with $25 of test money." action={<ButtonLink href="/">Explore</ButtonLink>} />
+        <EmptyState icon={Compass} line="Start with $25 of test money." action={<ButtonLink href="/explore">Explore</ButtonLink>} />
       ) : (
         <div className="mt-5 grid gap-8 md:grid-cols-[1fr_400px] md:gap-12">
           <div className="flex flex-col gap-6 md:order-2">
