@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Award, Clock, FlaskConical, RefreshCw } from "lucide-react";
+import { Award, FlaskConical, RefreshCw } from "lucide-react";
 import { useBuyBasket } from "@/lib/hooks/use-basket-tx";
 import { DEFAULT_SLIPPAGE_BPS, MIN_BUY_USDC } from "@/lib/strategy";
-import { formatShares, formatUsd6, parseUsdc } from "@/lib/units";
+import { formatUsd6, parseUsdc } from "@/lib/units";
 import { describeTxError } from "@/lib/tx";
 import { DEFAULT_CHAIN_ID, explorerTxUrl } from "@/lib/chains";
 import { Certificate } from "../Certificate";
@@ -12,7 +12,7 @@ import { Sheet } from "../Sheet";
 import { AlloyBar, Banner, Button, ErrorState, InlineToast, QuietLink, Stamp } from "../primitives";
 import { longDate, type BasketView } from "../basket-view";
 import { useAccount, useAttestation, useQuoteView } from "../hooks";
-import { AmountField, AttestBlock, QuoteRows, TxProgress } from "./shared";
+import { AmountField, AttestBlock, BuyQuote, TxProgress } from "./shared";
 
 type Stage = "compose" | "attest" | "running" | "done" | "error";
 
@@ -25,7 +25,7 @@ function safeParse(s: string): bigint {
 }
 
 /**
- * Phone buy sheet. Order: amount (input + chips) → You get / Trading cost / Fee → CTA.
+ * Phone buy sheet. Order: amount (input + chips) → You get / Trading cost / Fee (+ market line) → CTA.
  * The quote refreshes silently in the background (useQuote refetches every 15s); no visible timer.
  */
 export function BuySheet({
@@ -89,6 +89,7 @@ export function BuySheet({
     <Sheet open={open} onOpenChange={onOpenChange} title={title} hideTitle={stage === "done"}>
       {stage === "attest" && (
         <AttestBlock
+            buy
           onConfirm={() => {
             attest.confirm();
             setStage("compose");
@@ -115,24 +116,8 @@ export function BuySheet({
         <>
           <AmountField value={amount} onChange={setAmount} disabled={stage === "running"} />
 
-          <QuoteRows
-            rows={[
-              { k: "You get", v: tooSmall ? <span className="down">Minimum $5</span> : `≈ ${formatShares(quote.out, 2)} shares` },
-              ...(quote.costUsd6 !== null ? [{ k: "Trading cost (one-time)", v: `≈ ${formatUsd6(quote.costUsd6)}` }] : []),
-              { k: "Fee", v: `${b.feeBps / 100}% a year` },
-            ]}
-          />
+          <BuyQuote name={b.name} usdc={usdc} quote={quote} feeBps={b.feeBps} marketOpen={marketOpen} />
 
-          {quote.impactBps !== null && quote.impactBps > 50 && (
-            <Banner intent="closed" icon={Clock}>
-              Fills ~{(quote.impactBps / 100).toFixed(1)}% below value now.
-            </Banner>
-          )}
-          {marketOpen === false && quote.impactBps === null && (
-            <Banner intent="closed" icon={Clock}>
-              US market closed. Fills can differ from value.
-            </Banner>
-          )}
           {changeAt && (
             <Banner intent="notice" icon={RefreshCw} action={onSeeChange ? <QuietLink onClick={onSeeChange}>See</QuietLink> : undefined}>
               Recipe changes soon.
@@ -142,8 +127,8 @@ export function BuySheet({
           {stage === "running" ? (
             <TxProgress step={buy.step} />
           ) : (
-            <Button className="!h-[52px] !rounded-full" onClick={go} disabled={usdc === 0n || tooSmall}>
-              {acct.signedIn ? label : "Sign in to buy"}
+            <Button variant="buy" className="!h-[52px] !rounded-full" onClick={go} disabled={usdc === 0n || tooSmall}>
+              {tooSmall ? "Minimum is $5" : acct.signedIn ? label : "Sign in to buy"}
             </Button>
           )}
 
@@ -169,9 +154,9 @@ export function FoundingCertificate({ v, paid, refund = 0n, txHash }: { v: Baske
   const shareText = encodeURIComponent(`I'm Founding Follower #${n} of ${b.name} on Alloy (Base Sepolia test).`);
   return (
     <div className="flex flex-col gap-4">
-      {/* Success moment: check draws in a soft burgundy ring; facts, no confetti (MOTION.md §5.5). */}
+      {/* Success moment: check draws in a soft oxblood ring; facts, no confetti (MOTION.md §5.5). */}
       <div className="flex flex-col items-center gap-3 pt-2">
-        <span className="relative inline-flex h-14 w-14 items-center justify-center rounded-full" style={{ background: "var(--s2)", boxShadow: "0 0 40px rgba(163,22,58,0.35)" }}>
+        <span className="relative inline-flex h-14 w-14 items-center justify-center rounded-full" style={{ background: "var(--s2)", boxShadow: "0 0 40px rgba(var(--brand-rgb),0.35)" }}>
           <span className="v-ring" aria-hidden />
           <svg className="v-check" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--gain)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M5 12.5l4.5 4.5L19 7.5" pathLength={1} />

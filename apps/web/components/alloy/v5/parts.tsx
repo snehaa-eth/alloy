@@ -11,7 +11,8 @@ import type { Performance } from "@/lib/types";
 import { AlloyBar, AlloyLegend, StockLogo } from "../primitives";
 import { Ticker } from "../motion/Ticker";
 import { hash32 } from "../guilloche-gen";
-import { compactUsd6, type BasketView } from "../basket-view";
+import { compactUsd6, shortDate, type BasketView } from "../basket-view";
+import { formatUsd6 } from "@/lib/units";
 
 // ---------------------------------------------------------------------------
 // Brand mark: three stacked bars (the alloy bar, tiny) + wordmark
@@ -20,14 +21,14 @@ import { compactUsd6, type BasketView } from "../basket-view";
 export function BrandMark({ className }: { className?: string }) {
   return (
     <span className={cn("inline-flex items-center gap-2", className)}>
-      {/* Brand mark: solid oxblood (--cta) rounded square, subtle top highlight, two bone hairlines (the alloy bands). */}
+      {/* Brand mark: lifted oxblood (--logo) rounded square, subtle top highlight, two cream hairlines (the alloy bands). */}
       <span
         aria-hidden
         className="flex h-[20px] w-[20px] flex-col justify-center gap-[3px] rounded-[6px] px-[4px]"
-        style={{ background: "var(--cta)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.22)" }}
+        style={{ background: "var(--logo)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.22)" }}
       >
-        <i className="block h-[2px] rounded-full bg-[var(--bone)]" />
-        <i className="block h-[2px] w-[70%] rounded-full bg-[var(--bone)] opacity-60" />
+        <i className="block h-[2px] rounded-full bg-[var(--tx)]" />
+        <i className="block h-[2px] w-[70%] rounded-full bg-[var(--tx)] opacity-70" />
       </span>
       <span className="text-[17px] font-semibold leading-none tracking-tight">Alloy</span>
     </span>
@@ -76,9 +77,11 @@ export function hasHistory(v: BasketView): boolean {
 }
 
 export function Pct({ bps, className, tick }: { bps: number; className?: string; tick?: boolean }) {
+  // Anything that rounds to 0.0% is flat: muted, no sign (a green "+0.0%" reads as a gain).
+  const flat = Math.abs(bps) < 5;
   const up = bps >= 0;
-  const text = `${up ? "+" : "−"}${(Math.abs(bps) / 100).toFixed(1)}%`;
-  return <span className={cn(up ? "up" : "down", "whitespace-nowrap tabular-nums", className)}>{tick ? <Ticker value={text} /> : text}</span>;
+  const text = flat ? "0.0%" : `${up ? "+" : "−"}${(Math.abs(bps) / 100).toFixed(1)}%`;
+  return <span className={cn(flat ? "c2" : up ? "up" : "down", "whitespace-nowrap tabular-nums", className)}>{tick ? <Ticker value={text} /> : text}</span>;
 }
 
 /** Whole days since a unix time (for "New · N days of history"). */
@@ -141,7 +144,7 @@ export function BasketCard({ v, perf, priority }: { v: BasketView; perf?: Perfor
   return (
     <Link
       href={`/b/${b.address}`}
-      className="v-spot group flex flex-col overflow-hidden rounded-[20px] border border-white/[0.07] bg-s1 text-tx no-underline transition duration-200 hover:-translate-y-0.5 hover:border-[var(--acc)] hover:bg-s2"
+      className="v-spot group flex flex-col overflow-hidden rounded-[20px] border border-white/[0.07] bg-s1 text-tx no-underline transition duration-200 hover:-translate-y-0.5 hover:border-white/25 hover:bg-s2"
     >
       <div className="relative h-[136px] overflow-hidden bg-[var(--tint)] sm:h-[160px]">
         <Image
@@ -179,16 +182,20 @@ export function BasketCard({ v, perf, priority }: { v: BasketView; perf?: Perfor
           <p className="line-clamp-2 min-h-[40px] text-[14px] leading-[20px] text-tx2">{thesisOf(v)}</p>
         </div>
 
-        {/* Real data only: returns once there's history, otherwise fee + minimum. */}
+        {/* Real data only. Followers vs creator once both exist; otherwise the basket's return (or "New") + price per unit.
+            Fee and minimum are the same on every card, so Explore states them once instead. */}
         <div className="grid grid-cols-2 gap-2">
-          {(r.creator === null || b.followers === 0
+          {(r.creator !== null && b.followers > 0
             ? [
-                ["Fee", `${b.feeBps / 100}% a year`],
-                ["Minimum", "$5"],
-              ]
-            : [
                 ["Followers' return", <ReturnValue key="f" bps={r.followers} className="text-[15px] font-semibold" />],
                 ["Creator's return", <ReturnValue key="c" bps={r.creator} className="text-[15px] font-semibold" />],
+              ]
+            : [
+                [
+                  hasHistory(v) ? `Since ${shortDate(v.sinceDate)}` : "Return",
+                  hasHistory(v) ? <Pct key="r" bps={v.sinceBps} className="text-[15px] font-semibold" /> : <NewTag key="r" />,
+                ],
+                ["Price per unit", <span key="p" className="tabular-nums">{formatUsd6(v.navPerShare)}</span>],
               ]
           ).map(([k, val]) => (
             <div key={k as string} className="flex flex-col gap-0.5 rounded-[14px] bg-s2 px-3 py-2.5">
@@ -261,7 +268,7 @@ export function SiteFooter() {
           </nav>
         </div>
         <div className="flex flex-col gap-2 border-t border-white/[0.07] pt-6 text-[13px] text-tx2 md:flex-row md:items-center md:justify-between">
-          <p>Tokenized stock exposure, not shares · Not available to US persons · You can lose money</p>
+          <p>You own a token that tracks these stocks, not the shares themselves · Not available to US persons · You can lose money</p>
           <p>Not investment advice</p>
         </div>
       </div>

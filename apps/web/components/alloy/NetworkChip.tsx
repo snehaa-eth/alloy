@@ -2,7 +2,8 @@
 
 /**
  * Navbar menus (every pill is interactive):
- * - NetworkChip: real chain (wagmi, populated by @privy-io/wagmi) → popover with networks, test-money action, explorer.
+ * - NetworkChip: shown signed in AND signed out. Real chain (wagmi, populated by @privy-io/wagmi) → popover with
+ *   networks, "prices are real, money is test USDC", and the test-money action (signed out: sign in to get it).
  * - WalletMenu: address (copy), explorer, balances, add test money, portfolio, sign out.
  * Radix Popover: click + keyboard, closes on outside click / Esc.
  */
@@ -52,8 +53,8 @@ function Panel({ children, label }: { children: ReactNode; label: string }) {
 function Item({ icon: I, children, onClick, href, external, disabled, primary }: { icon: typeof Copy; children: ReactNode; onClick?: () => void; href?: string; external?: boolean; disabled?: boolean; primary?: boolean }) {
   const cls = cn(
     "flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-[14px] no-underline transition-colors",
-    disabled ? "cursor-not-allowed text-tx2 opacity-60" : "text-tx hover:bg-[rgba(var(--brand-rgb),0.35)] focus-visible:bg-[rgba(var(--brand-rgb),0.35)] focus-visible:outline-none",
-    primary && "bg-[var(--btn)] !text-[var(--on-btn)] hover:bg-[var(--btn-hover)]",
+    disabled ? "cursor-not-allowed text-tx2 opacity-60" : "text-tx hover:bg-white/[0.06] focus-visible:bg-white/[0.06] focus-visible:outline-none",
+    primary && "bg-[var(--btn-alt)] !text-[var(--on-btn)] hover:bg-[var(--btn-alt-hover)]",
   );
   const body = (
     <>
@@ -124,12 +125,18 @@ export function NetworkChip() {
         aria-label={wrong ? `Wrong network. Switch to ${DEFAULT_CHAIN.name}` : testnet ? `Test mode on ${c.name}` : c.name}
         className={cn(
           "inline-flex h-9 flex-none items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 text-[13px] font-medium transition-colors sm:px-3",
-          wrong || testnet
+          wrong
             ? "border-[var(--warnbd)] bg-[var(--warnbg)] text-[var(--warn)] hover:border-[var(--warn)] data-[state=open]:border-[var(--warn)]"
-            : "border-white/10 text-tx3 hover:border-white/25 hover:text-tx data-[state=open]:border-[var(--acc)]",
+            : "border-white/10 text-tx3 hover:border-white/25 hover:text-tx data-[state=open]:border-white/30",
         )}
       >
-        {wrong || testnet ? <span className="h-1.5 w-1.5 flex-none rounded-full bg-[var(--warn)]" aria-hidden /> : <BaseMark />}
+        {wrong ? (
+          <span className="h-1.5 w-1.5 flex-none rounded-full bg-[var(--warn)]" aria-hidden />
+        ) : testnet ? (
+          <span className="h-1.5 w-1.5 flex-none rounded-full bg-[var(--test)]" aria-hidden />
+        ) : (
+          <BaseMark />
+        )}
         <span>{wrong ? (w.switching ? "Switching…" : "Wrong network") : testnet ? "Test mode" : c.name}</span>
         <ChevronDown size={13} strokeWidth={1.75} className="hidden sm:block" aria-hidden />
       </Popover.Trigger>
@@ -147,7 +154,7 @@ export function NetworkChip() {
           <span className="flex-1">
             {DEFAULT_CHAIN.name} <span className="text-tx2">· testnet</span>
           </span>
-          {!wrong && <Check size={16} strokeWidth={2} style={{ color: "var(--acc)" }} aria-label="Active" />}
+          {!wrong && <Check size={16} strokeWidth={2} style={{ color: "var(--hi)" }} aria-label="Active" />}
         </div>
         <div className="flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-[14px] text-tx2 opacity-60" aria-disabled>
           <BaseMark size={16} />
@@ -155,9 +162,12 @@ export function NetworkChip() {
           <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px]">Coming soon</span>
         </div>
         <p className="mx-3 my-2 border-t border-white/[0.07] pt-2.5 text-[13px] text-tx2">Prices are real. Money is test USDC.</p>
-        <Item icon={Droplets} onClick={faucet.run} disabled={faucet.pending}>
-          {faucet.pending ? "Adding test money…" : w.authenticated ? "Get test money" : "Sign in to get test money"}
-        </Item>
+        {/* Signed out: the one next step is signing in (copper). Signed in: a plain row. */}
+        <div className={w.authenticated ? undefined : "px-1 pb-1"}>
+          <Item icon={Droplets} onClick={faucet.run} disabled={faucet.pending} primary={!w.authenticated}>
+            {faucet.pending ? "Adding test money…" : w.authenticated ? "Get test money" : "Sign in to get test money"}
+          </Item>
+        </div>
         {w.address && (
           <Item icon={ScanSearch} href={explorer(w.address)} external>
             View on BaseScan
@@ -184,7 +194,7 @@ export function WalletMenu({ address }: { address: `0x${string}` }) {
     <Popover.Root>
       <Popover.Trigger
         aria-label="Your account"
-        className="inline-flex h-9 flex-none items-center gap-2 rounded-full border border-white/10 pl-1.5 pr-2.5 sm:pr-3 text-[14px] font-medium text-tx3 transition-colors hover:border-white/25 hover:text-tx data-[state=open]:border-[var(--acc)]"
+        className="inline-flex h-9 flex-none items-center gap-2 rounded-full border border-white/10 pl-1.5 pr-2.5 sm:pr-3 text-[14px] font-medium text-tx3 transition-colors hover:border-white/25 hover:text-tx data-[state=open]:border-white/30"
       >
         <CreatorAvatar handle={address.slice(2)} seed={address} size={22} />
         <span className="hidden tabular-nums sm:inline">
@@ -196,7 +206,7 @@ export function WalletMenu({ address }: { address: `0x${string}` }) {
         <div className="flex items-center gap-3 px-3 pb-2 pt-2">
           <CreatorAvatar handle={address.slice(2)} seed={address} size={32} />
           <span className="t-num min-w-0 flex-1 break-all text-[12px] leading-snug text-tx3">{address}</span>
-          <button type="button" onClick={copy} aria-label="Copy address" className="inline-flex h-8 w-8 flex-none items-center justify-center rounded-full bg-s2 hover:bg-[rgba(var(--brand-rgb),0.45)]">
+          <button type="button" onClick={copy} aria-label="Copy address" className="inline-flex h-8 w-8 flex-none items-center justify-center rounded-full bg-s2 hover:bg-white/[0.1]">
             <Copy size={14} strokeWidth={1.75} aria-hidden />
           </button>
         </div>

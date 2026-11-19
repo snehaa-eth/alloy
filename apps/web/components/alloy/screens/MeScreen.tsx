@@ -26,13 +26,14 @@ export function MeScreen({ items }: { items: LoadedBasket[] }) {
 
   if (!acct.ready && !acct.preview)
     return (
-      <div className="mx-auto max-w-[720px] px-4 pt-6">
+      <div className="mx-auto max-w-app px-4 pb-8 pt-5 md:px-8 md:pt-8">
         <Skeleton className="h-12 w-48" />
       </div>
     );
 
   return (
-    <div className="mx-auto max-w-[720px] px-4 pb-8 pt-5 md:px-8 md:pt-8">
+    // Same container as Explore / Portfolio (max-w-app, px-4 md:px-8) so every page starts on one grid line.
+    <div className="mx-auto max-w-app px-4 pb-8 pt-5 md:px-8 md:pt-8">
       {!acct.signedIn ? (
         <>
           <h1 className="t-body t-strong md:text-[20px]">Me</h1>
@@ -50,7 +51,7 @@ export function MeScreen({ items }: { items: LoadedBasket[] }) {
           />
         </>
       ) : (
-        <div className="flex flex-col gap-6">
+        <div className="flex max-w-[720px] flex-col gap-6">
           <div className="flex items-center gap-3">
             <Avatar creator={mine.length > 0} seed={me} />
             <span className="t-body t-strong truncate">@{handle}</span>

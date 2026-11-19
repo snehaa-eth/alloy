@@ -176,8 +176,8 @@ export function BasketScreen({
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div className="flex flex-col gap-1">
                   <span className="inline-flex items-center gap-2 text-[13px] text-tx2">
-                    <span className="v-live" aria-hidden /> Price · live
-                    <span title="Price of one share of this basket" aria-label="Price of one share of this basket" className="inline-flex cursor-help">
+                    <span className="v-live" aria-hidden /> Price per unit · live
+                    <span title="You own units of this basket. Each unit holds a slice of every stock in it." aria-label="You own units of this basket. Each unit holds a slice of every stock in it." className="inline-flex cursor-help">
                       <Info size={13} strokeWidth={1.75} aria-hidden />
                     </span>
                   </span>
@@ -237,7 +237,7 @@ export function BasketScreen({
                   </div>
                 </div>
                 <div className="mt-4 h-2 overflow-hidden rounded-full bg-s2">
-                  <div className="h-full rounded-full" style={{ width: `${Math.min(100, v.creatorStakeBps / 100)}%`, background: "var(--gold)" }} />
+                  <div className="h-full rounded-full" style={{ width: `${Math.min(100, v.creatorStakeBps / 100)}%`, background: "var(--bone)" }} />
                 </div>
               </Card>
             </div>
@@ -326,7 +326,7 @@ export function BasketScreen({
                   </div>
                 ))}
               </dl>
-              <p className="mt-3 text-[13px] text-tx2">Tokenized stock exposure, not shares. Not for US persons.</p>
+              <p className="mt-3 text-[13px] text-tx2">You own a token that tracks these stocks, not the shares themselves. Not for US persons.</p>
             </details>
           </div>
 
@@ -382,15 +382,24 @@ export function BasketScreen({
       >
         <div className="mx-auto flex max-w-[640px] items-center gap-3">
           <div className="flex min-w-0 flex-1 items-baseline gap-1.5">
-            <span className="text-[17px] font-semibold tabular-nums">{holding ? formatUsd6(heldUsd6) : formatUsd6(v.navPerShare)}</span>
-            <span className="truncate text-[13px] text-tx2">{holding ? "your value" : "per share"}</span>
+            {holding ? (
+              <>
+                <span className="text-[17px] font-semibold tabular-nums">{formatUsd6(heldUsd6)}</span>
+                <span className="truncate text-[13px] text-tx2">your value</span>
+              </>
+            ) : (
+              <>
+                <span className="text-[13px] text-tx2">From</span>
+                <span className="text-[17px] font-semibold tabular-nums">$5</span>
+              </>
+            )}
           </div>
           {holding && (
             <Button variant="secondary" auto className="!h-11 !rounded-full" onClick={() => openSheet("exit")}>
               Exit
             </Button>
           )}
-          <Button auto className="!h-11 !rounded-full !px-8" onClick={() => openSheet("buy", buyAmount)}>
+          <Button variant="buy" auto className="!h-11 !rounded-full !px-8" onClick={() => openSheet("buy", buyAmount)}>
             Buy
           </Button>
         </div>
@@ -453,7 +462,7 @@ export function ChangeFeed({ v, events, onOpenPending }: { v: BasketView; events
           e.status === "pending" ? "Change pending" : e.status === "cancelled" ? "Change cancelled" : e.kind === "drift-trim" ? "Rebalanced" : "Recipe changed";
         const row = (
           <>
-            <span className="c-rowicon" style={e.status === "pending" ? { color: "var(--acc)" } : undefined}>
+            <span className="c-rowicon" style={e.status === "pending" ? { color: "var(--hi)" } : undefined}>
               <I size={18} strokeWidth={1.75} aria-hidden />
             </span>
             <div className="c-row__main">

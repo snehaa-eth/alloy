@@ -14,7 +14,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://crates-ui.vercel.a
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: "Alloy — Invest in stories, not symbols", template: "%s · Alloy" },
-  description: "Curated baskets of tokenized U.S. stock exposure on Base. Tokenized stock exposure, not shares.",
+  description: "Curated baskets of tokenized U.S. stock exposure on Base. You own a token that tracks these stocks, not the shares themselves.",
   openGraph: { siteName: "Alloy", type: "website" },
   twitter: { card: "summary_large_image", site: "@alloy_fi" },
 };

@@ -24,12 +24,13 @@
     --scrim: rgba(0, 0, 0, 0.6);
     /* brand + accents (burgundy <=10%, gold <=3%) */
     --brand: #6d0f24; /* oxblood: brand surfaces, glows, fills, tints */
-    --acc: #c77b4a; /* copper: small bright accents (active marks, dots, focus) */
+    --acc: #b8693f; /* copper: ONLY "spend money" (buy actions) + the hero theme word */
+    --hi: #e8dcc8; /* warm neutral for every other mark: active tabs/nav, selected states, dots, ticks, focus */
     --tint: #2a0b12;
-    --gold: #c9a96e; /* rare: creator's own money only */
+    --gold: #f2ede8; /* gold dropped (founder, v6.1): creator money is plain cream text */
     --bone: #e8dcc8;
-    --gold6: #a07d3e;
-    --gold2: #e3cc9c;
+    --gold6: #6f6264;
+    --gold2: #f2ede8;
     /* signal */
     --gain: #3dbe8b;
     --loss: #f0545c;
@@ -79,21 +80,28 @@
     /* v5: burgundy highlight on the alloy bar (accent, never means loss) */
     --sheen-acc: rgba(232, 220, 200, 0.10);
     --brand-hover: #8a1a32;
-    /* v6: oxblood (--brand/--cta) is the brand mark and glow; copper (--btn, --acc) is the action and small accents. */
-    --cta: #6d0f24; /* oxblood brand mark: logo, glows, badges (not button fills) */
+    /* v6.1: oxblood (--brand/--cta/--logo) is identity only; copper (--btn, --acc) means "spend money" + the hero word. */
+    --cta: #6d0f24; /* oxblood brand: glows, badges, tints (not button fills) */
+    --logo: #8a1a32; /* lifted oxblood for the logo mark so it holds on black; glyph is --tx */
     --brand-rgb: 109, 15, 36; /* oxblood for rgba() glows/tints */
-    --copper-rgb: 199, 123, 74;
+    --copper-rgb: 184, 105, 63;
     /* primary action: copper fill, dark text (~4.8:1+) */
-    --btn: #c77b4a;
-    --btn-hover: #a9633a;
+    --btn: #b8693f; /* buy only */
+    --btn-hover: #c97b50; /* lighter on hover */
+    --btn-press: #9c5733;
+    /* every other primary CTA: cream fill, ink text */
+    --btn-alt: #f2ede8;
+    --btn-alt-hover: #ffffff;
+    --btn-alt-press: #ddd5cd;
     --on-btn: #0c0a0a;
-    /* allocation bar: one oxblood hue, stepped lightness (rank 1 = darkest = biggest weight) */
-    --al-1: #6d0f24;
-    --al-2: #8a2238;
-    --al-3: #a63b50;
-    --al-4: #bf5c6e;
-    --al-5: #d38290;
-    --al-6: #e3aab4;
+    /* allocation bar (data: never oxblood, which reads as loss; never copper, which means "buy").
+       Warm-neutral ramp by rank: rank 1 = lightest = biggest weight. */
+    --al-1: #e8dcc8;
+    --al-2: #bdb2aa;
+    --al-3: #8a7b72;
+    --al-4: #5e5452;
+    --al-5: #4a4241;
+    --al-6: #3b3434;
     --engrave: 0.55;
     --hair: 1px solid var(--bd);
 
@@ -140,7 +148,7 @@
     margin: 0;
   }
   :focus-visible {
-    outline: 2px solid var(--acc);
+    outline: 2px solid var(--hi);
     outline-offset: 2px;
   }
 }
@@ -163,7 +171,7 @@
   .up { color: var(--gain); }
   .down { color: var(--loss); }
   .warn { color: var(--warn); }
-  .gold { color: var(--gold); }
+  .gold { color: var(--tx); font-weight: 600; }
   .q { font-style: italic; color: var(--tx3); }
 
   /* ---------- buttons: square-edged primary / secondary / quiet / icon ---------- */
@@ -177,15 +185,19 @@
   }
   .c-btn:active:not(:disabled) { transform: scale(0.98); }
   /*
-   * v6 primary = copper fill (--btn) + dark ink text (--on-btn), hover/pressed --btn-hover.
+   * v6.1: primary = cream fill (--btn-alt), buy = copper fill (--btn); both dark ink text (--on-btn).
    * Secondary stays outline.
    * Focus ring is off-white (burgundy-on-burgundy would vanish) and keeps the hairline.
    */
   .c-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--tx); }
-  .c-btn--primary { background: var(--btn); color: var(--on-btn); }
-  .c-btn--primary:hover:not(:disabled) { background: var(--btn-hover); }
-  .c-btn--primary:focus-visible { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px rgba(var(--copper-rgb), 0.45); }
-  .c-btn--primary:active:not(:disabled) { background: var(--btn-hover); }
+  /* primary = cream (every non-buy CTA); buy = copper (spend money only). */
+  .c-btn--primary { background: var(--btn-alt); color: var(--on-btn); }
+  .c-btn--primary:hover:not(:disabled) { background: var(--btn-alt-hover); }
+  .c-btn--primary:active:not(:disabled) { background: var(--btn-alt-press); }
+  .c-btn--buy { background: var(--btn); color: var(--on-btn); }
+  .c-btn--buy:hover:not(:disabled) { background: var(--btn-hover); }
+  .c-btn--buy:focus-visible { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px rgba(var(--copper-rgb), 0.45); }
+  .c-btn--buy:active:not(:disabled) { background: var(--btn-press); }
   .c-btn--secondary { background: transparent; color: var(--tx); border-color: var(--bdi); }
   .c-btn--secondary:hover:not(:disabled) { border-color: var(--tx); }
   .c-btn:disabled, .c-btn[aria-disabled="true"] { background: var(--s2); color: var(--tx2); border-color: transparent; cursor: not-allowed; }
@@ -217,8 +229,8 @@
     font: 500 var(--fs-small) var(--font-inter), sans-serif; white-space: nowrap;
   }
   .c-stamp svg { width: 12px; height: 12px; }
-  .c-stamp--accent { box-shadow: inset 0 0 0 1px var(--acc); color: var(--tx); }
-  .c-stamp--accent svg { color: var(--acc); }
+  .c-stamp--accent { box-shadow: inset 0 0 0 1px var(--hi); color: var(--tx); }
+  .c-stamp--accent svg { color: var(--hi); }
   .c-stamp--warn { box-shadow: inset 0 0 0 1px var(--warnbd); color: var(--warn); }
   .c-stamp--gold { box-shadow: inset 0 0 0 1px var(--gold6); color: var(--gold); }
   .c-stamp--test svg { color: var(--test); }
@@ -309,14 +321,14 @@
     height: 44px; display: flex; align-items: center; justify-content: center; background: none; border: 0; cursor: pointer;
     font: 600 var(--fs-small) var(--font-inter); color: var(--tx2); text-decoration: none;
   }
-  .c-tabs [aria-selected="true"] { color: var(--tx); box-shadow: inset 0 -2px 0 var(--acc); }
+  .c-tabs [aria-selected="true"] { color: var(--tx); box-shadow: inset 0 -2px 0 var(--hi); }
 
   /* ---------- nav ---------- */
   .c-nav { display: flex; justify-content: space-around; border-top: var(--hair); background: var(--bg); }
   .c-nav a { display: flex; flex-direction: column; align-items: center; gap: var(--s1x); padding: var(--s2x) 0 var(--s2x); font-size: var(--fs-small); color: var(--tx2); min-width: 64px; min-height: 52px; text-decoration: none; }
-  .c-nav a[aria-current="page"] { color: var(--tx); box-shadow: inset 0 2px 0 var(--acc); }
+  .c-nav a[aria-current="page"] { color: var(--tx); box-shadow: inset 0 2px 0 var(--hi); }
   .c-topnav a { display: inline-flex; align-items: center; height: 56px; padding: 0 var(--s3x); font-size: var(--fs-small); font-weight: 600; color: var(--tx2); text-decoration: none; }
-  .c-topnav a[aria-current="page"] { color: var(--tx); box-shadow: inset 0 2px 0 var(--acc); }
+  .c-topnav a[aria-current="page"] { color: var(--tx); box-shadow: inset 0 2px 0 var(--hi); }
 
   /* ---------- top bar, strip, in-app bar ---------- */
   .c-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s2x); min-height: 52px; }
@@ -324,7 +336,7 @@
   .c-strip svg { width: 14px; height: 14px; flex: none; }
   .c-strip__act { margin-left: auto; text-decoration: underline; text-underline-offset: 3px; color: inherit; background: none; border: 0; cursor: pointer; font: inherit; padding: 0; }
   .c-strip--change { background: var(--tint); }
-  .c-strip--change svg { color: var(--acc); }
+  .c-strip--change svg { color: var(--hi); }
   .c-strip--closed { background: var(--s1); color: var(--tx3); }
   .c-strip--closed svg { color: var(--warn); width: 12px; height: 12px; }
   .c-strip--held { background: var(--s2); }
@@ -348,8 +360,8 @@
   .c-toast--error svg { color: var(--loss); }
   .c-banner { display: flex; gap: var(--s3x); align-items: center; padding: var(--s3x) var(--s4x); border-radius: 14px; border: 1px solid var(--bd-soft); border-left: 3px solid var(--tx2); font-size: 13px; }
   .c-banner svg { width: 16px; height: 16px; flex: none; }
-  .c-banner--notice { background: var(--tint); border-color: var(--brand); border-left-color: var(--acc); }
-  .c-banner--notice svg { color: var(--acc); }
+  .c-banner--notice { background: var(--tint); border-color: var(--brand); border-left-color: var(--hi); }
+  .c-banner--notice svg { color: var(--hi); }
   .c-banner--closed { background: var(--warnbg); border-color: var(--warnbd); border-left-color: var(--warn); color: var(--warn); }
   .c-banner--test { background: var(--s1); color: var(--tx2); border-left-color: var(--test); }
   .c-banner--test svg { color: var(--test); }
@@ -386,20 +398,20 @@
     display: flex; align-items: center; gap: var(--s3x); min-height: 56px; width: 100%; text-align: left;
     padding: var(--s3x); border: 1px solid var(--bd); border-radius: 14px; background: transparent; color: var(--tx); cursor: pointer;
   }
-  .c-choice[aria-pressed="true"] { border-color: var(--tx); box-shadow: inset 2px 0 0 var(--acc); }
+  .c-choice[aria-pressed="true"] { border-color: var(--tx); box-shadow: inset 2px 0 0 var(--hi); }
 
   /* ---------- chart ---------- */
   .c-chart { display: block; width: 100%; touch-action: pan-y; }
   .c-chart__line { fill: none; stroke: var(--tx); stroke-width: 2; vector-effect: non-scaling-stroke; }
   .c-chart__creator { fill: none; stroke: var(--tx2); stroke-width: 1.5; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
-  .c-chart__tick { stroke: var(--acc); stroke-dasharray: 2 4; vector-effect: non-scaling-stroke; }
+  .c-chart__tick { stroke: var(--hi); stroke-dasharray: 2 4; vector-effect: non-scaling-stroke; }
   .c-chart__grid { stroke: var(--bd); vector-effect: non-scaling-stroke; }
   .c-chart__scrub { stroke: var(--tx); stroke-opacity: 0.5; vector-effect: non-scaling-stroke; }
   .c-legend { display: flex; gap: var(--s4x); font-size: 13px; color: var(--tx2); }
 
   /* ---------- bars, skeleton, empty, error ---------- */
   .c-bar { height: 4px; border-radius: var(--r-xs); background: var(--s2); overflow: hidden; }
-  .c-bar i { display: block; height: 100%; background: var(--acc); transition: width 240ms ease-out; }
+  .c-bar i { display: block; height: 100%; background: var(--hi); transition: width 240ms ease-out; }
   .c-skel { border-radius: var(--r-xs); background: linear-gradient(90deg, var(--s1), var(--s2), var(--s1)); background-size: 200% 100%; animation: c-shimmer 1.4s ease-in-out 6; }
   .c-empty, .c-error { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--s3x); padding: var(--s8x) var(--s4x); }
   .c-empty > svg { width: 24px; height: 24px; color: var(--tx2); }
@@ -416,7 +428,7 @@
   .c-step { display: flex; align-items: center; gap: var(--s2x); font-size: var(--fs-small); color: var(--tx2); }
   .c-step svg { width: 14px; height: 14px; flex: none; }
   .c-step.is-on { color: var(--tx); }
-  .c-step.is-on svg { color: var(--acc); }
+  .c-step.is-on svg { color: var(--hi); }
   .c-step.is-done svg { color: var(--gain); }
 }
 
@@ -526,7 +538,7 @@
   .v-tick--still .v-tick__stack { transition: none; }
 
   /* Success moment: soft burgundy ring + check draw + card slide. */
-  .v-ring { position: absolute; inset: -8px; border-radius: 50%; box-shadow: 0 0 0 2px var(--acc); animation: v-ring 700ms var(--ease-out) both; }
+  .v-ring { position: absolute; inset: -8px; border-radius: 50%; box-shadow: 0 0 0 2px var(--hi); animation: v-ring 700ms var(--ease-out) both; }
   .v-check path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: v-draw var(--dur-draw) var(--ease-out) forwards; }
   .v-slide-up { animation: v-rise 420ms var(--ease-out) 260ms both; }
 

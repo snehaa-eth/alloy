@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Plus, Search, SearchX, X } from "lucide-react";
+import { ArrowRight, Plus, Search, SearchX, X } from "lucide-react";
 import type { Performance } from "@/lib/types";
 import type { BasketView } from "../basket-view";
 import { ButtonLink, EmptyState } from "../primitives";
-import { BasketCard, BrandWash } from "../v5/parts";
+import { BasketCard, BrandWash, hasHistory } from "../v5/parts";
 
 /** UX_MAP §3.3 Explore: search + theme chips + sort. */
 type Tab = "all" | "ai" | "story";
@@ -39,6 +39,9 @@ export function ExploreView({ items }: { items: { v: BasketView; perf?: Performa
       );
     return l;
   }, [items, tab, sort, q]);
+  const anyReturns = list.some(({ v }) => hasHistory(v));
+  const fees = new Set(items.map(({ v }) => v.basket.feeBps));
+  const fee = fees.size === 1 ? [...fees][0] / 100 : null;
 
   return (
     <div className="relative isolate">
@@ -47,7 +50,7 @@ export function ExploreView({ items }: { items: { v: BasketView; perf?: Performa
       <div className="flex items-end justify-between gap-4">
         <div className="flex flex-col gap-1 md:gap-2">
           <h1 className="text-[28px] font-semibold leading-tight tracking-tight md:text-[40px]">Explore baskets</h1>
-          <p className="text-[15px] text-tx2 md:text-[16px]">Pick a story. Start with $5.</p>
+          <p className="text-[15px] text-tx2 md:text-[16px]">Pick a theme. From $5{fee !== null ? `, ${fee}% a year` : ""}.</p>
         </div>
         <Link
           href="/create"
@@ -137,19 +140,24 @@ export function ExploreView({ items }: { items: { v: BasketView; perf?: Performa
           {list.map(({ v, perf }, i) => (
             <BasketCard key={v.basket.address} v={v} perf={perf} priority={i < 4} />
           ))}
+          {/* Full-row slim banner: fits any card count without leaving a lone tile and dead columns. */}
           <Link
             href="/create"
-            className="flex min-h-[260px] flex-col items-center justify-center gap-3 rounded-[20px] border border-dashed border-white/15 p-6 text-center text-tx no-underline transition hover:border-white/30 hover:bg-white/[0.02]"
+            className="col-span-full flex items-center gap-4 rounded-[20px] border border-dashed border-white/15 px-5 py-4 text-tx no-underline transition hover:border-white/30 hover:bg-white/[0.02]"
           >
-            <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-s2">
-              <Plus size={20} strokeWidth={1.75} aria-hidden />
+            <span className="inline-flex h-10 w-10 flex-none items-center justify-center rounded-full bg-s2">
+              <Plus size={18} strokeWidth={1.75} aria-hidden />
             </span>
-            <span className="text-[16px] font-semibold">Build your own</span>
-            <span className="max-w-[220px] text-[14px] text-tx2">Up to 10 stocks. Your weights. Others can follow.</span>
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="text-[15px] font-semibold">Build your own</span>
+              <span className="text-[13px] text-tx2">Up to 10 stocks. Your weights. Others can follow.</span>
+            </span>
+            <ArrowRight size={16} strokeWidth={1.75} className="flex-none text-tx2" aria-hidden />
           </Link>
         </div>
       )}
-      <p className="mt-10 text-[13px] text-tx2">Tokenized stock exposure, not shares. Returns shown are past, not promised.</p>
+      {/* The site footer already says what you own; only add the returns caveat when returns are on screen. */}
+      {anyReturns && <p className="mt-10 text-[13px] text-tx2">Past returns aren&apos;t a promise.</p>}
     </div>
     </div>
   );

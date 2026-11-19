@@ -62,9 +62,11 @@ export function HeroStories({
             <span className="v-word" style={{ ["--i" as string]: 0 }}>Buy</span> <span className="v-word" style={{ ["--i" as string]: 1 }}>the</span>{" "}
             <span className="v-word" style={{ ["--i" as string]: 2 }}>whole</span>
             <br />
+            {/* The theme word has its own line: its slot is the widest word's width, so "story." never moves. */}
             <span className="v-word" style={{ ["--i" as string]: 3 }}>
               <WordRotator words={stories.map((s) => s.word)} index={idx} />
-            </span>{" "}
+            </span>
+            <br />
             <span className="v-word" style={{ ["--i" as string]: 4 }}>story.</span>
           </span>
         </h1>

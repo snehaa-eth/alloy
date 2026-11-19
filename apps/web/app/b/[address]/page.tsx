@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const basket = await load(params);
   if (!basket) return { title: "Basket not found" };
   const title = basket.name;
-  const description = `${basket.thesis} By @${basket.creator.handle}. Tokenized stock exposure, not shares.`;
+  const description = `${basket.thesis} By @${basket.creator.handle}. A token that tracks these stocks, not the shares themselves.`;
   return {
     title,
     description,

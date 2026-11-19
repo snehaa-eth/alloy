@@ -148,7 +148,7 @@ export function PortfolioScreen({ items }: { items: LoadedBasket[] }) {
             {held.map((x) => (
               <OwedRows key={x.it.v.basket.address} it={x.it} />
             ))}
-            <p className="t-mono c2 mt-6">Tokenized stock exposure, not shares. Past performance isn&apos;t a promise.</p>
+            <p className="t-mono c2 mt-6">You own a token that tracks these stocks, not the shares themselves. Past returns aren&apos;t a promise.</p>
           </section>
         </div>
       )}

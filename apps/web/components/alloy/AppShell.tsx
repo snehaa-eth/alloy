@@ -47,26 +47,22 @@ export function AppShell({ children }: { children: ReactNode }) {
                   }
                 >
                   {t.label}
-                  {/* Active: 2px burgundy underline sitting on the header's bottom edge */}
-                  {on && <span aria-hidden className="absolute inset-x-3.5 -bottom-[14px] h-[2px] rounded-full" style={{ background: "var(--acc)" }} />}
+                  {/* Active: 2px copper underline sitting on the header's bottom edge */}
+                  {on && <span aria-hidden className="absolute inset-x-3.5 -bottom-[14px] h-[2px] rounded-full" style={{ background: "var(--hi)" }} />}
                 </Link>
               );
             })}
           </nav>
-          {/* Same actions everywhere: signed out → Sign in; signed in → network + wallet. Home adds Launch app. */}
+          {/* Same actions on every page and size: test-mode pill + Sign in, or test-mode pill + wallet menu. */}
           <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
             <AccountButton />
-            {landing && (
-              <Link href="/explore" className="c-btn c-btn--primary c-btn--auto c-btn--sm !h-9 flex-none !rounded-full !px-3 !text-[13px] sm:!px-4 sm:!text-[14px]">
-                Launch app
-              </Link>
-            )}
           </div>
         </div>
         {!landing && <StatusStrip />}
       </header>
       <main className={full ? "min-h-[calc(100dvh-64px)]" : landing ? "min-h-[calc(100dvh-64px)]" : "min-h-[calc(100dvh-64px)] pb-24 md:pb-8"}>{children}</main>
-      {!full && !landing && (
+      {/* Phone tab bar on every page except full-screen flows, home included. */}
+      {!full && (
         <nav className="c-nav fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)] md:hidden" aria-label="Main">
           {TABS.map((t) => {
             const I = t.icon;
@@ -80,7 +76,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
       )}
       {!full && (
-        <div className={landing ? "" : "hidden md:block"}>
+        <div className={landing ? "pb-20 md:pb-0" : "hidden md:block"}>
           <SiteFooter />
         </div>
       )}
@@ -99,12 +95,21 @@ function AccountButton() {
     </>
   );
   if (acct.preview && !w.address) return signedIn("0xc7000000000000000000000000000000000a1aeb");
-  if (!w.ready) return <span className="h-9 w-[76px]" aria-hidden />;
+  if (!w.ready)
+    return (
+      <>
+        <NetworkChip />
+        <span className="h-9 w-[76px]" aria-hidden />
+      </>
+    );
   if (!w.authenticated || !w.address)
     return (
-      <button type="button" className="c-btn c-btn--secondary c-btn--auto c-btn--sm !h-9 !rounded-full !px-4 !text-[14px]" onClick={() => w.login()}>
-        Sign in
-      </button>
+      <>
+        <NetworkChip />
+        <button type="button" className="c-btn c-btn--secondary c-btn--auto c-btn--sm !h-9 !rounded-full !px-4 !text-[14px]" onClick={() => w.login()}>
+          Sign in
+        </button>
+      </>
     );
   return signedIn(w.address);
 }

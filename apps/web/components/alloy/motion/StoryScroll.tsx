@@ -5,7 +5,7 @@
  * Pick a basket → Start with $5 → Prices move → It runs on autopilot (creator styles).
  * Desktop: a 500vh track (one full viewport of scroll per step); the stepper (left) and the live card (right) stay
  * pinned while scroll position picks the step, so the card morphs in place (no scroll-jacking). Clicking a step
- * scrolls to it. Phones: no pinning; four compact stacked cards. Reduced motion: same layout, transitions off (CSS).
+ * scrolls to it. Phones: no pinning; four stacked cards, each with readable covers and every recipe row. Reduced motion: same layout, transitions off (CSS).
  */
 import Image from "next/image";
 import { useMotionValueEvent, useScroll } from "framer-motion";
@@ -19,13 +19,15 @@ type Cover = { src: string; tone: Tone; name?: string };
 
 const STEPS = [
   { t: "Pick a basket", d: "One theme, like AI or big tech. Each basket is a recipe of US stocks." },
-  { t: "Start with $5", d: "Put in dollars. You get one basket share that holds all of it." },
-  { t: "Prices move", d: "Winners grow. One stock can become a bigger slice." },
+  { t: "Start with $5", d: "Put in dollars. You own a slice of every stock in it." },
+  { t: "Prices move", d: "Winners grow, and so does your basket." },
   { t: "It runs on autopilot", d: "Each basket follows its creator's plan. You don't lift a finger." },
 ];
 
-const GROW = 1400; // the winner grows +14 pts and, under "Let winners run", stays there
-const TAKEOVER = 6000; // dotted "takes over" line: the featured basket only sells if one stock passes 60%
+const START = 25; // illustrated deposit, in dollars
+const GROW = 1000; // the top stock gains +10 pts of weight (only its price moves) and, under "Let winners run", stays there
+const TAKEOVER = 6000; // dotted line: the featured basket only sells if one stock passes 60%
+const PLAN = STYLE_ORDER[0]; // the featured basket's plan: Let winners run
 
 function weightsAt(parts: RecipePart[], step: number, drift: number): RecipePart[] {
   if (step < 2 || parts.length < 2) return parts;
@@ -35,6 +37,20 @@ function weightsAt(parts: RecipePart[], step: number, drift: number): RecipePart
   const restTotal = rest.reduce((a, p) => a + p.bps, 0) || 1;
   return [{ ...top, bps: top.bps + add }, ...rest.map((p) => ({ ...p, bps: Math.max(0, p.bps - Math.round((add * p.bps) / restTotal)) }))];
 }
+
+/**
+ * Basket value after the illustrated move. Only the top stock's price moves, so the other stocks keep their dollars:
+ * value = dollars in the rest / the rest's new share. 40% to 50% turns $25 into $30 (the top stock goes $10 to $15).
+ */
+function valueAt(parts: RecipePart[], now: RecipePart[]): number {
+  const w0 = (parts[0]?.bps ?? 0) / 10_000;
+  const w1 = (now[0]?.bps ?? 0) / 10_000;
+  if (w1 >= 1) return START;
+  return (START * (1 - w0)) / (1 - w1);
+}
+
+const usd = (n: number) => `$${n.toFixed(2)}`;
+const usdShort = (n: number) => (Math.abs(n - Math.round(n)) < 0.005 ? `$${Math.round(n)}` : usd(n));
 
 export function StoryVisual({
   parts,
@@ -54,115 +70,114 @@ export function StoryVisual({
   const now = weightsAt(parts, step, drift);
   const top = parts[0];
   const topNow = now[0];
-  const rows = compact ? now.slice(0, step >= 2 ? 1 : 2) : now;
+  const value = step >= 2 ? valueAt(parts, now) : START;
+  const topGain = top && topNow && top.bps > 0 ? Math.round(((value * topNow.bps) / (START * top.bps) - 1) * 100) : 0;
+  const plan = STYLES[PLAN];
+  const PlanIcon = plan.icon;
   const result =
     step <= 0
       ? `${parts.length} stocks, one idea. You buy the whole recipe.`
       : step === 1
-        ? "$25 is split across the stocks by weight."
+        ? `${usdShort(START)} is split across the stocks by weight.`
         : step === 2
-          ? `${top?.ticker} rises from ${fmtPct(top?.bps ?? 0)}% to ${fmtPct(topNow?.bps ?? 0)}% of the basket.`
+          ? `${top?.ticker} rose ${topGain}%, so your ${usdShort(START)} is now ${usdShort(value)}.`
           : `${top?.ticker} stays at ${fmtPct(topNow?.bps ?? 0)}%. It only sells if one stock passes ${TAKEOVER / 100}%.`;
 
   return (
-    <div className={cn("flex flex-col rounded-[20px] border border-white/[0.07] bg-s1", compact ? "justify-center gap-4 p-4" : cn("h-[480px] overflow-hidden p-6", step >= 3 ? "gap-3" : "gap-5"))}>
-      {compact ? (
-        <div className="flex items-center justify-between">
-          <div className="flex -space-x-4">
-            {covers.slice(0, 3).map((c, k) => (
+    <div
+      className={cn(
+        "flex flex-col rounded-[20px] border border-white/[0.07] bg-s1",
+        compact ? "gap-4 p-4" : cn("h-[480px] overflow-hidden p-6", step >= 3 ? "gap-4" : "gap-5"),
+      )}
+    >
+      {/* Head: step 1 = three real basket covers to pick from (first one picked); later = the picked basket + its value. */}
+      {step <= 0 ? (
+        <div className={cn("grid flex-none grid-cols-3", compact ? "gap-2" : "gap-3")}>
+          {covers.slice(0, 3).map((c, k) => (
+            <div key={c.src + k} className={cn("flex min-w-0 flex-col gap-1.5", k > 0 && "opacity-60")}>
               <div
-                key={c.src + k}
-                className={cn("v-swap relative h-10 w-10 overflow-hidden rounded-[12px] border-2 border-s1 bg-[var(--tint)]", k > 0 && step >= 1 && "opacity-30")}
-                style={{ transform: `rotate(${(k - 1) * 6}deg)` }}
+                className={cn(
+                  "relative overflow-hidden rounded-[14px] bg-[var(--tint)]",
+                  compact ? "aspect-[4/3]" : "h-[100px]",
+                  k === 0 && "shadow-[inset_0_0_0_2px_var(--hi)]",
+                )}
               >
-                <Image src={c.src} alt="" fill sizes="48px" className="v-duo object-cover" />
+                <Image src={c.src} alt="" fill sizes="(min-width: 1024px) 180px, 33vw" className="v-duo object-cover" />
                 <div className="v-duo-tint absolute inset-0" />
+                {k === 0 && <span className="absolute left-2.5 top-2.5 h-2 w-2 rounded-full" style={{ background: "var(--hi)" }} aria-hidden />}
               </div>
-            ))}
-          </div>
-          <span className={cn("v-swap font-display text-[32px] leading-none", step >= 1 ? "opacity-100" : "translate-y-2 opacity-0")}>$25</span>
+              {c.name && <span className={cn("line-clamp-2 font-semibold leading-tight", compact ? "text-[12px]" : "text-[13px]")}>{c.name}</span>}
+            </div>
+          ))}
         </div>
       ) : (
-        /* Desktop: step 1 = three real basket covers to pick from (first one picked); later steps = the picked basket + $25. */
-        <div className={cn("v-swap relative flex-none", step >= 1 ? "h-[80px]" : "h-[132px]")}>
-          <div className={cn("v-swap absolute inset-0 grid grid-cols-3 gap-3", step >= 1 && "pointer-events-none opacity-0")} aria-hidden={step >= 1}>
-            {covers.slice(0, 3).map((c, k) => (
-              <div
-                key={c.src + k}
-                className={cn("relative overflow-hidden rounded-[14px] bg-[var(--tint)]", k === 0 ? "shadow-[inset_0_0_0_2px_var(--acc)]" : "opacity-60")}
-              >
-                <Image src={c.src} alt="" fill sizes="180px" className="v-duo object-cover" />
-                <div className="v-duo-tint absolute inset-0" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-                {c.name && <span className="absolute inset-x-3 bottom-2.5 truncate text-[13px] font-semibold">{c.name}</span>}
-                {k === 0 && <span className="absolute left-2.5 top-2.5 h-2 w-2 rounded-full" style={{ background: "var(--acc)" }} aria-hidden />}
-              </div>
-            ))}
-          </div>
-          <div className={cn("v-swap absolute inset-0 flex items-center gap-4", step >= 1 ? "opacity-100" : "pointer-events-none translate-y-2 opacity-0")} aria-hidden={step < 1}>
-            {covers[0] && (
-              <div className="relative h-[72px] w-[72px] flex-none overflow-hidden rounded-[16px] bg-[var(--tint)] shadow-[inset_0_0_0_2px_var(--acc)]">
-                <Image src={covers[0].src} alt="" fill sizes="72px" className="v-duo object-cover" />
-                <div className="v-duo-tint absolute inset-0" />
-              </div>
-            )}
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <span className="truncate text-[17px] font-semibold">{covers[0]?.name}</span>
-              <span className="text-[14px] text-tx2">{step === 1 ? "1 basket share" : step === 2 ? "Prices moved" : "Following the creator's plan"}</span>
+        <div className="flex flex-none items-center gap-3">
+          {covers[0] && (
+            <div className={cn("relative flex-none overflow-hidden rounded-[14px] bg-[var(--tint)] shadow-[inset_0_0_0_2px_var(--hi)]", compact ? "h-12 w-12" : "h-[72px] w-[72px]")}>
+              <Image src={covers[0].src} alt="" fill sizes="72px" className="v-duo object-cover" />
+              <div className="v-duo-tint absolute inset-0" />
             </div>
-            <span className="font-display text-[48px] leading-none">$25</span>
+          )}
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className={cn("truncate font-semibold", compact ? "text-[15px]" : "text-[17px]")}>{covers[0]?.name}</span>
+            <span className={cn("text-tx2", compact ? "text-[13px]" : "text-[14px]")}>
+              {step === 1 ? "Your money, split" : step === 2 ? "Prices moved" : "Following the creator's plan"}
+            </span>
           </div>
+          <span
+            className={cn("t-num flex-none font-display leading-none", compact ? "text-[32px]" : "text-[48px]")}
+            style={step >= 2 && value > START + 0.005 ? { color: "var(--gain)" } : undefined}
+          >
+            {usdShort(value)}
+          </span>
         </div>
       )}
 
-      <div className={cn("flex flex-col", compact ? "gap-4" : cn("flex-1 justify-center", step >= 3 ? "gap-3" : "gap-6"))}>
-      <AlloyBar parts={now} tone={tone} legend={false} />
+      <div className={cn("flex flex-col", compact ? "gap-4" : cn("flex-1 justify-center", step >= 3 ? "gap-5" : "gap-6"))}>
+        <AlloyBar parts={now} tone={tone} legend={false} />
 
-      <ul className={cn("flex flex-col", compact || step >= 3 ? "gap-3" : "gap-[22px]")}>
-        {rows.map((p, k) => {
-          const isTop = k === 0;
-          return (
-            <li key={p.ticker} className="flex items-center gap-3">
-              <StockLogo ticker={p.ticker} />
-              <span className="t-num w-12 text-tx">{p.ticker}</span>
-              <div className="relative h-2 flex-1 rounded-full bg-white/[0.07]">
-                {isTop && step >= 3 && (
-                  <span aria-hidden className="absolute -inset-y-2 border-l border-dashed border-white/40" style={{ left: `${TAKEOVER / 100}%` }}>
-                    <span className="absolute -top-4 left-1 whitespace-nowrap text-[10px] text-tx2">takes over</span>
-                  </span>
-                )}
-                <span
-                  className="absolute inset-y-0 left-0 w-full origin-left rounded-full transition-transform duration-700"
-                  style={{ transform: `scaleX(${p.bps / 10_000})`, background: isTop && step >= 2 ? "var(--acc)" : "var(--tx)", transitionTimingFunction: "var(--ease-in-out)" }}
-                />
-              </div>
-              <span className="t-num w-16 text-right text-tx3">{step === 1 ? `$${((25 * p.bps) / 10_000).toFixed(2)}` : `${fmtPct(p.bps)}%`}</span>
-            </li>
-          );
-        })}
-      </ul>
-
-      {step >= 3 && (
-        <ul className="grid gap-2">
-          {STYLE_ORDER.map((m, k) => {
-            const I = STYLES[m].icon;
+        <ul className={cn("flex flex-col", compact || step >= 3 ? "gap-3" : "gap-[18px]")}>
+          {now.map((p, k) => {
+            const isTop = k === 0;
             return (
-              <li key={m} className={cn("flex items-start gap-3 rounded-[14px] px-3 py-2 text-[13px]", k === 0 ? "bg-s2 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--acc)_45%,transparent)]" : "bg-s2/50")}>
-                <I size={15} strokeWidth={1.75} className="mt-0.5 flex-none" style={{ color: k === 0 ? "var(--acc)" : "var(--tx2)" }} aria-hidden />
-                <span>
-                  <span className="font-semibold">{STYLES[m].label}</span>
-                  {k === 0 ? <span className="text-tx2"> · {STYLES[m].line}</span> : null}
-                </span>
+              <li key={p.ticker} className="flex items-center gap-3">
+                <StockLogo ticker={p.ticker} />
+                <span className="t-num w-12 text-tx">{p.ticker}</span>
+                <div className="relative h-2 flex-1 rounded-full bg-white/[0.07]">
+                  {isTop && step >= 3 && (
+                    <span aria-hidden className="absolute -inset-y-2 border-l border-dashed border-white/40" style={{ left: `${TAKEOVER / 100}%` }}>
+                      <span className="absolute -top-4 left-1 whitespace-nowrap text-[11px] text-tx2">{TAKEOVER / 100}%</span>
+                    </span>
+                  )}
+                  <span
+                    className="absolute inset-y-0 left-0 w-full origin-left rounded-full transition-transform duration-700"
+                    style={{
+                      transform: `scaleX(${p.bps / 10_000})`,
+                      background: isTop && step >= 2 ? "var(--gain)" : "var(--tx)",
+                      transitionTimingFunction: "var(--ease-in-out)",
+                    }}
+                  />
+                </div>
+                {/* Step 1: weights. Later: each stock's dollars (only the winner's grow). */}
+                <span className="t-num w-16 text-right text-tx3">{step <= 0 ? `${fmtPct(p.bps)}%` : usd((value * p.bps) / 10_000)}</span>
               </li>
             );
           })}
         </ul>
-      )}
 
+        {step >= 3 && (
+          <div className="flex items-start gap-3 rounded-[14px] bg-s2 px-3 py-2.5 text-[13px] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--hi)_45%,transparent)]">
+            <PlanIcon size={15} strokeWidth={1.75} className="mt-0.5 flex-none" style={{ color: "var(--hi)" }} aria-hidden />
+            <span>
+              <span className="font-semibold">{plan.label}</span>
+              <span className="text-tx2"> · {plan.line}</span>
+            </span>
+          </div>
+        )}
       </div>
 
-      <p className={cn("flex items-center gap-2 border-t border-white/[0.07] pt-3 text-[14px] text-tx3", !compact && "mt-auto")} aria-live="polite">
-        <span className="h-1.5 w-1.5 flex-none rounded-full" style={{ background: "var(--acc)" }} aria-hidden />
+      <p className={cn("flex items-start gap-2 border-t border-white/[0.07] pt-3 text-[14px] text-tx3", !compact && "mt-auto")} aria-live="polite">
+        <span className="mt-[7px] h-1.5 w-1.5 flex-none rounded-full" style={{ background: "var(--hi)" }} aria-hidden />
         {result}
       </p>
     </div>
@@ -226,7 +241,7 @@ function StepText({ n, t, d, on, done }: { n: number; t: string; d: string; on: 
     <div className={cn("v-swap flex gap-4 rounded-[16px] px-4 py-3", on ? "bg-s1 opacity-100" : done ? "opacity-75 hover:opacity-100" : "opacity-55 hover:opacity-100")}>
       <span
         className="inline-flex h-8 w-8 flex-none items-center justify-center rounded-full text-[14px] font-semibold"
-        style={on ? { background: "var(--acc)", color: "var(--bg)" } : { background: "var(--s2)" }}
+        style={on ? { background: "var(--hi)", color: "var(--bg)" } : { background: "var(--s2)" }}
       >
         {n}
       </span>

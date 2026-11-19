@@ -16,6 +16,19 @@ export function dirOf(chgPct: number): Dir {
   return Math.abs(chgPct) < 0.05 ? "flat" : chgPct > 0 ? "up" : "down";
 }
 
+/** Smallest visible y-range: ±2% around the start value, so a +0.2% move looks small, not like a rocket. */
+export const MIN_Y_SWING = 0.02;
+/** Y domain covering the data and at least ±MIN_Y_SWING around `base` (the first point). */
+export function yDomain(all: number[], base: number | undefined): [number, number] {
+  let lo = Math.min(...all);
+  let hi = Math.max(...all);
+  if (base && Number.isFinite(base)) {
+    lo = Math.min(lo, base * (1 - MIN_Y_SWING));
+    hi = Math.max(hi, base * (1 + MIN_Y_SWING));
+  }
+  return [lo, hi];
+}
+
 /** Same anatomy for every range toggle: Inter, tabular figures, 36px tall pill. */
 export const RANGE_BTN =
   "inline-flex h-9 min-w-[44px] items-center justify-center rounded-full px-3 font-sans text-[14px] font-semibold tabular-nums transition-colors";
@@ -55,8 +68,7 @@ export function ValueChart({ values, times, tone, ticks = [], creator, height = 
     const c = creator ? idx.map((i) => creator[i]) : undefined;
     const t = idx.map((i) => times[i]);
     const all = [...v, ...(c ?? [])];
-    const lo = Math.min(...all);
-    const hi = Math.max(...all);
+    const [lo, hi] = yDomain(all, v[0]);
     const pad = (hi - lo) * 0.12 || 1;
     const y = (n: number) => H - 8 - ((n - (lo - pad)) / (hi - lo + 2 * pad)) * (H - 16);
     // Spread points by index so the line always spans the full width (no flat-then-stop look).
@@ -168,7 +180,7 @@ export function ValueChart({ values, times, tone, ticks = [], creator, height = 
           {creator && <span>- - creator</span>}
           {view.tx.length > 0 && (
             <span className="inline-flex items-center gap-1">
-              <i className="inline-block h-3 w-px" style={{ background: "var(--acc)" }} /> rebalance
+              <i className="inline-block h-3 w-px" style={{ background: "var(--hi)" }} /> rebalance
             </span>
           )}
         </div>

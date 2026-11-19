@@ -26,7 +26,7 @@ export function ActivityScreen({ items }: { items: LoadedBasket[] }) {
   const receipts = mine.flatMap((it) => it.events.filter((e) => e.txHash).map((e) => ({ it, e })));
 
   return (
-    <div className="mx-auto max-w-[720px] px-4 pb-8 pt-5 md:px-8 md:pt-8">
+    <div className="mx-auto max-w-app px-4 pb-8 pt-5 md:px-8 md:pt-8">
       <h1 className="t-body t-strong md:text-[20px]">Activity</h1>
       <div className="mt-3">
         <Tabs
@@ -61,7 +61,7 @@ export function ActivityScreen({ items }: { items: LoadedBasket[] }) {
               if (i > 0)
                 return (
                   <a key={c!.id} className="c-row" href={`/b/${v.basket.address}?sheet=change`}>
-                    <span className="c-rowicon" style={{ color: "var(--acc)" }}>
+                    <span className="c-rowicon" style={{ color: "var(--hi)" }}>
                       <RefreshCw size={18} strokeWidth={1.75} aria-hidden />
                     </span>
                     <div className="c-row__main">

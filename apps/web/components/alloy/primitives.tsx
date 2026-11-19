@@ -16,7 +16,8 @@ type Icon = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string; st
 // ---------------------------------------------------------------------------
 
 type BtnProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary";
+  /** primary = cream (any non-buy CTA); buy = copper, only for spending money (Buy, Sign in to buy, Confirm). */
+  variant?: "primary" | "secondary" | "buy";
   loading?: boolean;
   size?: "md" | "sm";
   auto?: boolean;
@@ -47,7 +48,7 @@ export function ButtonLink({
   children,
 }: {
   href: string;
-  variant?: "primary" | "secondary";
+  variant?: "primary" | "secondary" | "buy";
   auto?: boolean;
   className?: string;
   children: ReactNode;
@@ -209,7 +210,7 @@ export function Ledger({ cells, className }: { cells: [LedgerCell, LedgerCell]; 
 
 export type RecipePart = { ticker: string; bps: number };
 
-/** Segmented recipe bar: width = weight, one burgundy hue stepped by rank, 2px separators. */
+/** Segmented recipe bar: width = weight, copper-to-neutral ramp by rank (never oxblood), 2px separators. */
 export function AlloyBar({
   parts,
   tone,
@@ -252,7 +253,7 @@ export function AlloyBar({
   );
 }
 
-/** One burgundy hue at stepped lightness by rank (rank 1 = darkest = biggest weight). Tokens: --al-1…--al-6. */
+/** Copper-to-neutral ramp by rank (rank 1 = most saturated copper = biggest weight). Tokens: --al-1…--al-6. */
 export function alloyColor(rank: number): string {
   return `var(--al-${Math.min(rank, 5) + 1})`;
 }

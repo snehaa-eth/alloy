@@ -1,17 +1,20 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Delete, ShieldCheck } from "lucide-react";
+import { Clock, Delete, ShieldCheck } from "lucide-react";
 import type { TxStep } from "@/lib/tx";
+import { MIN_BUY_USDC } from "@/lib/strategy";
+import { formatShares, formatUsd6 } from "@/lib/units";
 import { cn } from "@/lib/utils";
 import { Button, StepList } from "../primitives";
+import type { QuoteView } from "../hooks";
 
 /**
  * One anatomy for every money/percent chip: Inter 600 with tabular figures (never mono), 44px tap
- * target. Selected = brand burgundy outline + tint (the brand touch; filled buttons stay the CTA).
+ * target. Selected = cream outline on the s2 fill (never oxblood, which reads as loss; never copper, which means "buy").
  */
 export const CHIP =
-  "inline-flex h-11 min-w-[64px] flex-1 items-center justify-center rounded-full border border-white/[0.12] bg-transparent px-4 font-sans text-[15px] font-semibold tabular-nums text-tx transition-colors hover:border-white/30 disabled:cursor-not-allowed disabled:opacity-50 aria-pressed:border-[var(--acc)] aria-pressed:bg-[var(--tint)]";
+  "inline-flex h-11 min-w-[64px] flex-1 items-center justify-center rounded-full border border-white/[0.12] bg-transparent px-4 font-sans text-[15px] font-semibold tabular-nums text-tx transition-colors hover:border-white/30 disabled:cursor-not-allowed disabled:opacity-50 aria-pressed:border-[var(--tx)] aria-pressed:bg-[var(--s2)]";
 
 /** Amount first: big "$ 25" input (Inter 600, tabular) + $10 · $25 · $100 chips. No keypad, no Max. */
 export function AmountField({
@@ -63,6 +66,48 @@ export function QuoteRows({ rows, className }: { rows: { k: ReactNode; v: ReactN
         </div>
       ))}
     </dl>
+  );
+}
+
+/**
+ * Buy quote block shared by the phone sheet and the desktop panel. Layout never changes with the
+ * amount: all three rows are always present ("—" while quoting or below the minimum), and the
+ * market-closed note is one small line that depends only on the market, never on the quote state.
+ * Unit model: you own basket units, priced per unit.
+ */
+export function BuyQuote({ name, usdc, quote, feeBps, marketOpen }: { name: string; usdc: bigint; quote: QuoteView; feeBps: number; marketOpen: boolean | null }) {
+  const tooSmall = usdc > 0n && usdc < MIN_BUY_USDC;
+  const none = usdc === 0n || tooSmall;
+  const impact = quote.impactBps !== null && quote.impactBps > 50 ? quote.impactBps : null;
+  return (
+    <div className="flex flex-col gap-3">
+      <QuoteRows
+        rows={[
+          {
+            k: "You get",
+            v: tooSmall ? <span className="text-tx">Enter $5 or more</span> : none ? "—" : `≈ ${formatShares(quote.out, 2)} units of ${name}`,
+          },
+          {
+            k: "Trading cost (one-time)",
+            v:
+              none || quote.costUsd6 === null ? (
+                <span className="c2">—</span>
+              ) : (
+                <span style={impact ? { color: "var(--warn)" } : undefined}>
+                  ≈ {formatUsd6(quote.costUsd6)}
+                  {impact ? ` · ${(impact / 100).toFixed(1)}%` : ""}
+                </span>
+              ),
+          },
+          { k: "Fee", v: `${feeBps / 100}% a year` },
+        ]}
+      />
+      {marketOpen === false && (
+        <p className="flex items-center gap-1.5 text-[12px] text-tx2">
+          <Clock size={12} strokeWidth={1.75} aria-hidden /> US market is closed. Your price may differ a little.
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -124,15 +169,15 @@ export function TxProgress({ step, skip = [] }: { step: TxStep; skip?: TxStep[] 
 }
 
 /** One-sentence not-for-US-persons attestation, shown before the first money action. */
-export function AttestBlock({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
+export function AttestBlock({ onConfirm, onCancel, buy }: { onConfirm: () => void; onCancel: () => void; /** copper only when confirming a buy */ buy?: boolean }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-start gap-3">
         <ShieldCheck size={20} strokeWidth={1.75} className="mt-0.5 flex-none c2" aria-hidden />
         <p className="t-body">I&apos;m not a US person, and this is allowed where I live.</p>
       </div>
-      <p className="t-mono c2">Tokenized stock exposure, not shares.</p>
-      <Button onClick={onConfirm}>I confirm</Button>
+      <p className="t-mono c2">You own a token that tracks these stocks, not the shares themselves.</p>
+      <Button variant={buy ? "buy" : "primary"} onClick={onConfirm}>I confirm</Button>
       <button type="button" className="c-link self-center" onClick={onCancel}>
         Not now
       </button>

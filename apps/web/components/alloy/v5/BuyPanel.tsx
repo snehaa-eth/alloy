@@ -1,17 +1,18 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { FlaskConical } from "lucide-react";
 import { MIN_BUY_USDC } from "@/lib/strategy";
-import { formatShares, formatUsd6, parseUsdc } from "@/lib/units";
+import { formatUsd6, parseUsdc } from "@/lib/units";
+import { usMarketStatus } from "@/lib/market";
 import { cn } from "@/lib/utils";
 import { useBuyBasket } from "@/lib/hooks/use-basket-tx";
 import { DEFAULT_SLIPPAGE_BPS } from "@/lib/strategy";
 import { describeTxError } from "@/lib/tx";
 import { Button, ErrorState, QuietLink } from "../primitives";
 import { useAccount, useAttestation, useQuoteView } from "../hooks";
-import { AmountField, AttestBlock, QuoteRows, TxProgress } from "../flows/shared";
-import { DIR_HEX, dirOf } from "../ValueChart";
+import { AmountField, AttestBlock, BuyQuote, TxProgress } from "../flows/shared";
+import { DIR_HEX, dirOf, yDomain } from "../ValueChart";
 import { FoundingCertificate } from "../flows/BuySheet";
 import type { Tone } from "../identity";
 import type { BasketView } from "../basket-view";
@@ -64,6 +65,8 @@ export function BuyPanel({
   const buy = useBuyBasket(b.address);
   const [stage, setStage] = useState<Stage>("compose");
   const [err, setErr] = useState("");
+  const [market, setMarket] = useState<boolean | null>(null);
+  useEffect(() => setMarket(usMarketStatus().open), []);
   const usdc = safeParse(amount);
   const quote = useQuoteView(b.address, "buy", usdc, v.nav, b.totalSupply);
   const tooSmall = usdc > 0n && usdc < MIN_BUY_USDC;
@@ -88,15 +91,16 @@ export function BuyPanel({
 
   return (
     <div id="buy-panel" className="scroll-mt-24 overflow-hidden rounded-[20px] border border-white/[0.1] bg-s1 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.9)]">
-      <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-3" style={{ boxShadow: "inset 0 2px 0 var(--acc)" }}>
+      <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-3" style={{ boxShadow: "inset 0 2px 0 var(--hi)" }}>
         <span className="inline-flex items-center gap-2 text-[15px] font-semibold">
-          <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--acc)" }} aria-hidden /> {stage === "done" ? "You're in" : `Buy ${b.name}`}
+          <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--hi)" }} aria-hidden /> {stage === "done" ? "You're in" : `Buy ${b.name}`}
         </span>
         <span className="text-[12px] text-tx3">min $5</span>
       </div>
       <div className="flex flex-col gap-5 p-5">
         {stage === "attest" && (
           <AttestBlock
+            buy
             onConfirm={() => {
               attest.confirm();
               setStage("compose");
@@ -143,25 +147,14 @@ export function BuyPanel({
 
             <AmountField value={amount} onChange={setAmount} disabled={stage === "running"} presets={PRESETS} />
 
-            <QuoteRows
-              rows={[
-                { k: "You get", v: tooSmall ? <span className="down">Minimum $5</span> : `≈ ${formatShares(quote.out, 2)} shares` },
-                ...(quote.costUsd6 !== null ? [{ k: "Trading cost (one-time)", v: `≈ ${formatUsd6(quote.costUsd6)}` }] : []),
-                { k: "Fee", v: `${b.feeBps / 100}% a year` },
-              ]}
-            />
-            {quote.impactBps !== null && quote.impactBps > 50 && (
-              <span className="-mt-2 self-start rounded-full px-3 py-1 text-[12px]" style={{ background: "var(--warnbg)", color: "var(--warn)" }}>
-                Fills ~{(quote.impactBps / 100).toFixed(1)}% lower now
-              </span>
-            )}
+            <BuyQuote name={b.name} usdc={usdc} quote={quote} feeBps={b.feeBps} marketOpen={market} />
 
             <div className="flex flex-col gap-2">
               {stage === "running" ? (
                 <TxProgress step={buy.step} />
               ) : (
-                <Button data-buy-primary className="!h-[52px] !rounded-full" onClick={go} disabled={usdc === 0n || tooSmall}>
-                  {acct.signedIn ? label : "Sign in to buy"}
+                <Button variant="buy" data-buy-primary className="!h-[52px] !rounded-full" onClick={go} disabled={usdc === 0n || tooSmall}>
+                  {tooSmall ? "Minimum is $5" : acct.signedIn ? label : "Sign in to buy"}
                 </Button>
               )}
               {holding && stage === "compose" && (
@@ -194,8 +187,7 @@ export function NewChart({ series, tone }: { series: number[]; tone: Tone }) {
   const H = 150;
   if (series.length < 2 || series.every((n) => n === series[0]))
     return <p className="rounded-[14px] bg-s2 px-4 py-6 text-center text-[14px] text-tx2">New basket. Value history starts after its first day.</p>;
-  const lo = Math.min(...series);
-  const hi = Math.max(...series);
+  const [lo, hi] = yDomain(series, series[0]);
   const pad = (hi - lo) * 0.15 || 1;
   const y = (n: number) => H - ((n - (lo - pad)) / (hi - lo + 2 * pad)) * H;
   const x = (i: number) => (i / (series.length - 1)) * W;

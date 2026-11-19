@@ -30,7 +30,7 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
   const cols = Math.min(4, trending.length + (trending.length < 4 ? 1 : 0));
   const feePct = featured ? featured.v.basket.feeBps / 100 : 1;
   // Hero themes: only themes (never a single company) with a live public basket; the card swaps in sync with the
-  // rolling word. Add a theme here only when its word fits the headline line ("BIG TECH STORY." is the widest).
+  // theme word. The word has its own headline line, so add a theme only when it fits there ("BIG TECH" is the widest).
   const heroStories = (
     [
       ["AI", featured],
@@ -53,7 +53,7 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
           stories={heroStories.map(({ word, item }) => ({ word, card: <FeaturedStory item={item} fan={visible.filter((x) => x !== item).slice(0, 2)} /> }))}
           top={
             <span className="hidden w-fit items-center gap-2 rounded-full border sm:inline-flex border-white/10 bg-white/[0.04] px-3 py-1.5 text-[13px] text-tx3">
-              <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--acc)" }} aria-hidden /> Invest in stories, not symbols.
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--hi)" }} aria-hidden /> Invest in stories, not symbols.
             </span>
           }
           bottom={
@@ -139,11 +139,12 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
               </Link>
             }
           />
+          {/* Each cell is a grid so its card stretches to the row height: every card in the row is the same height. */}
           <div
             className={`-mx-4 mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0 ${cols >= 4 ? "xl:grid-cols-4" : cols === 3 ? "lg:grid-cols-3" : ""}`}
           >
             {trending.map((i) => (
-              <div key={i.v.basket.address} className="w-[82%] flex-none snap-start sm:w-auto">
+              <div key={i.v.basket.address} className="grid w-[82%] flex-none snap-start sm:w-auto">
                 <BasketCard v={i.v} perf={i.perf} />
               </div>
             ))}
@@ -198,7 +199,7 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
         >
           <div className="flex flex-col gap-6">
             <SectionHead id="create" title="Have an idea? Build a basket." sub="Pick up to 10 stocks, set the weights, put in $10. Others can follow it." />
-            <Link href="/create" className="c-btn c-btn--primary c-btn--auto !h-[52px] w-fit !rounded-full !px-7">
+            <Link href="/create" className="c-btn c-btn--secondary c-btn--auto !h-[52px] w-fit !rounded-full !px-7">
               <Plus size={16} strokeWidth={2} aria-hidden /> Build a basket
             </Link>
           </div>
@@ -297,12 +298,12 @@ function FeaturedStory({ item, fan }: { item: LoadedBasket; fan: LoadedBasket[] 
             <Link href={`/b/${b.address}`} className="c-btn c-btn--secondary !rounded-full">
               See inside
             </Link>
-            <Link href={`/b/${b.address}?buy=25`} className="c-btn c-btn--primary !rounded-full">
+            <Link href={`/b/${b.address}?buy=25`} className="c-btn c-btn--buy !rounded-full">
               Buy $25
             </Link>
           </div>
           <p className="flex items-center justify-center gap-2 text-[12px] text-tx2">
-            <span className="v-live" aria-hidden /> Live price {formatUsd6(v.navPerShare)} per share of this basket
+            <span className="v-live" aria-hidden /> Live price {formatUsd6(v.navPerShare)} per unit
           </p>
         </div>
       </div>
@@ -314,7 +315,7 @@ function FeaturedStory({ item, fan }: { item: LoadedBasket; fan: LoadedBasket[] 
 function HowHeld() {
   const rows: [typeof ShieldCheck, string][] = [
     [Coins, "Your dollars buy tokenized exposure to US stocks, held in an on-chain basket."],
-    [KeyRound, "The basket share sits in your own account. Only you can move it."],
+    [KeyRound, "Your basket units sit in your own account. Only you can move them."],
     [DoorOpen, "Sell anytime, or withdraw the stock tokens themselves."],
     [ShieldCheck, "Not available to US persons. You can lose money."],
   ];
@@ -329,7 +330,7 @@ function HowHeld() {
           </li>
         ))}
       </ul>
-      <p className="border-t border-white/[0.07] pt-4 text-[12px] text-tx2">Tokenized stock exposure, not shares. Not investment advice.</p>
+      <p className="border-t border-white/[0.07] pt-4 text-[12px] text-tx2">You own a token that tracks these stocks, not the shares themselves. Not investment advice.</p>
     </div>
   );
 }
