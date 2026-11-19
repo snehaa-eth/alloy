@@ -8,7 +8,9 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "smoke": "tsx scripts/smoke-sepolia.ts"
+    "smoke": "tsx scripts/smoke-sepolia.ts",
+    "e2e": "node e2e/run.mjs",
+    "e2e:quiet": "E2E_HEADLESS=1 node e2e/run.mjs"
   },
   "dependencies": {
     "@privy-io/react-auth": "^3.52.0",
@@ -63,6 +65,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
     "@types/node": "^22",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",

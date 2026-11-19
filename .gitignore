@@ -15,3 +15,7 @@ docs/design/app-shots-v5/*-v2palette.png
 # Design mockups and reference screenshots: keep local, not on GitHub
 docs/design/artdir/
 docs/design/refboard/
+
+# Playwright e2e artifacts
+apps/web/test-results/
+apps/web/playwright-report/

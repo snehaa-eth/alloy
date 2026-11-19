@@ -202,3 +202,61 @@ ffmpeg -i teaser.mp4 -af loudnorm=I=-14:TP=-1:LRA=11 -c:v copy -c:a aac -b:a 192
 **Licensing housekeeping:**
 - Save the Pixabay license certificate for the track you use, in a private folder (not the repo).
 - If you later boost the post as a **paid ad**, or repost it to YouTube with a Content-ID-registered track, switch to an Epidemic Pro/Business or Artlist Pro track. Or keep the certificate ready to dispute claims.
+
+---
+
+## 5. Round 2 candidates (concept video, liquid metal)
+
+Research date: 2026-11-19. These are for the 90s concept video: pure-black screens, liquid chrome drops melting into one glossy shape (the "wow" moment at about 24s), on-screen text only, no voiceover. The arc is: quiet intro (0–14s), build, melt (~24s), steady confident middle (30–78s), resolve on the logo (84–90s).
+
+**Excluded on purpose:**
+- Every track and artist in section 4: NverAvetyanMusic, Musinova, u_98673jp944, Evgeny_Bardyuzha, YuraSoop, penguinmusic, Kulakovka, JayStacksBeats, 9JackJack8, CloudSystem, MoodStrides.
+- Kevin MacLeod / Incompetech, industrial, synth beeps, and sci-fi or space drones and pads. "Gravity" (_Music_for_Creators_) and "Ethereal Pulse" (PineAppleMusic) were dropped because their descriptions pitch them for sci-fi.
+- "Corporate inspiring" ukulele or marimba, EDM supersaw drops, and tracks with lyrics.
+- Everything tagged "AI generated". This rules out all OpenMindAudio organic and Afro house tracks, DARIOCOIRO "Crimson over Cape Town", and The_Mountain "Neo Soul". Many top Pixabay results in these genres are AI-generated now, so check the tag before you download any substitute.
+
+**How these were picked:**
+- All 5 are **[NA]**: I could not listen to them. I chose them from page metadata only: plays and downloads, Editor's Choice, tags, the description, and the artist's track record. Listen to all five before you choose.
+- Every URL below opened on 2026-11-19 **[V]**, and the length, tags, Content ID status and license come from that page.
+- All five are on the Pixabay Content License. That license is free, commercial use is OK, no credit is needed, and it covers an organic post on the brand's X account (see section 2).
+- "Content ID Registered" does not matter on X. It only matters if you repost to YouTube, where it can trigger a claim that you dispute with the Pixabay license certificate.
+- Each track is 3 different styles away from the others, so the founder's reaction tells us which lane to search next.
+
+| # | Style | Track / artist | Length | Link | Content ID | Plays / downloads | Tags (from page) |
+|---|---|---|---|---|---|---|---|
+| 1 | Minimal modern piano + soft beat | **Crystalline Flow**, Grand_Project | 3:27 | https://pixabay.com/music/beats-crystalline-flow-367714/ | **Registered** | 6.1k / 624 | Ambient, Piano, Arpeggio, Chill, Cinematic, Soft Piano, Soundscape. Mood: Dreamy, Laid Back, Bright, Relaxing. Instrumental |
+| 2 | Elegant warm deep house | **Fashion Deep House**, lvymusic | 2:15 | https://pixabay.com/music/deep-house-fashion-deep-house-126300/ | **Not registered** | 26k / 3.7k | Deep House, Elegant, Luxury, Fashion, Atmospheric, Melodic, Modern, Brand, Presentation, Calm |
+| 3 | Emotional modern cinematic build | **Single Moment**, RomanBelov | 2:39 | https://pixabay.com/music/build-up-scenes-single-moment-15284/ | **Registered** | 173k / 10.6k | Epic, Electronic, Cinematic, Piano, Drive, Uplifting, Reflective, Dreamy. Genre: Build Up Scenes |
+| 4 | Luxe chill hip-hop / neo-soul | **Chill RnB**, danyvin | 2:38 | https://pixabay.com/music/rnb-chill-rnb-621264/ | **Registered** | 88k / 3.7k, **Editor's Choice** | R&B, Soul, Smooth, Lounge, Urban, Rhodes, Deep, Fashion, Hip Hop. Movement: Elegant, Smooth |
+| 5 | Elegant Afro-house groove | **My Love – Melodic Afro Deep House**, SoundEden | 3:21 | https://pixabay.com/music/upbeat-my-love-melodic-afro-deep-house-343626/ | **Not registered** | 7.4k / 1.6k | Afro, Melodic, House, Lounge, Fashion, Dreamy, Sunset. Instrumental |
+
+### Why each one, and where the melt could land
+
+1. **Crystalline Flow (piano + soft beat).**
+   - **Why:** Piano arpeggios over synth pads and a relaxed downtempo beat. It is tagged bright and dreamy, not sad, which is the warm "keynote reveal" lane.
+   - **Melt:** The artist also uploaded _Short, _Medium 1–4 and _Outro edits of the same piece. Use the beatless opening for 0–14s, cut so the beat enters on the melt at 24s, and end on the 0:34 _Outro edit (https://pixabay.com/music/main-title-crystalline-flow-outro-367708/) for the 84–90s logo.
+   - **Caveat:** Its tags include "Lo-fi". If it sounds too much like a study playlist, the non-Content-ID backup in this lane is "220722 – Dark Piano / Electronica / Minimal" by WELC0MEИ0 (2:58, 16k plays): https://pixabay.com/music/beats-220722-dark-piano-electronica-abstract-minimal-ambient-155643/. It is darker and is described as "melancholic", so it may read sad.
+
+2. **Fashion Deep House (deep house).**
+   - **Why:** Tagged elegant, luxury, brand, presentation. It is an older track with a solid download count, and it is not Content ID registered, so it is the cleanest license of the five.
+   - **Melt:** Deep house enters in 8-bar blocks (about 16s at ~122 BPM). Start the edit so the first full kick-and-bass entry lands on 24s. Then cut the middle-section text on bar lines.
+   - **Caveat:** The track is only 2:15 long, so a 90s edit uses most of it. Watch that the intro doesn't sound too "runway".
+
+3. **Single Moment (cinematic build).**
+   - **Why:** It is described as an "atmospheric and uplifting" electronic track with emotional strings, piano and dynamic beats. RomanBelov is one of Pixabay's most-used composers (173k plays).
+   - **Melt:** Use the swell into the first full-beat section as the lift, and land it exactly on 24s.
+   - **Caveat:** It is tagged "Epic" and "Majestic", so check that it stays modern and doesn't tip into trailer music.
+
+4. **Chill RnB (luxe hip-hop / neo-soul).**
+   - **Why:** It is an Editor's Choice track with mellow Rhodes and a smooth beat, tagged urban, lounge and elegant. This is the "premium urban" option, closest to how Robinhood or a fintech brand plays on Instagram.
+   - **Melt:** Hip-hop beds have no big build. Do the melt as a beat drop-out and re-entry: low-pass the track or mute the drums from about 22.5s, then bring the drums back in on 24s.
+   - **Backup** with far more proven popularity (2.7M plays, Editor's Choice, Content ID registered, more lo-fi): Ashot_Danielyan "Night Street (Relaxed Vlog)", 2:21: https://pixabay.com/music/beats-night-street-relaxed-vlog-131746/.
+
+5. **My Love – Melodic Afro Deep House (Afro house).**
+   - **Why:** It is an instrumental, melodic Afro deep house track with rhythmic percussion, tagged lounge and sunset. It nods to the Africa and Global South audience without sounding like a festival. It is not Content ID registered.
+   - **Melt:** Bring in the percussion-only section (or high-pass the full mix) for 0–24s, then let the bass and melody land on the melt.
+   - **Caveat:** Its moods include "Energetic". If it feels too busy under the 30–78s text, drop the music to about -6 dB in that section.
+
+**No good Latin option.** The Latin house results on Pixabay were reggaeton or vlog-style background tracks, or tagged AI generated. If the founder likes #5, a Latin-leaning take is the next search to run.
+
+**Uppbeat not used.** Pixabay had a non-AI option for each style, so no Uppbeat track was needed. Its free tier probably doesn't cover a brand account anyway (see section 2).
