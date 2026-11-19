@@ -195,8 +195,12 @@ export function Story({ b, moves }: { b: LBasket; moves: StoryMoves | null }) {
     };
     const camFuse = fuse;
     const mx = mouse[0] * (1 - fuse * 0.6), my = mouse[1] * (1 - fuse * 0.6);
-    const cz = phone ? lerp(9.2, 10.8, camFuse) : 6.2;
-    s.cam = { ro: [mx * 0.35, fy + my * 0.22, cz], ta: [0, fy, 0], tan: 0.42 };
+    // Once fused, pull back and sit the form lower so it never runs into the caption above it.
+    // Short/wide windows (e.g. 1920x1000) need a little more room.
+    const wideBoost = phone ? 0 : Math.min(Math.max((W / Math.max(H, 1) - 1.5) * 1.2, 0), 0.9);
+    const cz = phone ? lerp(9.2, 10.8, camFuse) : lerp(6.2, 7.5 + wideBoost, camFuse);
+    const lift = phone ? 0 : 0.42 * camFuse; // aim the camera above the form → form appears lower on screen
+    s.cam = { ro: [mx * 0.35, fy + lift + my * 0.22, cz], ta: [0, fy + lift, 0], tan: 0.42 };
     const cam = s.cam;
 
     // ---- DOM ----
