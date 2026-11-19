@@ -22,11 +22,11 @@ export default async function Image({ params }: { params: Promise<{ n: string }>
   const { n } = await params;
   const v = Number.parseInt(n, 10);
   const num = Number.isFinite(v) && v > 0 && v < 10_000_000 ? String(v).padStart(4, "0") : "····";
-  const [thin, light] = await Promise.all([sora(200), sora(300)]);
-  const fonts = [thin && { name: "Sora", data: thin, weight: 200 as const }, light && { name: "Sora", data: light, weight: 300 as const }].filter(Boolean) as {
+  const [thin, light] = await Promise.all([sora(300), sora(400)]);
+  const fonts = [thin && { name: "Sora", data: thin, weight: 300 as const }, light && { name: "Sora", data: light, weight: 400 as const }].filter(Boolean) as {
     name: string;
     data: ArrayBuffer;
-    weight: 200 | 300;
+    weight: 300 | 400;
   }[];
   const label = { fontSize: 15, letterSpacing: 5, color: "#8a8580", textTransform: "uppercase" as const };
 
@@ -69,9 +69,29 @@ export default async function Image({ params }: { params: Promise<{ n: string }>
             <span style={label}>Early pass</span>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", marginTop: "auto" }}>
-            <span style={{ ...label, fontSize: 14 }}>No.</span>
-            <span style={{ fontSize: 172, fontWeight: 200, lineHeight: 1, letterSpacing: -6, color: "#ece8e3" }}>{num}</span>
+          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginTop: "auto" }}>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <span style={{ ...label, fontSize: 14 }}>No.</span>
+              <span style={{ fontSize: 150, fontWeight: 300, lineHeight: 1, letterSpacing: -6, color: "#ece8e3" }}>{num}</span>
+            </div>
+            <svg width="190" height="190" viewBox="0 0 120 120" style={{ marginBottom: 6 }}>
+              <defs>
+                <linearGradient id="st" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stopColor="#fbf9f6" />
+                  <stop offset="0.45" stopColor="#8f8a85" />
+                  <stop offset="0.7" stopColor="#e6e2dd" />
+                  <stop offset="1" stopColor="#6f6a66" />
+                </linearGradient>
+                <radialGradient id="cu" cx="0.38" cy="0.32" r="0.8">
+                  <stop offset="0" stopColor="#ffd2b3" />
+                  <stop offset="0.45" stopColor={COPPER} />
+                  <stop offset="1" stopColor="#8a4f2c" />
+                </radialGradient>
+              </defs>
+              <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(243,241,238,0.08)" strokeWidth="1" />
+              <circle cx="60" cy="60" r="44" fill="none" stroke="url(#st)" strokeWidth="7" strokeDasharray="99.5 7.7 61.5 7.7 48.6 7.7 35.6 7.7" transform="rotate(-90 60 60)" />
+              <circle cx="60" cy="60" r="15" fill="url(#cu)" />
+            </svg>
           </div>
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: 28, paddingTop: 22, borderTop: "1px solid rgba(243,241,238,0.12)" }}>

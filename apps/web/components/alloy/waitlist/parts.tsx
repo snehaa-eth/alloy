@@ -3,11 +3,12 @@
 /** Shared /waitlist pieces: sign-up (card + bar), facts, price strip, counter, metal vignettes, footer. */
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { ArrowRight, AtSign, Check, Mail } from "lucide-react";
+import { ArrowRight, AtSign, Check, Copy, Image as ImageIcon, Mail } from "lucide-react";
 import { API_BASE_URL } from "@/lib/api/client";
 import { BaseLogo, UsdcLogo, UsdtLogo } from "../brand/ChainLogos";
 import { TickerMark } from "../brand/StockMark";
 import { MetalBasket, type MetalState } from "../metal/MetalBasket";
+import { useMetalModal } from "../metal/MetalCanvas";
 import { tintCss } from "../metal/palette";
 import type { Recipe } from "../metal/shape";
 import { OdometerOnView, WordReveal } from "../motion/alloy-motion";
@@ -17,9 +18,7 @@ import { cn } from "@/lib/utils";
 
 export const X_URL = "https://x.com/alloy_fi";
 const shareUrl = (position: number | null) =>
-  `https://x.com/intent/post?text=${encodeURIComponent(
-    `${position ? `Pass #${String(position).padStart(4, "0")}` : "I'm on the list"} for @alloy_fi. Baskets of US stocks around one idea, from $5.`,
-  )}&url=${encodeURIComponent(position ? `https://alloyfi.vercel.app/waitlist/pass/${position}` : "https://alloyfi.vercel.app/waitlist")}`;
+  `https://x.com/intent/post?text=${encodeURIComponent(passCaption(position))}&url=${encodeURIComponent(passLink(position))}`;
 export const SUBLINE = "Baskets of US stocks around one idea, from $5, built by creators you follow. Real money on Base is coming. Get in first.";
 export const FACTS = ["From $5", "1% a year, nothing else", "Sell anytime"];
 /** Show the public counter only once the list is big enough to be a signal, not a weakness. */
@@ -179,11 +178,27 @@ function Note({ err, className, extra }: { err: { msg: string } | null; classNam
   );
 }
 
-/** The pass moment: a focused overlay with the pass and the share action, so nothing collides with the hero. */
+const passCaption = (position: number | null) =>
+  `${position ? `Pass #${String(position).padStart(4, "0")}` : "I'm on the list"} for @alloy_fi. Baskets of US stocks around one idea, from $5.`;
+const passLink = (position: number | null) => (position ? `https://alloyfi.vercel.app/waitlist/pass/${position}` : "https://alloyfi.vercel.app/waitlist");
+
+/** X's mark (lucide has none). */
+function XMark({ size = 13 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z" />
+    </svg>
+  );
+}
+
+/** The pass moment: a focused overlay with the pass (live metal basket on it) and the share actions. */
 function PassOverlay({ done, onClose }: { done: Done; onClose: () => void }) {
+  const root = useRef<HTMLDivElement>(null);
   const close = useRef<HTMLButtonElement>(null);
+  const [copied, setCopied] = useState<"image" | "caption" | null>(null);
+  useMetalModal(root, true); // hides the page's metal drops behind the overlay (the canvas can't be blurred)
   useEffect(() => {
-    close.current?.focus();
+    close.current?.focus({ preventScroll: true });
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
@@ -193,12 +208,44 @@ function PassOverlay({ done, onClose }: { done: Done; onClose: () => void }) {
       document.body.style.overflow = prev;
     };
   }, [onClose]);
+
+  const flash = (k: "image" | "caption") => {
+    setCopied(k);
+    window.setTimeout(() => setCopied((c) => (c === k ? null : c)), 1800);
+  };
+  const imgUrl = done.position ? `/waitlist/pass/${done.position}/opengraph-image` : null;
+  async function copyImage() {
+    if (!imgUrl) return;
+    try {
+      // the blob promise goes straight into ClipboardItem so Safari keeps the click's permission
+      const blob = fetch(imgUrl).then((r) => r.blob()).then((b) => new Blob([b], { type: "image/png" }));
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+      flash("image");
+    } catch {
+      const a = document.createElement("a");
+      a.href = imgUrl;
+      a.download = `alloy-pass-${done.position}.png`;
+      a.click();
+    }
+  }
+  async function copyCaption() {
+    try {
+      await navigator.clipboard.writeText(`${passCaption(done.position)} ${passLink(done.position)}`);
+      flash("caption");
+    } catch {
+      /* ignore */
+    }
+  }
+
   return createPortal(
-    <div className="wl-pass-overlay" role="dialog" aria-modal="true" aria-label="Your Alloy pass" onClick={onClose} data-testid="pass-overlay">
-      <div className="flex w-full max-w-[420px] flex-col items-center px-4 text-center" onClick={(e) => e.stopPropagation()}>
+    <div ref={root} className="wl-pass-overlay" role="dialog" aria-modal="true" aria-label="Your Alloy pass" onClick={onClose} data-testid="pass-overlay">
+      <div className="flex w-full max-w-[440px] flex-col items-center px-4 text-center" onClick={(e) => e.stopPropagation()}>
         <AlloyPass position={done.position} holder={done.holder} />
-        <h2 className="mt-8 font-display text-[30px] font-light tracking-[-0.02em]">{done.already ? "You're already in." : "You're in."}</h2>
-        <p className="mt-1.5 text-[14px] text-mute">
+        <h2 className="a-display mt-8 text-[32px] leading-none tracking-[-0.03em]">
+          {done.already ? "You're already " : "You're "}
+          <em className="a-acc">in.</em>
+        </h2>
+        <p className="mt-2.5 text-[14px] text-mute">
           {done.position ? (
             <>
               <span className="num text-ink">#{done.position.toLocaleString("en-US")}</span> in line. We&apos;ll email you when your spot opens.
@@ -207,12 +254,23 @@ function PassOverlay({ done, onClose }: { done: Done; onClose: () => void }) {
             "We'll email you when your spot opens."
           )}
         </p>
-        <a href={shareUrl(done.position)} target="_blank" rel="noreferrer" className="a-btn a-btn--buy a-btn--lg mt-6 w-full max-w-[320px]" data-testid="share-pass">
-          Share your pass <ArrowRight size={16} strokeWidth={1.8} aria-hidden />
+        <a href={shareUrl(done.position)} target="_blank" rel="noreferrer" className="a-btn a-btn--buy a-btn--lg mt-6 w-full" data-testid="share-pass">
+          Share your pass on <XMark size={14} /> <ArrowRight size={16} strokeWidth={1.8} aria-hidden />
         </a>
-        <div className="mt-4 flex items-center gap-5 text-[13px]">
-          <a href={X_URL} target="_blank" rel="noreferrer" className="text-mute transition-colors hover:text-ink">
-            Follow @alloy_fi
+        <div className="mt-2.5 grid w-full grid-cols-2 gap-2.5">
+          <button type="button" onClick={copyImage} disabled={!imgUrl} className="a-btn a-btn--line a-btn--sm h-11 disabled:opacity-50" data-testid="copy-image">
+            {copied === "image" ? <Check size={14} strokeWidth={2} aria-hidden /> : <ImageIcon size={14} strokeWidth={1.7} aria-hidden />}
+            {copied === "image" ? "Copied" : "Copy image"}
+          </button>
+          <button type="button" onClick={copyCaption} className="a-btn a-btn--line a-btn--sm h-11" data-testid="copy-caption">
+            {copied === "caption" ? <Check size={14} strokeWidth={2} aria-hidden /> : <Copy size={14} strokeWidth={1.7} aria-hidden />}
+            {copied === "caption" ? "Copied" : "Copy caption"}
+          </button>
+        </div>
+        <p className="mt-3 font-mono text-[11px] tracking-[0.01em] text-dim">Or copy the image and paste it into your post.</p>
+        <div className="mt-5 flex items-center gap-4 text-[13px]">
+          <a href={X_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-mute transition-colors hover:text-ink">
+            <XMark size={12} /> Follow @alloy_fi
           </a>
           <span className="text-line2" aria-hidden>·</span>
           <button ref={close} type="button" onClick={onClose} className="text-mute transition-colors hover:text-ink">
