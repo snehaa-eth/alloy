@@ -44,7 +44,7 @@ function Panel({ children, label, align = "end" }: { children: ReactNode; label:
         sideOffset={10}
         collisionPadding={16}
         aria-label={label}
-        className="z-[60] w-[min(300px,calc(100vw-32px))] rounded-[16px] border border-white/[0.08] bg-s1 p-2 text-tx shadow-[0_24px_60px_-12px_rgba(0,0,0,0.85)] outline-none animate-fade-in"
+        className="z-[60] w-[min(300px,calc(100vw-32px))] rounded-[18px] border border-line bg-[#0d0d0d] p-2 text-tx shadow-[0_24px_60px_-12px_rgba(0,0,0,0.9)] outline-none animate-fade-in"
       >
         {children}
       </Popover.Content>
@@ -54,13 +54,13 @@ function Panel({ children, label, align = "end" }: { children: ReactNode; label:
 
 function Item({ icon: I, children, onClick, href, external, disabled, primary }: { icon: typeof Copy; children: ReactNode; onClick?: () => void; href?: string; external?: boolean; disabled?: boolean; primary?: boolean }) {
   const cls = cn(
-    "flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-[14px] no-underline transition-colors",
+    "flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-[13.5px] no-underline transition-colors",
     disabled ? "cursor-not-allowed text-tx2 opacity-60" : "text-tx hover:bg-white/[0.06] focus-visible:bg-white/[0.06] focus-visible:outline-none",
-    primary && "bg-[var(--btn-alt)] !text-[var(--on-btn)] hover:bg-[var(--btn-alt-hover)]",
+    primary && "bg-ink !text-black hover:bg-white",
   );
   const body = (
     <>
-      <I size={16} strokeWidth={1.75} className={primary ? "text-[var(--on-btn)]" : "text-tx2"} aria-hidden />
+      <I size={16} strokeWidth={1.5} className={primary ? "text-black" : "text-tx2"} aria-hidden />
       <span className="flex-1">{children}</span>
       {external && <ExternalLink size={13} strokeWidth={1.75} className="text-tx2" aria-hidden />}
     </>
@@ -126,21 +126,20 @@ export function NetworkChip() {
         title={wrong ? `Switch to ${DEFAULT_CHAIN.name}` : TIP}
         aria-label={wrong ? `Wrong network. Switch to ${DEFAULT_CHAIN.name}` : testnet ? "Test mode" : c.name}
         className={cn(
-          "inline-flex h-9 flex-none items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 text-[13px] font-medium transition-colors sm:px-3",
+          "inline-flex h-8 flex-none items-center gap-2 whitespace-nowrap rounded-full border px-[11px] text-[11.5px] font-medium transition-colors sm:h-9 sm:px-3.5 sm:text-[12.5px]",
           wrong
             ? "border-[var(--warnbd)] bg-[var(--warnbg)] text-[var(--warn)] hover:border-[var(--warn)] data-[state=open]:border-[var(--warn)]"
-            : "border-white/10 text-tx3 hover:border-white/25 hover:text-tx data-[state=open]:border-white/30",
+            : "border-dashed border-line2 text-mute hover:border-white/45 hover:text-ink data-[state=open]:border-white/45 data-[state=open]:text-ink",
         )}
       >
         {wrong ? (
           <span className="h-1.5 w-1.5 flex-none rounded-full bg-[var(--warn)]" aria-hidden />
         ) : testnet ? (
-          <span className="h-1.5 w-1.5 flex-none rounded-full bg-[var(--test)]" aria-hidden />
+          <span className="a-test-dot h-1.5 w-1.5 flex-none rounded-full bg-ink" aria-hidden />
         ) : (
           <BaseMark />
         )}
         <span>{wrong ? (w.switching ? "Switching…" : "Wrong network") : testnet ? "Test mode" : c.name}</span>
-        <ChevronDown size={13} strokeWidth={1.75} className="hidden sm:block" aria-hidden />
       </Popover.Trigger>
       <Panel label="Test mode" align="center">
         {wrong && (
@@ -202,13 +201,12 @@ export function WalletMenu({ address }: { address: `0x${string}` }) {
     <Popover.Root>
       <Popover.Trigger
         aria-label="Your account"
-        className="inline-flex h-9 flex-none items-center gap-2 rounded-full border border-white/10 pl-1.5 pr-2.5 sm:pr-3 text-[14px] font-medium text-tx3 transition-colors hover:border-white/25 hover:text-tx data-[state=open]:border-white/30"
+        className="inline-flex h-9 w-9 flex-none items-center justify-center gap-2 rounded-full border border-line2 text-[12.5px] font-medium text-ink transition-colors hover:border-white/50 data-[state=open]:border-white/50 sm:w-auto sm:justify-start sm:pl-1.5 sm:pr-3.5"
       >
-        <CreatorAvatar handle={address.slice(2)} seed={address} size={22} />
-        <span className="hidden tabular-nums sm:inline">
+        <span className="a-av" aria-hidden />
+        <span className="hidden tabular-nums tracking-[0.02em] sm:inline">
           {address.slice(0, 6)}…{address.slice(-4)}
         </span>
-        <ChevronDown size={13} strokeWidth={1.75} aria-hidden />
       </Popover.Trigger>
       <Panel label="Account">
         <div className="flex items-center gap-3 px-3 pb-2 pt-2">

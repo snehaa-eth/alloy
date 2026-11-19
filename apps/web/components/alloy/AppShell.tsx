@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { Activity, Compass, PieChart, User, X } from "lucide-react";
 import { useWallet } from "@/lib/hooks/use-wallet";
-import { DEFAULT_CHAIN } from "@/lib/chains";
 import { StatusProvider, StatusStrip } from "./status";
 import { BrandMark, SiteFooter } from "./v5/parts";
+import { MetalCanvasProvider } from "./metal";
 import { NetworkChip, WalletMenu } from "./NetworkChip";
 import { useAccount } from "./hooks";
 
@@ -18,6 +18,33 @@ const TABS = [
   { href: "/me", label: "Me", icon: User, match: (p: string) => p.startsWith("/me") || p.startsWith("/create") },
 ];
 
+/** Desktop nav links (liquid-metal nav: wordmark · Explore / Portfolio / Activity / Create · Test mode · account). */
+const LINKS = [
+  { href: "/explore", label: "Explore", match: (p: string) => p.startsWith("/explore") || p.startsWith("/b/") },
+  { href: "/portfolio", label: "Portfolio", match: (p: string) => p.startsWith("/portfolio") },
+  { href: "/activity", label: "Activity", match: (p: string) => p.startsWith("/activity") },
+  { href: "/create", label: "Create", match: (p: string) => p.startsWith("/create") || p.startsWith("/me") },
+];
+
+/** Nav turns solid once the page scrolls (landing: once the scroll story is over). */
+function useSolidNav(landing: boolean) {
+  const [solid, setSolid] = useState(false);
+  useEffect(() => {
+    const on = () => {
+      const story = landing ? document.getElementById("story") : null;
+      setSolid(story ? story.getBoundingClientRect().bottom < window.innerHeight * 0.2 : window.scrollY > 20);
+    };
+    on();
+    window.addEventListener("scroll", on, { passive: true });
+    window.addEventListener("resize", on);
+    return () => {
+      window.removeEventListener("scroll", on);
+      window.removeEventListener("resize", on);
+    };
+  }, [landing]);
+  return solid;
+}
+
 /** Full-screen flows hide the nav (create, try). */
 const FULLSCREEN = ["/create"];
 
@@ -25,61 +52,52 @@ export function AppShell({ children }: { children: ReactNode }) {
   const path = usePathname() ?? "/";
   const full = FULLSCREEN.some((p) => path.startsWith(p));
   const landing = path === "/";
+  const solid = useSolidNav(landing);
   return (
     <StatusProvider>
-      <InAppBar />
-      <header className="sticky top-0 z-40 border-b border-white/[0.07] bg-bg/85 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-app items-center justify-between gap-3 px-4 md:gap-6 md:px-8">
-          <Link href="/" className="flex h-9 items-center text-tx no-underline" aria-label="Alloy home">
-            <BrandMark />
-          </Link>
-          <nav className="hidden h-full flex-1 items-center gap-1 md:flex" aria-label="Main">
-            {TABS.map((t) => {
-              const on = t.match(path);
-              return (
-                <Link
-                  key={t.href}
-                  href={t.href}
-                  aria-current={on ? "page" : undefined}
-                  className={
-                    "relative flex h-9 items-center rounded-full px-3.5 text-[14px] font-medium no-underline transition-colors " +
-                    (on ? "text-tx" : "text-tx2 hover:text-tx")
-                  }
-                >
+      <MetalCanvasProvider>
+        <InAppBar />
+        <header className="a-nav" data-over={landing ? "true" : undefined} data-solid={solid || !landing ? "true" : "false"}>
+          <div className="relative flex h-16 items-center justify-between gap-3 px-[var(--gut)] md:h-[76px]">
+            <Link href="/" className="flex h-9 items-center no-underline" aria-label="Alloy home">
+              <BrandMark />
+            </Link>
+            <nav className="a-links absolute left-1/2 hidden -translate-x-1/2 items-center gap-1.5 text-[13.5px] lg:flex" aria-label="Main">
+              {LINKS.map((t) => (
+                <Link key={t.href} href={t.href} aria-current={t.match(path) ? "page" : undefined}>
                   {t.label}
-                  {/* Active: 2px copper underline sitting on the header's bottom edge */}
-                  {on && <span aria-hidden className="absolute inset-x-3.5 -bottom-[14px] h-[2px] rounded-full" style={{ background: "var(--hi)" }} />}
+                </Link>
+              ))}
+            </nav>
+            {/* Same actions on every page and size: Test mode pill + Sign in, or Test mode pill + wallet menu. */}
+            <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
+              <AccountButton />
+            </div>
+          </div>
+          {!landing && <StatusStrip />}
+        </header>
+        <main className={"relative z-[1] " + (full || landing ? "min-h-[calc(100dvh-64px)]" : "min-h-[calc(100dvh-64px)] pb-24 md:pb-8")}>{children}</main>
+        {/* Phone tab bar on app pages (not on the landing or full-screen flows). */}
+        {!full && !landing && (
+          <nav className="c-nav fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)] md:hidden" aria-label="Main">
+            {TABS.map((t) => {
+              const I = t.icon;
+              return (
+                <Link key={t.href} href={t.href} aria-current={t.match(path) ? "page" : undefined}>
+                  <I size={20} strokeWidth={1.5} aria-hidden />
+                  {t.label}
                 </Link>
               );
             })}
           </nav>
-          {/* Same actions on every page and size: test-mode pill + Sign in, or test-mode pill + wallet menu. */}
-          <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
-            <AccountButton />
+        )}
+        {/* The landing draws its own footer. */}
+        {!full && !landing && (
+          <div className="hidden md:block">
+            <SiteFooter />
           </div>
-        </div>
-        {!landing && <StatusStrip />}
-      </header>
-      <main className={full ? "min-h-[calc(100dvh-64px)]" : landing ? "min-h-[calc(100dvh-64px)]" : "min-h-[calc(100dvh-64px)] pb-24 md:pb-8"}>{children}</main>
-      {/* Phone tab bar on every page except full-screen flows, home included. */}
-      {!full && (
-        <nav className="c-nav fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)] md:hidden" aria-label="Main">
-          {TABS.map((t) => {
-            const I = t.icon;
-            return (
-              <Link key={t.href} href={t.href} aria-current={t.match(path) ? "page" : undefined}>
-                <I size={20} strokeWidth={1.75} aria-hidden />
-                {t.label}
-              </Link>
-            );
-          })}
-        </nav>
-      )}
-      {!full && (
-        <div className={landing ? "pb-20 md:pb-0" : "hidden md:block"}>
-          <SiteFooter />
-        </div>
-      )}
+        )}
+      </MetalCanvasProvider>
     </StatusProvider>
   );
 }
@@ -99,14 +117,14 @@ function AccountButton() {
     return (
       <>
         <NetworkChip />
-        <span className="h-9 w-[76px]" aria-hidden />
+        <span className="h-10 w-[84px]" aria-hidden />
       </>
     );
   if (!w.authenticated || !w.address)
     return (
       <>
         <NetworkChip />
-        <button type="button" className="c-btn c-btn--secondary c-btn--auto c-btn--sm !h-9 !rounded-full !px-4 !text-[14px]" onClick={() => w.login()}>
+        <button type="button" className="a-btn a-btn--line a-btn--nav" onClick={() => w.login()}>
           Sign in
         </button>
       </>

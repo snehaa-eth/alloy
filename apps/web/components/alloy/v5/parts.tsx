@@ -14,22 +14,23 @@ import { hash32 } from "../guilloche-gen";
 import { compactUsd6, shortDate, type BasketView } from "../basket-view";
 
 // ---------------------------------------------------------------------------
-// Brand mark: three stacked bars (the alloy bar, tiny) + wordmark
+// Brand mark: 40/25/20/15 ring (the basket split) + copper core, letter-spaced A L L O Y
 // ---------------------------------------------------------------------------
+
+export function RingMark({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="9.2" stroke="#F3F1EE" strokeOpacity=".9" strokeWidth="1.2" strokeDasharray="20.7 1.6 12.8 1.6 10.1 1.6 7.4 1.6" transform="rotate(-90 12 12)" />
+      <circle cx="12" cy="12" r="3.2" fill="#E39B6E" />
+    </svg>
+  );
+}
 
 export function BrandMark({ className }: { className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-2", className)}>
-      {/* Brand mark: lifted oxblood (--logo) rounded square, subtle top highlight, two cream hairlines (the alloy bands). */}
-      <span
-        aria-hidden
-        className="flex h-[20px] w-[20px] flex-col justify-center gap-[3px] rounded-[6px] px-[4px]"
-        style={{ background: "var(--logo)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.22)" }}
-      >
-        <i className="block h-[2px] rounded-full bg-[var(--tx)]" />
-        <i className="block h-[2px] w-[70%] rounded-full bg-[var(--tx)] opacity-70" />
-      </span>
-      <span className="text-[17px] font-semibold leading-none tracking-tight">Alloy</span>
+    <span className={cn("a-mark text-[13px] tracking-[0.46em] md:text-[15px] md:tracking-[0.52em]", className)}>
+      <RingMark />
+      ALLOY
     </span>
   );
 }
@@ -40,25 +41,19 @@ export function BrandMark({ className }: { className?: string }) {
 
 export function CreatorAvatar({ handle, seed, size = 32, ring }: { handle: string; seed?: string; size?: number; ring?: boolean }) {
   const h = hash32((seed ?? handle).toLowerCase());
-  // Oxblood family (brand), varied by handle so creators still differ.
-  const fam = [
-    { mid: "#A63B50", deep: "#3A0A14" },
-    { mid: "#8A2238", deep: "#2A0B12" },
-    { mid: "#6D0F24", deep: "#1B1213" },
-  ];
-  const a = fam[(h >>> 0) % fam.length];
-  const b = fam[(h >>> 3) % fam.length];
+  // Polished-metal disc, turned per handle so creators still differ (no brand colour, no photos).
+  const angle = h % 360;
   const letter = (handle.replace(/^@/, "").match(/[a-z0-9]/i)?.[0] ?? "A").toUpperCase();
   return (
     <span
       aria-hidden
-      className="inline-flex flex-none items-center justify-center rounded-full font-semibold text-tx"
+      className="inline-flex flex-none items-center justify-center rounded-full font-semibold text-black/70"
       style={{
         width: size,
         height: size,
         fontSize: Math.round(size * 0.42),
-        background: `linear-gradient(135deg, ${a.mid}, ${b.deep} 80%)`,
-        boxShadow: ring ? "0 0 0 3px var(--s1), 0 0 0 4px rgba(242,240,237,0.18)" : "inset 0 0 0 1px rgba(255,255,255,0.12)",
+        background: `conic-gradient(from ${angle}deg, #f3f1ee, #7d7a76, #2a2928, #cfcac4, #f3f1ee)`,
+        boxShadow: ring ? "0 0 0 3px #000, 0 0 0 4px rgba(243,241,238,0.22)" : "inset 0 0 0 1px rgba(255,255,255,0.2)",
       }}
     >
       {letter}
@@ -226,7 +221,7 @@ export function SectionHead({ title, sub, action, id, onBrand }: { title: ReactN
   return (
     <div className="flex flex-wrap items-end justify-between gap-4">
       <div className="flex flex-col gap-2">
-        <h2 id={id} className="text-[26px] font-semibold leading-tight tracking-tight md:text-[32px]">
+        <h2 id={id} className="font-display text-[28px] font-light leading-[1.08] tracking-[-0.022em] md:text-[36px]">
           {title}
         </h2>
         {sub ? <p className={cn("max-w-[560px] text-[15px] md:text-[16px]", onBrand ? "text-tx3" : "text-tx2")}>{sub}</p> : null}
@@ -246,32 +241,32 @@ export function BrandWash() {
     <div
       aria-hidden
       className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[460px]"
-      style={{ background: "radial-gradient(38% 70% at 6% -25%, rgba(var(--brand-rgb),0.55), transparent 70%)" }}
+      style={{ background: "transparent" }}
     />
   );
 }
 
 export function SiteFooter() {
   return (
-    <footer className="mt-8 border-t border-white/[0.07]">
-      <div className="mx-auto flex max-w-app flex-col gap-8 px-4 py-10 md:px-8">
+    <footer className="relative z-[1] mt-8 border-t border-line">
+      <div className="flex flex-col gap-8 px-[var(--gut)] py-10">
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-start">
           <div className="flex flex-col gap-3">
             <BrandMark />
-            <p className="max-w-[320px] text-[14px] text-tx2">Invest in stories, not symbols.</p>
+            <p className="max-w-[320px] text-[14px] text-mute">Invest in stories, not symbols.</p>
           </div>
-          <nav aria-label="Footer" className="grid grid-cols-2 gap-x-12 gap-y-2 text-[14px] sm:grid-cols-3">
-            <Link className="text-tx2 no-underline hover:text-tx" href="/explore">Explore</Link>
-            <Link className="text-tx2 no-underline hover:text-tx" href="/create">Build a basket</Link>
-            <Link className="text-tx2 no-underline hover:text-tx" href="/try">2-minute tour</Link>
-            <Link className="text-tx2 no-underline hover:text-tx" href="/portfolio">Portfolio</Link>
-            <Link className="text-tx2 no-underline hover:text-tx" href="/activity">Activity</Link>
-            <a className="text-tx2 no-underline hover:text-tx" href="https://x.com/alloy_fi" target="_blank" rel="noreferrer">
+          <nav aria-label="Footer" className="grid grid-cols-2 gap-x-12 gap-y-2 text-[13.5px] sm:grid-cols-3">
+            <Link className="text-mute no-underline transition-colors hover:text-ink" href="/explore">Explore</Link>
+            <Link className="text-mute no-underline transition-colors hover:text-ink" href="/create">Build a basket</Link>
+            <Link className="text-mute no-underline transition-colors hover:text-ink" href="/try">2-minute tour</Link>
+            <Link className="text-mute no-underline transition-colors hover:text-ink" href="/portfolio">Portfolio</Link>
+            <Link className="text-mute no-underline transition-colors hover:text-ink" href="/activity">Activity</Link>
+            <a className="text-mute no-underline transition-colors hover:text-ink" href="https://x.com/alloy_fi" target="_blank" rel="noreferrer">
               X · @alloy_fi
             </a>
           </nav>
         </div>
-        <div className="flex flex-col gap-2 border-t border-white/[0.07] pt-6 text-[13px] text-tx2 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-2 border-t border-line pt-6 text-[12px] text-dim md:flex-row md:items-center md:justify-between">
           <p>You own a token that tracks these stocks, not the shares themselves · Not available to US persons · You can lose money</p>
           <p>Not investment advice</p>
         </div>

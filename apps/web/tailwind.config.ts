@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
 
-/** Alloy v4 tokens (docs/design/TOKENS.md). Colours resolve to CSS vars in app/globals.css. */
+/** Alloy "liquid metal" tokens (docs/design/artdir/wow). Colours resolve to CSS vars in app/globals.css. */
 const config = {
   darkMode: ["class"],
   content: ["./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}"],
@@ -9,9 +9,10 @@ const config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+        sans: ["var(--font-ui)", "system-ui", "sans-serif"],
+        ui: ["var(--font-ui)", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)", "ui-monospace", "monospace"],
-        display: ["var(--font-anton)", "Impact", "sans-serif"],
+        display: ["var(--font-sora)", "system-ui", "sans-serif"],
       },
       fontSize: {
         hero: ["32px", { lineHeight: "1" }],
@@ -19,7 +20,16 @@ const config = {
         small: ["12px", { lineHeight: "1.3" }],
       },
       colors: {
-        // Alloy tokens
+        // Alloy liquid-metal palette
+        ink: "var(--ink)",
+        mute: "var(--mute)",
+        dim: "var(--dim)",
+        line: "var(--line)",
+        line2: "var(--line2)",
+        fill: "var(--fill)",
+        fill2: "var(--fill2)",
+        copper: { DEFAULT: "var(--copper)", ink: "var(--copper-ink)" },
+        // Legacy token names (mapped onto the palette above)
         bg: "var(--bg)",
         s1: "var(--s1)",
         s2: "var(--s2)",
@@ -60,6 +70,7 @@ const config = {
         "2xl": "24px",
       },
       maxWidth: { app: "1200px" },
+      transitionTimingFunction: { alloy: "cubic-bezier(.16,1,.3,1)" },
       keyframes: {
         "accordion-down": { from: { height: "0" }, to: { height: "var(--radix-accordion-content-height)" } },
         "accordion-up": { from: { height: "var(--radix-accordion-content-height)" }, to: { height: "0" } },
