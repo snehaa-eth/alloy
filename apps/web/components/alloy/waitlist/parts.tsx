@@ -218,7 +218,7 @@ function PassOverlay({ done, onClose }: { done: Done; onClose: () => void }) {
     if (!imgUrl) return;
     try {
       // the blob promise goes straight into ClipboardItem so Safari keeps the click's permission
-      const blob = fetch(imgUrl).then((r) => r.blob()).then((b) => new Blob([b], { type: "image/png" }));
+      const blob = fetch(`${imgUrl}?t=${Date.now()}`, { cache: "no-store" }).then((r) => r.blob()).then((b) => new Blob([b], { type: "image/png" }));
       await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
       flash("image");
     } catch {
