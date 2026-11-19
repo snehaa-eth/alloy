@@ -4,41 +4,66 @@
  */
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Clock, DoorOpen, HandCoins, Plus, ShieldCheck } from "lucide-react";
+import { ArrowRight, Clock, Coins, DoorOpen, HandCoins, KeyRound, MessageSquareText, Percent, Plus, ShieldCheck } from "lucide-react";
 import { formatUsd6 } from "@/lib/units";
-import { AlloyBar, AlloyBarPair, fmtPct } from "../primitives";
+import { AlloyBar, fmtPct } from "../primitives";
+import { HeroParallax } from "../motion/HeroParallax";
+import { StoryScroll } from "../motion/StoryScroll";
 import { compactUsd6 } from "../basket-view";
 import type { LoadedBasket } from "../load";
+import { FEATURED_BASKET, isPublic } from "../config";
 import { BasketCard, CreatorAvatar, Logos, ReturnValue, SectionHead, returnsOf, thesisOf } from "./parts";
 
 export function Landing({ items }: { items: LoadedBasket[] }) {
-  const sorted = [...items].sort((a, b) => b.v.basket.followers - a.v.basket.followers);
-  const featured = items.find((i) => /ai build/i.test(i.v.basket.name)) ?? sorted[0];
-  const trending = sorted.filter((i) => i !== featured).slice(0, 4);
-  const totalNav = items.reduce((a, i) => a + i.v.nav, 0n);
-  const followers = items.reduce((a, i) => a + i.v.basket.followers, 0);
+  // Public lists hide demo / judge baskets (they live on /try) and retired baskets (config.ts).
+  const visible = items.filter((i) => isPublic(i.v.basket));
+  const sorted = [...visible].sort((a, b) => b.v.basket.followers - a.v.basket.followers);
+  // Featured story: FEATURED_BASKET (config.ts) → else an "AI Build-Out" by name (visible first) → else most followed.
+  const featured =
+    (FEATURED_BASKET ? items.find((i) => i.v.basket.address.toLowerCase() === String(FEATURED_BASKET).toLowerCase()) : undefined) ||
+    visible.find((i) => /ai build/i.test(i.v.basket.name)) ||
+    items.find((i) => /ai build/i.test(i.v.basket.name)) ||
+    sorted[0];
+  const others = sorted.filter((i) => i !== featured);
+  // Few public baskets: include the featured one so the row never looks half empty.
+  const trending = (others.length < 3 && featured ? [featured, ...others] : others).slice(0, 4);
+  const cols = Math.min(4, trending.length + (trending.length < 4 ? 1 : 0));
+  const totalNav = visible.reduce((a, i) => a + i.v.nav, 0n);
+  const followers = visible.reduce((a, i) => a + i.v.basket.followers, 0);
   const stocks = new Set(items.flatMap((i) => i.v.tickers)).size;
+  const feePct = featured ? featured.v.basket.feeBps / 100 : 1;
 
   return (
     <div className="overflow-x-clip">
       {/* ---------------- Hero ---------------- */}
       <section className="relative">
         <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute -left-40 -top-40 h-[520px] w-[520px] rounded-full opacity-[0.22] blur-[120px]" style={{ background: "var(--brand)" }} />
-          <div className="absolute -right-40 top-20 h-[520px] w-[620px] rounded-full opacity-[0.16] blur-[140px]" style={{ background: "var(--j-sapp)" }} />
+          <div className="absolute -left-40 -top-40 hidden h-[520px] w-[520px] rounded-full opacity-[0.14] blur-[120px] md:block" style={{ background: "var(--cta)" }} />
+          <div className="absolute -right-40 top-20 h-[520px] w-[620px] rounded-full opacity-[0.07] blur-[140px]" style={{ background: "var(--acc)" }} />
         </div>
         <div className="mx-auto grid max-w-app items-center gap-12 px-4 pb-16 pt-10 md:px-8 md:pb-24 md:pt-20 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
           <div className="flex flex-col gap-7">
             <span className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[13px] text-tx3">
-              <span className="h-1.5 w-1.5 rounded-full bg-gain" aria-hidden /> Tokenized US stocks · on Base
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--acc)" }} aria-hidden /> Themed investing for everyone outside the US
             </span>
-            <h1 className="font-display text-[56px] uppercase leading-[0.95] tracking-[0.01em] sm:text-[72px] xl:text-[92px]">
-              Invest in stories,
-              <br />
-              <span className="text-tx2">not symbols.</span>
+            <h1 className="font-display text-[56px] uppercase leading-[0.95] tracking-[0.01em] sm:text-[72px] xl:text-[92px]" aria-label="Invest in stories, not symbols.">
+              {/* Word-by-word reveal on load (CSS, 60ms stagger; static for reduced motion) */}
+              <span aria-hidden>
+                <W i={0}>Invest</W> <W i={1}>in</W>{" "}
+                <W i={2} style={{ color: "var(--acc)" }}>
+                  stories,
+                </W>
+                <br />
+                <W i={3}>
+                  not
+                </W>{" "}
+                <W i={4}>
+                  symbols.
+                </W>
+              </span>
             </h1>
             <p className="max-w-[480px] text-[18px] leading-relaxed text-tx3">
-              Baskets of US stocks built around one idea. We keep them balanced.
+              Buy a whole theme of US stocks, from $5. Each basket runs on its creator&apos;s plan.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row">
               <Link href="/explore" className="c-btn c-btn--primary c-btn--auto !h-[52px] !rounded-full !px-7">
@@ -51,8 +76,8 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
             <dl className="mt-2 grid max-w-[480px] grid-cols-3 gap-4 border-t border-white/[0.08] pt-6">
               {[
                 ["$5", "minimum"],
-                ["24h", "notice"],
-                ["Anytime", "exit"],
+                [`${feePct}%`, "a year, nothing else"],
+                ["Anytime", "sell or withdraw"],
               ].map(([k, v]) => (
                 <div key={k} className="flex flex-col gap-1">
                   <dt className="text-[20px] font-semibold">{k}</dt>
@@ -61,7 +86,34 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
               ))}
             </dl>
           </div>
-          {featured && <FeaturedStory item={featured} fan={trending.slice(0, 2)} />}
+          {featured && (
+            <HeroParallax>
+              <FeaturedStory item={featured} fan={trending.slice(0, 2)} />
+            </HeroParallax>
+          )}
+        </div>
+      </section>
+
+      {/* ---------------- Trust strip ---------------- */}
+      <section aria-label="Why it's safe to try" className="border-t border-white/[0.07]">
+        <div className="mx-auto flex max-w-app flex-wrap items-center justify-between gap-x-8 gap-y-3 px-4 py-5 md:px-8">
+          <ul className="flex flex-wrap items-center gap-x-8 gap-y-3 text-[14px] text-tx3">
+            {(
+              [
+                [DoorOpen, "Exit anytime"],
+                [Percent, `Fee ${feePct}% a year, nothing else`],
+                [MessageSquareText, "Every trade explained"],
+                [KeyRound, "Your basket, your keys"],
+              ] as [typeof DoorOpen, string][]
+            ).map(([I, t]) => (
+              <li key={t} className="inline-flex items-center gap-2">
+                <I size={16} strokeWidth={1.75} className="text-tx2" aria-hidden /> {t}
+              </li>
+            ))}
+          </ul>
+          <a href="#held" className="inline-flex items-center gap-1 text-[14px] font-medium text-tx no-underline hover:text-tx3">
+            How your money is held <ArrowRight size={14} strokeWidth={2} aria-hidden />
+          </a>
         </div>
       </section>
 
@@ -69,8 +121,8 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
       <section aria-label="Alloy today" className="border-y border-white/[0.07] bg-s1/60">
         <div className="mx-auto grid max-w-app grid-cols-2 gap-6 px-4 py-8 md:grid-cols-4 md:px-8">
           {[
-            [String(items.length), "Baskets live"],
-            followers > 0 ? [followers.toLocaleString("en-US"), "Followers"] : ["24/7", "Buy and exit"],
+            [String(visible.length), "Baskets live"],
+            followers > 0 ? [followers.toLocaleString("en-US"), "Followers"] : ["24/7", "Buy and sell"],
             [compactUsd6(totalNav), "In baskets"],
             [String(stocks), "US stocks inside"],
           ].map(([k, v]) => (
@@ -83,46 +135,15 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
       </section>
 
       {/* ---------------- How it works ---------------- */}
-      <section className="mx-auto max-w-app px-4 py-20 md:px-8 md:py-28" aria-labelledby="how">
-        <SectionHead id="how" title="How it works" sub="Three steps. No stock picking." />
-        <ol className="mt-10 grid gap-5 md:grid-cols-3">
-          <Step n={1} title="Pick a story" body="AI build-out, space, big tech. Each basket is a recipe of US stocks.">
-            <div className="flex -space-x-5">
-              {items.slice(0, 4).map((i, k) => (
-                <div
-                  key={i.v.basket.address}
-                  className="relative h-[84px] w-[84px] overflow-hidden rounded-[16px] border-2 border-s1"
-                  style={{ transform: `rotate(${(k - 1.5) * 5}deg)`, background: `var(--j-${i.v.id.tone}-d)` }}
-                >
-                  <Image src={i.v.id.coverSrc} alt="" fill sizes="84px" className="object-cover" />
-                </div>
-              ))}
-            </div>
-          </Step>
-          <Step n={2} title="Start with $5" body="Put in USDC. You get one basket token that holds all of it.">
-            <div className="flex items-center gap-4">
-              <span className="font-display text-[56px] leading-none">$5</span>
-              <div className="flex flex-wrap gap-2">
-                {["$10", "$25", "$100"].map((p) => (
-                  <span key={p} className="rounded-full border border-white/10 px-3 py-1.5 text-[13px] text-tx3">
-                    {p}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </Step>
-          <Step n={3} title="We keep it balanced" body="Prices drift, we trim. Every change comes with a one-line reason.">
-            {featured ? (
-              <div className="w-full">
-                <AlloyBarPair
-                  tone={featured.v.id.tone}
-                  before={featured.v.target.map((p, k) => ({ ...p, bps: Math.max(100, p.bps + (k === 0 ? 900 : -300)) }))}
-                  after={featured.v.target}
-                />
-              </div>
-            ) : null}
-          </Step>
-        </ol>
+      <section className="mx-auto max-w-app px-4 py-16 md:px-8 md:py-24" aria-labelledby="how">
+        <SectionHead id="how" title="How it works" />
+        {featured && (
+          <StoryScroll
+            parts={featured.v.target}
+            tone={featured.v.id.tone}
+            covers={visible.slice(0, 4).map((i) => ({ src: i.v.id.coverSrc, tone: i.v.id.tone }))}
+          />
+        )}
       </section>
 
       {/* ---------------- Trending ---------------- */}
@@ -138,41 +159,54 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
               </Link>
             }
           />
-          <div className="-mx-4 mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0 xl:grid-cols-4">
+          <div
+            className={`-mx-4 mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0 ${cols >= 4 ? "xl:grid-cols-4" : cols === 3 ? "lg:grid-cols-3" : ""}`}
+          >
             {trending.map((i) => (
               <div key={i.v.basket.address} className="w-[82%] flex-none snap-start sm:w-auto">
                 <BasketCard v={i.v} perf={i.perf} />
               </div>
             ))}
+            {trending.length < 4 && (
+              <Link
+                href="/create"
+                className="hidden min-h-[260px] flex-col items-center justify-center gap-3 rounded-[20px] border border-dashed border-white/15 p-6 text-center text-tx no-underline transition hover:border-white/30 sm:flex"
+              >
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-s2">
+                  <Plus size={20} strokeWidth={1.75} aria-hidden />
+                </span>
+                <span className="text-[16px] font-semibold">Build your own</span>
+                <span className="max-w-[220px] text-[14px] text-tx2">Up to 10 stocks. Your weights. Others can follow.</span>
+              </Link>
+            )}
           </div>
         </section>
       )}
 
-      {/* ---------------- Honesty band ---------------- */}
-      <section className="mx-auto max-w-app px-4 pb-20 md:px-8 md:pb-28" aria-labelledby="honest">
-        <div className="grid gap-10 overflow-hidden rounded-[28px] border border-white/[0.07] bg-s1 p-6 md:p-12 lg:grid-cols-[1fr_440px] lg:gap-16">
+      {/* ---------------- How your money is held (plain words, no performance claims) ---------------- */}
+      <section id="held" className="v-silk relative mb-20 scroll-mt-20 overflow-hidden md:mb-28" aria-labelledby="held-h">
+        <div className="relative mx-auto grid max-w-app items-start gap-10 px-4 py-14 md:px-8 md:py-16 lg:grid-cols-[1fr_440px] lg:gap-16">
           <div className="flex flex-col gap-8">
-            <SectionHead id="honest" title="Did followers win too?" sub="Every basket shows how followers did next to how the creator did. Fees included." />
-            <ul className="grid gap-5 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-              {[
-                [HandCoins, "Creators put money in", "You see their stake, and if they sell."],
-                [Clock, "Changes come with notice", "Recipe changes wait 24 hours."],
-                [DoorOpen, "Your exit stays open", "Sell to USDC or take the stocks."],
-              ].map(([I, t, d]) => {
-                const Icon = I as typeof Clock;
-                return (
-                  <li key={t as string} className="flex flex-col gap-2">
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-s2">
-                      <Icon size={18} strokeWidth={1.75} aria-hidden />
-                    </span>
-                    <span className="text-[15px] font-semibold">{t as string}</span>
-                    <span className="text-[14px] text-tx2">{d as string}</span>
-                  </li>
-                );
-              })}
+            <SectionHead id="held-h" title="Nothing hidden" sub="See the creator's own money, every change and why, and how followers did next to the creator, once there's history." onBrand />
+            <ul className="grid gap-5 sm:grid-cols-3">
+              {(
+                [
+                  [HandCoins, "Creators put money in", "You see their stake, and if they sell."],
+                  [Clock, "Changes announced a day early", "You can leave before a recipe changes."],
+                  [DoorOpen, "Your exit stays open", "Sell for dollars, or take the stocks."],
+                ] as [typeof Clock, string, string][]
+              ).map(([Icon, t, d]) => (
+                <li key={t} className="flex flex-col gap-2">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/25 shadow-[inset_0_0_0_1px_rgba(242,240,237,0.18)]">
+                    <Icon size={18} strokeWidth={1.75} aria-hidden />
+                  </span>
+                  <span className="text-[15px] font-semibold">{t}</span>
+                  <span className="text-[14px] text-tx3">{d}</span>
+                </li>
+              ))}
             </ul>
           </div>
-          <ExampleCompare />
+          <HowHeld />
         </div>
       </section>
 
@@ -180,10 +214,10 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
       <section className="mx-auto max-w-app px-4 pb-16 md:px-8 md:pb-24" aria-labelledby="create">
         <div
           className="relative grid items-center gap-10 overflow-hidden rounded-[28px] p-6 md:p-12 lg:grid-cols-[1fr_420px]"
-          style={{ background: "linear-gradient(120deg, #2a000a 0%, #160408 45%, #141416 100%)" }}
+          style={{ background: "var(--s1)", boxShadow: "inset 0 0 0 1px rgba(242,240,237,0.07)" }}
         >
           <div className="flex flex-col gap-6">
-            <SectionHead id="create" title="Got a thesis? Bottle it." sub="Pick up to 10 stocks, set the weights, seed it with $10. Others can follow." />
+            <SectionHead id="create" title="Have an idea? Build a basket." sub="Pick up to 10 stocks, set the weights, put in $10. Others can follow it." />
             <Link href="/create" className="c-btn c-btn--primary c-btn--auto !h-[52px] w-fit !rounded-full !px-7">
               <Plus size={16} strokeWidth={2} aria-hidden /> Build a basket
             </Link>
@@ -195,62 +229,52 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
   );
 }
 
-function Step({ n, title, body, children }: { n: number; title: string; body: string; children: React.ReactNode }) {
-  return (
-    <li className="flex flex-col gap-6 rounded-[20px] border border-white/[0.07] bg-s1 p-6">
-      <div className="flex h-[96px] items-center">{children}</div>
-      <div className="flex flex-col gap-2">
-        <span className="text-[13px] font-medium text-tx2">Step {n}</span>
-        <span className="text-[20px] font-semibold tracking-tight">{title}</span>
-        <span className="text-[15px] text-tx2">{body}</span>
-      </div>
-    </li>
-  );
-}
 
 function FeaturedStory({ item, fan }: { item: LoadedBasket; fan: LoadedBasket[] }) {
   const { v, perf } = item;
   const b = v.basket;
   const r = returnsOf(v, perf);
-  const stats: [string, React.ReactNode][] = [
-    [
-      "Followers vs creator",
-      r.creator === null ? (
-        <span className="text-tx3">New</span>
-      ) : (
-        <span className="inline-flex items-baseline gap-1.5">
-          <ReturnValue bps={r.followers} /> <span className="text-[13px] font-normal text-tx2">vs</span> <ReturnValue bps={r.creator} />
-        </span>
-      ),
-    ],
-    ["Stocks", String(v.tickers.length)],
-    ["Followers", b.followers > 0 ? b.followers.toLocaleString("en-US") : "Be first"],
-    ["Minimum", "$5"],
-  ];
+  // Real data only: returns appear once there's history; until then stocks · fee · min · followers.
+  const stats: [string, React.ReactNode][] =
+    r.creator === null || b.followers === 0
+      ? [
+          ["Stocks", String(v.tickers.length)],
+          ["Fee", `${b.feeBps / 100}%/yr`],
+          ["Minimum", "$5"],
+          ["Followers", b.followers.toLocaleString("en-US")],
+        ]
+      : [
+          ["Followers' return", <ReturnValue key="f" bps={r.followers} />],
+          ["Creator's return", <ReturnValue key="c" bps={r.creator} />],
+          ["Fee", `${b.feeBps / 100}%/yr`],
+          ["Minimum", "$5"],
+        ];
   return (
-    <article className="relative isolate">
-      <div aria-hidden className="absolute -inset-3 -z-10 rounded-[32px] opacity-60 blur-2xl" style={{ background: `var(--j-${v.id.tone}-d)` }} />
+    <article className="v-par-fast relative isolate">
+      {/* Burgundy radial glow behind the featured story */}
+      <div aria-hidden className="v-par-glow absolute -inset-4 -z-20 rounded-full opacity-50 blur-3xl md:-inset-10 md:opacity-70" style={{ background: "radial-gradient(closest-side, rgba(163,22,58,0.32), transparent 75%)" }} />
       {/* Fanned basket covers behind the featured story (UX_MAP landing: real covers, fanned) */}
       {fan.map((f, k) => (
         <div
           key={f.v.basket.address}
           aria-hidden
-          className="absolute top-6 -z-10 hidden h-[260px] w-[200px] overflow-hidden rounded-[22px] border border-white/10 opacity-80 lg:block"
+          className="v-par-slow absolute top-6 -z-10 hidden h-[260px] w-[200px] overflow-hidden rounded-[22px] border border-white/10 opacity-55 lg:block"
           style={{
             [k === 0 ? "left" : "right"]: -56,
             transform: `rotate(${k === 0 ? -8 : 8}deg)`,
-            background: `var(--j-${f.v.id.tone}-d)`,
+            background: "#1a0a0e",
           }}
         >
-          <Image src={f.v.id.coverSrc} alt="" fill sizes="200px" className="object-cover" />
-          <div className="absolute inset-0 bg-black/30" />
+          <Image src={f.v.id.coverSrc} alt="" fill sizes="200px" className="v-duo object-cover" />
+          <div className="v-duo-tint absolute inset-0" />
         </div>
       ))}
-      <div className="overflow-hidden rounded-[24px] border border-white/[0.1] bg-s1 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)]">
-        <div className="relative h-[150px] md:h-[170px]" style={{ background: `var(--j-${v.id.tone}-d)` }}>
-          <Image src={v.id.coverSrcLg} alt="" fill priority sizes="(min-width: 1024px) 560px, 100vw" className="object-cover" />
+      <div className="overflow-hidden rounded-[24px] border border-white/[0.1] bg-s1 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.85)]">
+        <div className="relative h-[150px] md:h-[170px] bg-[#1a0a0e]">
+          <Image src={v.id.coverSrcLg} alt="" fill priority sizes="(min-width: 1024px) 560px, 100vw" className="v-duo object-cover" />
+          <div className="v-duo-tint absolute inset-0" />
           <div className="absolute inset-0 bg-gradient-to-t from-s1 via-s1/20 to-transparent" />
-          <span className="absolute left-4 top-4 rounded-full bg-black/55 px-3 py-1 text-[12px] font-medium text-tx3 backdrop-blur">Featured story</span>
+          <span className="absolute left-4 top-4 rounded-full px-3 py-1 text-[12px] font-medium text-tx" style={{ background: "var(--cta)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15)" }}>Featured story</span>
         </div>
         <div className="-mt-8 flex flex-col gap-5 px-5 pb-5 md:px-6 md:pb-6">
           <div className="relative flex items-end gap-3">
@@ -258,7 +282,7 @@ function FeaturedStory({ item, fan }: { item: LoadedBasket; fan: LoadedBasket[] 
             <div className="flex min-w-0 flex-col pb-0.5">
               <span className="truncate text-[15px] font-semibold">@{b.creator.handle}</span>
               <span className="text-[13px] text-tx2">
-                Creator · <span className="gold">{compactUsd6(v.creatorStakeUsd6)} in</span>
+                Creator has <span className="gold">{compactUsd6(v.creatorStakeUsd6).replace(/\.\d+$/, "")}</span> in it
               </span>
             </div>
           </div>
@@ -275,7 +299,7 @@ function FeaturedStory({ item, fan }: { item: LoadedBasket; fan: LoadedBasket[] 
             ))}
           </dl>
           <div className="flex flex-col gap-3">
-            <AlloyBar parts={v.target} tone={v.id.tone} legend={false} />
+            <AlloyBar parts={v.target} tone={v.id.tone} legend={false} multi />
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               {[...v.target]
                 .sort((a, c) => c.bps - a.bps)
@@ -296,40 +320,35 @@ function FeaturedStory({ item, fan }: { item: LoadedBasket; fan: LoadedBasket[] 
               Buy $25
             </Link>
           </div>
-          <p className="text-center text-[12px] text-tx2">Value per token {formatUsd6(v.navPerShare)} · test network</p>
+          <p className="flex items-center justify-center gap-2 text-[12px] text-tx2">
+            <span className="v-live" aria-hidden /> Live price {formatUsd6(v.navPerShare)} per share of this basket
+          </p>
         </div>
       </div>
     </article>
   );
 }
 
-/** Illustrative follower-vs-creator card (example numbers from COPY.md, clearly labelled). */
-function ExampleCompare() {
-  const rows = [
-    { k: "Followers (avg)", bps: 1180, w: 95 },
-    { k: "Creator", bps: 1240, w: 100 },
+/** "How your money is held", in plain words. Never claims backing by any exchange or network. */
+function HowHeld() {
+  const rows: [typeof ShieldCheck, string][] = [
+    [Coins, "Your dollars buy tokenized exposure to US stocks, held in an on-chain basket."],
+    [KeyRound, "The basket share sits in your own account. Only you can move it."],
+    [DoorOpen, "Sell anytime, or withdraw the stock tokens themselves."],
+    [ShieldCheck, "Not available to US persons. You can lose money."],
   ];
   return (
-    <div className="flex flex-col gap-5 rounded-[20px] border border-white/[0.07] bg-bg p-6">
-      <div className="flex items-center justify-between">
-        <span className="text-[15px] font-semibold">Since launch</span>
-        <span className="rounded-full bg-s2 px-2.5 py-1 text-[12px] text-tx2">Example</span>
-      </div>
-      {rows.map((r) => (
-        <div key={r.k} className="flex flex-col gap-2">
-          <div className="flex items-baseline justify-between">
-            <span className="text-[14px] text-tx3">{r.k}</span>
-            <span className="text-[20px] font-semibold up">+{(r.bps / 100).toFixed(1)}%</span>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-s2">
-            <div className="h-full rounded-full" style={{ width: `${r.w}%`, background: r.k === "Creator" ? "var(--tx2)" : "var(--gain)" }} />
-          </div>
-        </div>
-      ))}
-      <p className="text-[14px] text-tx2">Followers trail by 0.6% since launch. That&apos;s the fee plus timing.</p>
-      <p className="flex items-center gap-1.5 border-t border-white/[0.07] pt-4 text-[12px] text-tx2">
-        <ShieldCheck size={14} strokeWidth={1.75} aria-hidden /> Example numbers, not a promise. You can lose money.
-      </p>
+    <div className="flex flex-col gap-4 rounded-[20px] border border-white/[0.08] bg-bg/80 p-6">
+      <span className="text-[17px] font-semibold">How your money is held</span>
+      <ul className="flex flex-col gap-3.5">
+        {rows.map(([I, t]) => (
+          <li key={t} className="flex gap-3 text-[14px] leading-snug text-tx3">
+            <I size={16} strokeWidth={1.75} className="mt-0.5 flex-none text-tx2" aria-hidden />
+            {t}
+          </li>
+        ))}
+      </ul>
+      <p className="border-t border-white/[0.07] pt-4 text-[12px] text-tx2">Tokenized stock exposure, not shares. Not investment advice.</p>
     </div>
   );
 }
@@ -354,5 +373,14 @@ function RecipeMock({ item }: { item: LoadedBasket }) {
       ))}
       <AlloyBar parts={parts} tone={item.v.id.tone} legend={false} />
     </div>
+  );
+}
+
+/** One hero headline word (CSS rise, staggered by --i). */
+function W({ i, children, className, style }: { i: number; children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
+  return (
+    <span className={`v-word ${className ?? ""}`} style={{ ...style, ["--i" as string]: i } as React.CSSProperties}>
+      {children}
+    </span>
   );
 }

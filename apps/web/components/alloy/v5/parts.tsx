@@ -9,8 +9,8 @@ import { FlaskConical, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Performance } from "@/lib/types";
 import { AlloyBar, StockLogo } from "../primitives";
+import { Ticker } from "../motion/Ticker";
 import { hash32 } from "../guilloche-gen";
-import { TONE_HEX, TONES } from "../identity";
 import { compactUsd6, type BasketView } from "../basket-view";
 
 // ---------------------------------------------------------------------------
@@ -20,12 +20,16 @@ import { compactUsd6, type BasketView } from "../basket-view";
 export function BrandMark({ className }: { className?: string }) {
   return (
     <span className={cn("inline-flex items-center gap-2", className)}>
-      <span aria-hidden className="flex h-[18px] w-[18px] flex-col justify-center gap-[2px]">
-        <i className="block h-[6px] rounded-[2px] bg-tx" />
-        <i className="block h-[4px] rounded-[2px] bg-tx/70" />
-        <i className="block h-[3px] rounded-[2px]" style={{ background: "var(--acc)" }} />
+      {/* Brand mark: solid #8C1230 rounded square, subtle top highlight, two bone hairlines (the alloy bands). */}
+      <span
+        aria-hidden
+        className="flex h-[20px] w-[20px] flex-col justify-center gap-[3px] rounded-[6px] px-[4px]"
+        style={{ background: "var(--cta)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.22)" }}
+      >
+        <i className="block h-[2px] rounded-full bg-[var(--bone)]" />
+        <i className="block h-[2px] w-[70%] rounded-full bg-[var(--bone)] opacity-60" />
       </span>
-      <span className="text-[17px] font-semibold tracking-tight">Alloy</span>
+      <span className="text-[17px] font-semibold leading-none tracking-tight">Alloy</span>
     </span>
   );
 }
@@ -36,8 +40,14 @@ export function BrandMark({ className }: { className?: string }) {
 
 export function CreatorAvatar({ handle, seed, size = 32, ring }: { handle: string; seed?: string; size?: number; ring?: boolean }) {
   const h = hash32((seed ?? handle).toLowerCase());
-  const a = TONE_HEX[TONES[h % TONES.length]];
-  const b = TONE_HEX[TONES[(h >> 3) % TONES.length]];
+  // Burgundy family (brand), varied by handle so creators still differ.
+  const fam = [
+    { mid: "#C41A42", deep: "#3A0010" },
+    { mid: "#8C1230", deep: "#2A000A" },
+    { mid: "#A8324F", deep: "#4A0618" },
+  ];
+  const a = fam[h % fam.length];
+  const b = fam[(h >> 3) % fam.length];
   const letter = (handle.replace(/^@/, "").match(/[a-z0-9]/i)?.[0] ?? "A").toUpperCase();
   return (
     <span
@@ -47,7 +57,7 @@ export function CreatorAvatar({ handle, seed, size = 32, ring }: { handle: strin
         width: size,
         height: size,
         fontSize: Math.round(size * 0.42),
-        background: `linear-gradient(135deg, ${a.mid}, ${b.deep === a.deep ? a.deep : b.mid} 70%)`,
+        background: `linear-gradient(135deg, ${a.mid}, ${b.deep} 80%)`,
         boxShadow: ring ? "0 0 0 3px var(--s1), 0 0 0 4px rgba(242,240,237,0.18)" : "inset 0 0 0 1px rgba(255,255,255,0.12)",
       }}
     >
@@ -65,14 +75,10 @@ export function hasHistory(v: BasketView): boolean {
   return v.series.length >= 3;
 }
 
-export function Pct({ bps, className }: { bps: number; className?: string }) {
+export function Pct({ bps, className, tick }: { bps: number; className?: string; tick?: boolean }) {
   const up = bps >= 0;
-  return (
-    <span className={cn(up ? "up" : "down", "whitespace-nowrap tabular-nums", className)}>
-      {up ? "+" : "−"}
-      {(Math.abs(bps) / 100).toFixed(1)}%
-    </span>
-  );
+  const text = `${up ? "+" : "−"}${(Math.abs(bps) / 100).toFixed(1)}%`;
+  return <span className={cn(up ? "up" : "down", "whitespace-nowrap tabular-nums", className)}>{tick ? <Ticker value={text} /> : text}</span>;
 }
 
 /** Whole days since a unix time (for "New · N days of history"). */
@@ -93,8 +99,9 @@ export function returnsOf(v: BasketView, perf?: Performance) {
   };
 }
 
-export function ReturnValue({ bps, className }: { bps: number | null; className?: string }) {
-  return bps === null ? <NewTag className={className} /> : <Pct bps={bps} className={className} />;
+/** `tick`: roll digits when the value changes (passive views only, never inside trade sheets). */
+export function ReturnValue({ bps, className, tick }: { bps: number | null; className?: string; tick?: boolean }) {
+  return bps === null ? <NewTag className={className} /> : <Pct bps={bps} className={className} tick={tick} />;
 }
 
 /** Creator thesis, or a plain one-liner from the recipe when the creator left it empty. */
@@ -134,17 +141,18 @@ export function BasketCard({ v, perf, priority }: { v: BasketView; perf?: Perfor
   return (
     <Link
       href={`/b/${b.address}`}
-      className="group flex flex-col overflow-hidden rounded-[20px] border border-white/[0.07] bg-s1 text-tx no-underline transition duration-200 hover:-translate-y-0.5 hover:border-white/[0.16] hover:bg-[#17171a]"
+      className="v-spot group flex flex-col overflow-hidden rounded-[20px] border border-white/[0.07] bg-s1 text-tx no-underline transition duration-200 hover:-translate-y-0.5 hover:border-[var(--acc)] hover:bg-[#17171a]"
     >
-      <div className="relative h-[160px] overflow-hidden" style={{ background: `var(--j-${v.id.tone}-d)` }}>
+      <div className="relative h-[136px] overflow-hidden bg-[#1a0a0e] sm:h-[160px]">
         <Image
           src={v.id.coverSrc}
           alt=""
           fill
           priority={priority}
           sizes="(min-width: 1280px) 320px, (min-width: 768px) 50vw, 100vw"
-          className="object-cover transition duration-500 group-hover:scale-[1.04]"
+          className="v-duo object-cover transition duration-500 group-hover:scale-[1.04]"
         />
+        <div className="v-duo-tint absolute inset-0" />
         <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-s1 to-transparent" />
         {b.demo && (
           <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-[12px] font-medium text-tx3 backdrop-blur">
@@ -160,7 +168,7 @@ export function BasketCard({ v, perf, priority }: { v: BasketView; perf?: Perfor
         <div className="relative flex items-end gap-2">
           <CreatorAvatar handle={b.creator.handle} seed={b.creator.address} size={36} ring />
           <span className="truncate pb-0.5 text-[13px] text-tx2">
-            @{b.creator.handle} · <span className="gold">{compactUsd6(v.creatorStakeUsd6)} in</span>
+            @{b.creator.handle} · has <span className="gold">{compactUsd6(v.creatorStakeUsd6).replace(/\.\d+$/, "")}</span> in it
           </span>
         </div>
         <div className="flex flex-col gap-1.5">
@@ -168,24 +176,23 @@ export function BasketCard({ v, perf, priority }: { v: BasketView; perf?: Perfor
           <p className="truncate text-[14px] leading-[20px] text-tx2">{thesisOf(v)}</p>
         </div>
 
+        {/* Real data only: returns once there's history, otherwise fee + minimum. */}
         <div className="grid grid-cols-2 gap-2">
-          <div className="flex flex-col gap-0.5 rounded-[14px] bg-s2 px-3 py-2.5">
-            {b.followers > 0 ? (
-              <>
-                <span className="text-[12px] text-tx2">Followers</span>
-                <ReturnValue bps={r.followers} className="text-[15px] font-semibold" />
-              </>
-            ) : (
-              <>
-                <span className="text-[12px] text-tx2">Founding</span>
-                <span className="text-[15px] font-semibold">Be #1</span>
-              </>
-            )}
-          </div>
-          <div className="flex flex-col gap-0.5 rounded-[14px] bg-s2 px-3 py-2.5">
-            <span className="text-[12px] text-tx2">Creator</span>
-            <ReturnValue bps={r.creator} className="text-[15px] font-semibold" />
-          </div>
+          {(r.creator === null || b.followers === 0
+            ? [
+                ["Fee", `${b.feeBps / 100}% a year`],
+                ["Minimum", "$5"],
+              ]
+            : [
+                ["Followers' return", <ReturnValue key="f" bps={r.followers} className="text-[15px] font-semibold" />],
+                ["Creator's return", <ReturnValue key="c" bps={r.creator} className="text-[15px] font-semibold" />],
+              ]
+          ).map(([k, val]) => (
+            <div key={k as string} className="flex flex-col gap-0.5 rounded-[14px] bg-s2 px-3 py-2.5">
+              <span className="text-[12px] text-tx2">{k}</span>
+              <span className="text-[15px] font-semibold">{val}</span>
+            </div>
+          ))}
         </div>
 
         <div className="mt-auto flex flex-col gap-3">
@@ -204,14 +211,14 @@ export function BasketCard({ v, perf, priority }: { v: BasketView; perf?: Perfor
 // Section heading
 // ---------------------------------------------------------------------------
 
-export function SectionHead({ title, sub, action, id }: { title: ReactNode; sub?: ReactNode; action?: ReactNode; id?: string }) {
+export function SectionHead({ title, sub, action, id, onBrand }: { title: ReactNode; sub?: ReactNode; action?: ReactNode; id?: string; onBrand?: boolean }) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-4">
       <div className="flex flex-col gap-2">
         <h2 id={id} className="text-[26px] font-semibold leading-tight tracking-tight md:text-[32px]">
           {title}
         </h2>
-        {sub ? <p className="max-w-[560px] text-[15px] text-tx2 md:text-[16px]">{sub}</p> : null}
+        {sub ? <p className={cn("max-w-[560px] text-[15px] md:text-[16px]", onBrand ? "text-tx3" : "text-tx2")}>{sub}</p> : null}
       </div>
       {action}
     </div>
@@ -221,6 +228,17 @@ export function SectionHead({ title, sub, action, id }: { title: ReactNode; sub?
 // ---------------------------------------------------------------------------
 // Footer (compliance)
 // ---------------------------------------------------------------------------
+
+/** Soft burgundy wash at the top of app pages (brand presence without loud surfaces). */
+export function BrandWash() {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[460px]"
+      style={{ background: "radial-gradient(38% 70% at 6% -25%, rgba(140,18,48,0.45), transparent 70%)" }}
+    />
+  );
+}
 
 export function SiteFooter() {
   return (
@@ -244,7 +262,7 @@ export function SiteFooter() {
         </div>
         <div className="flex flex-col gap-2 border-t border-white/[0.07] pt-6 text-[13px] text-tx2 md:flex-row md:items-center md:justify-between">
           <p>Tokenized stock exposure, not shares · Not available to US persons · You can lose money</p>
-          <p>Not investment advice · Base Sepolia test network</p>
+          <p>Not investment advice</p>
         </div>
       </div>
     </footer>

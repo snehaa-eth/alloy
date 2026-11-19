@@ -30,6 +30,9 @@ const COVER_TONE: Record<Cover, Tone> = {
 
 function coverFor(b: Pick<Basket, "address" | "category" | "name">): Cover {
   const n = b.name.toLowerCase();
+  // Demo baskets get their own covers so the grid stays distinguishable (they also carry a "Demo" chip).
+  if (n.includes("judge")) return "picks-shovels";
+  if (n.startsWith("alloy demo") && n.includes("big tech")) return "capitol-tech";
   if (n.includes("capitol") || b.category === "story") return "capitol-tech";
   if (n.includes("big tech")) return "big-tech";
   if (n.includes("shovel")) return "picks-shovels";

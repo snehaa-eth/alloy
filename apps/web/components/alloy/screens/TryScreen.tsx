@@ -26,7 +26,7 @@ export function TryScreen({ demo, others }: { demo: LoadedBasket; others: Loaded
   ];
 
   return (
-    <div className="mx-auto max-w-app px-4 pb-10 pt-5 md:px-6 md:pt-8">
+    <div className="mx-auto max-w-app px-4 pb-10 pt-5 md:px-8 md:pt-8">
       <div className="c-top">
         <h1 className="t-body t-strong md:text-[20px]">2-minute tour</h1>
         <Stamp icon={FlaskConical} intent="test">

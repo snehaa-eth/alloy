@@ -59,7 +59,7 @@ const config = {
         xl: "20px",
         "2xl": "24px",
       },
-      maxWidth: { app: "1280px" },
+      maxWidth: { app: "1200px" },
       keyframes: {
         "accordion-down": { from: { height: "0" }, to: { height: "var(--radix-accordion-content-height)" } },
         "accordion-up": { from: { height: "var(--radix-accordion-content-height)" }, to: { height: "0" } },

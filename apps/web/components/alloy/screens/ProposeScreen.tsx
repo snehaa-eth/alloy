@@ -39,7 +39,7 @@ export function ProposeScreen({ v, perf, events }: { v: BasketView; perf: Perfor
   }
 
   return (
-    <div className="mx-auto flex max-w-[560px] flex-col gap-6 px-4 pb-10 pt-4 md:px-6">
+    <div className="mx-auto flex max-w-[560px] flex-col gap-6 px-4 pb-10 pt-4 md:px-8">
       <div className="c-top">
         <Link href="/me" className="c-iconbtn" aria-label="Back to your baskets">
           <ArrowLeft size={20} strokeWidth={1.75} />

@@ -26,7 +26,7 @@ export function ActivityScreen({ items }: { items: LoadedBasket[] }) {
   const receipts = mine.flatMap((it) => it.events.filter((e) => e.txHash).map((e) => ({ it, e })));
 
   return (
-    <div className="mx-auto max-w-[720px] px-4 pb-8 pt-5 md:px-6 md:pt-8">
+    <div className="mx-auto max-w-[720px] px-4 pb-8 pt-5 md:px-8 md:pt-8">
       <h1 className="t-body t-strong md:text-[20px]">Activity</h1>
       <div className="mt-3">
         <Tabs
@@ -116,7 +116,7 @@ export function ActivityScreen({ items }: { items: LoadedBasket[] }) {
                 <ChangeFeed v={it.v} events={ev} />
               </section>
             ))}
-            <p className="t-mono c2">Trims need no action. Costs are the basket&apos;s.</p>
+            <p className="t-mono c2">Autopilot changes need no action. Costs are the basket&apos;s.</p>
           </div>
         )
       ) : receipts.length === 0 ? (

@@ -6,17 +6,16 @@ import { Plus, Search, SearchX, X } from "lucide-react";
 import type { Performance } from "@/lib/types";
 import type { BasketView } from "../basket-view";
 import { ButtonLink, EmptyState } from "../primitives";
-import { BasketCard } from "../v5/parts";
+import { BasketCard, BrandWash } from "../v5/parts";
 
 /** UX_MAP §3.3 Explore: search + theme chips + sort. */
-type Tab = "all" | "ai" | "story" | "demo";
+type Tab = "all" | "ai" | "story";
 type Sort = "followed" | "new";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "all", label: "All" },
   { id: "ai", label: "AI" },
   { id: "story", label: "Stories" },
-  { id: "demo", label: "Demo" },
 ];
 
 export function ExploreView({ items }: { items: { v: BasketView; perf?: Performance }[] }) {
@@ -28,7 +27,6 @@ export function ExploreView({ items }: { items: { v: BasketView; perf?: Performa
     let l = [...items];
     if (sort === "followed") l.sort((a, b) => b.v.basket.followers - a.v.basket.followers || (b.v.nav > a.v.nav ? 1 : b.v.nav < a.v.nav ? -1 : 0));
     if (sort === "new") l.sort((a, b) => b.v.basket.createdAt - a.v.basket.createdAt);
-    if (tab === "demo") l = l.filter(({ v }) => v.basket.demo);
     if (tab === "story") l = l.filter(({ v }) => v.basket.category === "story" || v.basket.story);
     if (tab === "ai") l = l.filter(({ v }) => v.basket.category === "ai" || /\bai\b/i.test(v.basket.name));
     const s = q.trim().toLowerCase();
@@ -43,6 +41,8 @@ export function ExploreView({ items }: { items: { v: BasketView; perf?: Performa
   }, [items, tab, sort, q]);
 
   return (
+    <div className="relative isolate">
+    <BrandWash />
     <div className="mx-auto max-w-app px-4 pb-12 pt-8 md:px-8 md:pt-12">
       <div className="flex items-end justify-between gap-4">
         <div className="flex flex-col gap-1 md:gap-2">
@@ -52,9 +52,10 @@ export function ExploreView({ items }: { items: { v: BasketView; perf?: Performa
         <Link
           href="/create"
           aria-label="Build a basket"
-          className="c-btn c-btn--secondary c-btn--auto !h-11 !w-11 flex-none !rounded-full !px-0 !text-[14px] md:!w-auto md:!px-5"
+          className="c-btn c-btn--secondary c-btn--auto !h-11 flex-none !rounded-full !px-4 !text-[14px] md:!px-5"
         >
-          <Plus size={16} strokeWidth={2} aria-hidden /> <span className="hidden md:inline">Build a basket</span>
+          <Plus size={16} strokeWidth={2} aria-hidden /> <span className="md:hidden">Build</span>
+          <span className="hidden md:inline">Build a basket</span>
         </Link>
       </div>
 
@@ -101,7 +102,7 @@ export function ExploreView({ items }: { items: { v: BasketView; perf?: Performa
               role="radio"
               aria-checked={sort === id}
               onClick={() => setSort(id)}
-              className={"h-full rounded-full px-4 text-[13px] font-medium transition " + (sort === id ? "bg-white/[0.1] text-tx" : "text-tx2 hover:text-tx")}
+              className={"h-full rounded-full px-4 text-[13px] font-medium transition " + (sort === id ? "bg-s2 text-tx" : "text-tx2 hover:text-tx")}
             >
               {label}
             </button>
@@ -149,6 +150,7 @@ export function ExploreView({ items }: { items: { v: BasketView; perf?: Performa
         </div>
       )}
       <p className="mt-10 text-[13px] text-tx2">Tokenized stock exposure, not shares. Returns shown are past, not promised.</p>
+    </div>
     </div>
   );
 }

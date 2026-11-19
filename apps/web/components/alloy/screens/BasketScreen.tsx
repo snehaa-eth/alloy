@@ -3,11 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowLeft, ChevronDown, FlaskConical, Info, RefreshCw, Scissors, Sparkles, XCircle } from "lucide-react";
-import { CreatorAvatar, Logos, ReturnValue, daysSince, returnsOf, thesisOf } from "../v5/parts";
+import { ArrowLeft, ChevronDown, FlaskConical, Info, RefreshCw, Scale, Sparkles, XCircle } from "lucide-react";
+import { BrandWash, CreatorAvatar, Logos, ReturnValue, daysSince, returnsOf, thesisOf } from "../v5/parts";
 import { BuyPanel, Card, NewChart } from "../v5/BuyPanel";
+import { Ticker } from "../motion/Ticker";
 import type { Performance, RebalanceEvent } from "@/lib/types";
-import { STRATEGY_MODES } from "@/lib/strategy";
+import { STYLES, styleOf } from "../styles";
 import { DEFAULT_CHAIN, explorerTxUrl } from "@/lib/chains";
 import { usMarketStatus } from "@/lib/market";
 import { formatUsd6, sharesToUsd6, pnl } from "@/lib/units";
@@ -46,13 +47,30 @@ export function BasketScreen({
   const change = pendingChange(events, b);
   const heldUsd6 = sharesToUsd6(pos.shares, v.nav, b.totalSupply);
   const holding = pos.shares > 0n;
-  const mode = STRATEGY_MODES[b.mode];
+  const mode = STYLES[styleOf(b)];
 
   useEffect(() => {
     setMarket(usMarketStatus().open);
-    if (initialBuy) setSheet("buy");
+    if (initialBuy) {
+      // Desktop: the right panel IS the buy flow (no modal). Mobile: open the sheet.
+      if (window.matchMedia("(min-width: 1024px)").matches) focusPanel();
+      else setSheet("buy");
+    }
     else if (initialSheet === "exit" || initialSheet === "change" || initialSheet === "stocks") setSheet(initialSheet);
   }, [initialBuy, initialSheet]);
+
+  function focusPanel() {
+    const el = document.getElementById("buy-panel");
+    el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    (el?.querySelector("[data-buy-primary]") as HTMLButtonElement | null)?.focus({ preventScroll: true });
+  }
+  /** Desktop focuses the inline panel; mobile opens the buy sheet. */
+  function startBuy(amount: string) {
+    if (window.matchMedia("(min-width: 1024px)").matches) {
+      setBuyAmount(amount);
+      focusPanel();
+    } else openSheet("buy", amount);
+  }
 
   // Keep buy intent in the URL so a killed tab (mail app switch) recovers it.
   function openSheet(s: SheetId, amount?: string) {
@@ -68,7 +86,7 @@ export function BasketScreen({
 
   const ticks = events
     .filter((e) => e.status === "executed")
-    .map((e) => ({ t: e.at, label: e.reason ?? (e.kind === "drift-trim" ? "Trim" : "Recipe change") }));
+    .map((e) => ({ t: e.at, label: e.reason ?? (e.kind === "drift-trim" ? "Took some profit" : "Recipe change") }));
 
   const position = holding && pos.costUsd6 !== null ? pnl(heldUsd6, pos.costUsd6) : null;
 
@@ -81,6 +99,8 @@ export function BasketScreen({
         <StatusSignal id={`change-${b.address}`} signal={{ kind: "change", text: `${b.name} changes soon`, href: `/b/${b.address}?sheet=change` }} />
       )}
 
+      <div className="relative isolate">
+      <BrandWash />
       <div className="mx-auto max-w-app px-4 pb-40 pt-4 md:px-8 md:pt-6 lg:pb-12">
         <Link href="/explore" className="inline-flex min-h-[40px] items-center gap-1.5 text-[14px] text-tx2 no-underline hover:text-tx">
           <ArrowLeft size={16} strokeWidth={1.75} aria-hidden /> Explore
@@ -89,8 +109,9 @@ export function BasketScreen({
         <div className="mt-2 grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-10">
           <div className="flex min-w-0 flex-col gap-6">
             {/* Cover hero */}
-            <div className="relative h-[220px] overflow-hidden rounded-[24px] md:h-[300px]" style={{ background: `var(--j-${v.id.tone}-d)` }}>
-              <Image src={v.id.coverSrcLg} alt="" fill priority sizes="(min-width: 1024px) 860px, 100vw" className="object-cover" />
+            <div className="relative h-[220px] overflow-hidden rounded-[24px] bg-[#1a0a0e] md:h-[300px]">
+              <Image src={v.id.coverSrcLg} alt="" fill priority sizes="(min-width: 1024px) 860px, 100vw" className="v-duo object-cover" />
+              <div className="v-duo-tint absolute inset-0" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 flex flex-col gap-3 p-5 md:p-8">
                 <div className="flex flex-wrap gap-2">
@@ -103,9 +124,9 @@ export function BasketScreen({
                     type="button"
                     onClick={() => setSheet("strategy")}
                     className="inline-flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-[12px] font-medium text-tx3 backdrop-blur hover:text-tx"
-                    aria-label={`Strategy: ${mode.label}. What does this mean?`}
+                    aria-label={`Creator style: ${mode.label}. What does this mean?`}
                   >
-                    {mode.label} <Info size={12} strokeWidth={1.75} aria-hidden />
+                    <mode.icon size={12} strokeWidth={2} aria-hidden /> {mode.label} <Info size={12} strokeWidth={1.75} aria-hidden />
                   </button>
                 </div>
                 <h1 className="text-[30px] font-semibold leading-[1.05] tracking-tight md:text-[44px]">{b.name}</h1>
@@ -119,7 +140,7 @@ export function BasketScreen({
                 <div className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate text-[15px] font-semibold">@{b.creator.handle}</span>
                   <span className="text-[13px] text-tx2">
-                    Creator · <span className="gold">{compactUsd6(v.creatorStakeUsd6)} in</span>
+                    Creator has <span className="gold">{compactUsd6(v.creatorStakeUsd6).replace(/\.\d+$/, "")}</span> in it
                   </span>
                 </div>
                 <Logos tickers={v.tickers} max={5} />
@@ -139,8 +160,15 @@ export function BasketScreen({
             <Card>
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div className="flex flex-col gap-1">
-                  <span className="text-[13px] text-tx2">Value per token</span>
-                  <span className="font-display text-[40px] leading-none md:text-[48px]">{formatUsd6(v.navPerShare)}</span>
+                  <span className="inline-flex items-center gap-2 text-[13px] text-tx2">
+                    <span className="v-live" aria-hidden /> Price · live
+                    <span title="Price of one share of this basket" aria-label="Price of one share of this basket" className="inline-flex cursor-help">
+                      <Info size={13} strokeWidth={1.75} aria-hidden />
+                    </span>
+                  </span>
+                  <span className="font-display text-[40px] leading-none md:text-[48px]">
+                    <Ticker value={formatUsd6(v.navPerShare)} />
+                  </span>
                 </div>
                 <span className="text-[14px]">
                   <Signed bps={v.sinceBps} /> <span className="c2">since {shortDate(v.sinceDate)}</span>
@@ -161,15 +189,20 @@ export function BasketScreen({
                 <div className="flex items-baseline justify-between gap-3">
                   <h2 className="text-[18px] font-semibold tracking-tight">Did followers win too?</h2>
                 </div>
-                {b.followers === 0 ? (
+                {b.followers === 0 || r.creator === null ? (
                   <div className="mt-4 flex flex-col gap-3">
-                    <div className="flex items-center justify-between rounded-[14px] bg-s2 px-4 py-3">
-                      <span className="text-[14px] text-tx3">Creator</span>
-                      <ReturnValue bps={r.creator} className="text-[20px] font-semibold" />
+                    <p className="text-[15px] text-tx3">
+                      Once this basket has a few days of history, you&apos;ll see followers&apos; return next to the creator&apos;s, here.
+                    </p>
+                    <div className="flex items-center justify-between rounded-[14px] bg-s2 px-4 py-3 text-[14px]">
+                      <span className="text-tx2">Followers</span>
+                      <span className="font-semibold">{b.followers.toLocaleString("en-US")}</span>
                     </div>
-                    <button type="button" onClick={() => openSheet("buy", buyAmount)} className="c-btn c-btn--secondary !h-11 !rounded-full">
-                      Be Founding Follower #1
-                    </button>
+                    {b.followers === 0 && (
+                      <button type="button" onClick={() => startBuy(buyAmount)} className="c-btn c-btn--secondary !h-11 !rounded-full">
+                        Be the first follower
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <div className="mt-4 flex flex-col gap-2">
@@ -179,7 +212,7 @@ export function BasketScreen({
                     ].map(([k, bps]) => (
                       <div key={k as string} className="flex items-center justify-between rounded-[14px] bg-s2 px-4 py-3">
                         <span className="text-[14px] text-tx3">{k as string}</span>
-                        <ReturnValue bps={bps as number | null} className="text-[20px] font-semibold" />
+                        <ReturnValue bps={bps as number | null} className="text-[20px] font-semibold" tick />
                       </div>
                     ))}
                   </div>
@@ -245,7 +278,7 @@ export function BasketScreen({
                       </div>
                       <div className="hidden w-[140px] sm:block">
                         <div className="h-1.5 overflow-hidden rounded-full bg-s2">
-                          <div className="h-full rounded-full" style={{ width: `${Math.min(100, v.now[i].bps / 100)}%`, background: `var(--j-${v.id.tone})` }} />
+                          <div className="h-full rounded-full" style={{ width: `${Math.min(100, v.now[i].bps / 100)}%`, background: "var(--bone)" }} />
                         </div>
                       </div>
                       <div className="c-row__end w-[72px]">
@@ -270,7 +303,7 @@ export function BasketScreen({
               </div>
             </Card>
 
-            <details className="group rounded-[20px] border border-white/[0.07] bg-s1 px-5 py-4 md:px-6">
+            <details className="group rounded-[20px] border border-white/[0.07] bg-s1 px-5 py-4 md:px-8">
               <summary className="flex cursor-pointer list-none items-center justify-between text-[16px] font-semibold">
                 Details <ChevronDown size={16} className="transition group-open:rotate-180" aria-hidden />
               </summary>
@@ -280,7 +313,7 @@ export function BasketScreen({
                   ["Network", DEFAULT_CHAIN.name],
                   ["Fee", `${b.feeBps / 100}%/yr · creator keeps 80%`],
                   ["Recipe notice", b.noticeSeconds >= 3600 ? `${b.noticeSeconds / 3600}h` : `${b.noticeSeconds / 60} min`],
-                  ["Strategy", mode.label],
+                  ["Creator style", mode.label],
                   ["Value vs fill", "Value is oracle; buys fill at pool prices"],
                 ].map(([k, val]) => (
                   <div key={k} className="flex min-h-[44px] items-center justify-between gap-3 border-t border-white/[0.07] text-[14px]">
@@ -303,7 +336,6 @@ export function BasketScreen({
                 holding={holding}
                 heldUsd6={heldUsd6}
                 positionBps={position?.bps ?? null}
-                onBuy={() => openSheet("buy", buyAmount)}
                 onExit={() => openSheet("exit")}
                 onAddMoney={() => setSheet("money")}
               />
@@ -315,10 +347,10 @@ export function BasketScreen({
                   [
                     ["In basket", compactUsd6(v.nav)],
                     ["Followers", b.followers.toLocaleString("en-US")],
-                    ["Creator stake", <span key="c" className="gold">{compactUsd6(v.creatorStakeUsd6)}</span>],
+                    ["Creator's own money", <span key="c" className="gold">{compactUsd6(v.creatorStakeUsd6)}</span>],
                     ["Fee", `${b.feeBps / 100}% a year`],
-                    ["Biggest drop", v.series.length >= 3 ? `−${(perf.maxDrawdownBps / 100).toFixed(1)}%` : "New"],
-                    ["Change notice", b.noticeSeconds >= 3600 ? `${b.noticeSeconds / 3600} hours` : `${b.noticeSeconds / 60} min`],
+                    ...(v.series.length >= 3 ? [["Biggest drop", `−${(perf.maxDrawdownBps / 100).toFixed(1)}%`] as [string, React.ReactNode]] : []),
+                    ["Recipe changes", b.noticeSeconds >= 86_400 ? "Announced a day early" : b.noticeSeconds >= 3600 ? `Announced ${b.noticeSeconds / 3600}h early` : `Announced ${b.noticeSeconds / 60} min early`],
                   ] as [string, React.ReactNode][]
                 ).map(([k, val]) => (
                   <div key={k} className="flex min-h-[42px] items-center justify-between gap-3 border-t border-white/[0.06] text-[14px] first:border-t-0">
@@ -332,11 +364,13 @@ export function BasketScreen({
         </div>
       </div>
 
+      </div>
+
       {/* Mobile / tablet action bar */}
       <div className="fixed inset-x-0 bottom-[60px] z-30 border-t border-white/[0.07] bg-bg/90 px-4 py-3 backdrop-blur-xl md:bottom-0 lg:hidden">
         <div className="mx-auto flex max-w-[640px] items-center gap-3">
           <div className="flex min-w-0 flex-1 flex-col">
-            <span className="text-[12px] text-tx2">{holding ? "Your value" : "Value per token"}</span>
+            <span className="text-[12px] text-tx2">{holding ? "Your value" : "Price per share"}</span>
             <span className="text-[16px] font-semibold tabular-nums">{holding ? formatUsd6(heldUsd6) : formatUsd6(v.navPerShare)}</span>
           </div>
           {holding && (
@@ -379,7 +413,7 @@ export function BasketScreen({
         />
       )}
       <AddMoneySheet open={sheet === "money"} onOpenChange={(o) => !o && setSheet("buy")} backLabel="Back to buy" />
-      <StrategySheet mode={b.mode} open={sheet === "strategy"} onOpenChange={(o) => !o && setSheet(null)} />
+      <StrategySheet mode={styleOf(b)} open={sheet === "strategy"} onOpenChange={(o) => !o && setSheet(null)} />
     </div>
   );
 }
@@ -390,21 +424,21 @@ export function ChangeFeed({ v, events, onOpenPending }: { v: BasketView; events
     return (
       <div className="c-row">
         <span className="c-rowicon">
-          <Scissors size={18} strokeWidth={1.75} aria-hidden />
+          <Scale size={18} strokeWidth={1.75} aria-hidden />
         </span>
         <div className="c-row__main">
-          <span className="c-row__title">No trims yet</span>
-          <span className="c-row__meta">all within band</span>
+          <span className="c-row__title">No changes yet</span>
+          <span className="c-row__meta">Following the creator&apos;s plan</span>
         </div>
       </div>
     );
   return (
     <div className="c-list">
       {events.map((e) => {
-        const I = e.status === "cancelled" ? XCircle : e.kind === "drift-trim" ? Scissors : RefreshCw;
-        const diff = e.changes.map((c) => `${tickerOf(b, c.symbol)} ${fmtPct(c.fromBps)}→${fmtPct(c.toBps)}`).join("  ");
+        const I = e.status === "cancelled" ? XCircle : e.kind === "drift-trim" ? Scale : RefreshCw;
+        const diff = e.kind === "drift-trim" && e.status === "executed" ? rebalanceLine(b, e) : e.changes.map((c) => `${tickerOf(b, c.symbol)} ${fmtPct(c.fromBps)}→${fmtPct(c.toBps)}`).join("  ");
         const title =
-          e.status === "pending" ? "Change pending" : e.status === "cancelled" ? "Change cancelled" : e.kind === "drift-trim" ? `Trimmed ${tickerOf(b, e.changes[0]?.symbol ?? "")}` : "Recipe changed";
+          e.status === "pending" ? "Change pending" : e.status === "cancelled" ? "Change cancelled" : e.kind === "drift-trim" ? "Rebalanced" : "Recipe changed";
         const row = (
           <>
             <span className="c-rowicon" style={e.status === "pending" ? { color: "var(--acc)" } : undefined}>
@@ -447,4 +481,15 @@ export function ChangeFeed({ v, events, onOpenPending }: { v: BasketView; events
       })}
     </div>
   );
+}
+
+/** Plain-language line: "Took some profit: NVIDIA 46% → 40%, spread to the others." */
+function rebalanceLine(b: BasketView["basket"], e: RebalanceEvent): string {
+  const big = [...e.changes].sort((x, y) => y.fromBps - y.toBps - (x.fromBps - x.toBps))[0];
+  if (!big) return "Moved a little between stocks.";
+  const c = b.components.find((x) => x.stock.symbol === big.symbol);
+  const name = c?.stock.name || tickerOf(b, big.symbol);
+  const moved = Math.max(0, big.fromBps - big.toBps);
+  void moved;
+  return `Took some profit: ${name} ${fmtPct(big.fromBps)}% → ${fmtPct(big.toBps)}%, spread to the others.`;
 }

@@ -6,7 +6,8 @@ import { ArrowLeft, Award, Check, FlaskConical } from "lucide-react";
 import type { Address } from "viem";
 import type { StrategyMode } from "@/lib/types";
 import { useCreateBasket } from "@/lib/hooks/use-basket-tx";
-import { DEFAULT_FEE_BPS, DEFAULT_SLIPPAGE_BPS, MAX_FEE_BPS, MIN_SEED_USDC, STRATEGY_MODES, STRATEGY_MODE_LIST } from "@/lib/strategy";
+import { DEFAULT_FEE_BPS, DEFAULT_SLIPPAGE_BPS, MAX_FEE_BPS, MIN_SEED_USDC } from "@/lib/strategy";
+import { STYLES, STYLE_ORDER } from "../styles";
 import { describeTxError } from "@/lib/tx";
 import { formatUsd6, parseUsdc, validateWeightsBps } from "@/lib/units";
 import { Certificate } from "../Certificate";
@@ -46,7 +47,7 @@ const EMPTY: Draft = {
   date: "",
   picked: [],
   weights: [],
-  mode: "balanced",
+  mode: "let-winners-run",
   feeBps: DEFAULT_FEE_BPS,
   demo: true,
   seed: "25",
@@ -270,11 +271,12 @@ export function CreateScreen({ stocks }: { stocks: PickStock[] }) {
         <div className="flex flex-col gap-4">
           <h1 className="t-body t-strong">Strategy and fee</h1>
           <div className="flex flex-col gap-2" role="radiogroup" aria-label="Strategy">
-            {STRATEGY_MODE_LIST.map((m) => (
+            {STYLE_ORDER.map((m) => (
               <button key={m} type="button" className="c-choice" aria-pressed={d.mode === m} onClick={() => up({ mode: m })}>
+                <StyleIcon m={m} />
                 <span className="flex-1">
-                  <span className="t-body t-strong block">{STRATEGY_MODES[m].label}</span>
-                  <span className="t-small c2">{STRATEGY_MODES[m].oneLiner}</span>
+                  <span className="t-body t-strong block">{STYLES[m].label}</span>
+                  <span className="t-small c2">{STYLES[m].line}</span>
                 </span>
                 {d.mode === m && <Check size={16} aria-hidden />}
               </button>
@@ -372,5 +374,14 @@ function Shell({ step, onBack, children }: { step: number; onBack?: () => void; 
       {children}
       {step >= STEPS.length && <ButtonLink href="/explore" variant="secondary">Explore</ButtonLink>}
     </div>
+  );
+}
+
+function StyleIcon({ m }: { m: keyof typeof STYLES }) {
+  const I = STYLES[m].icon;
+  return (
+    <span className="inline-flex h-9 w-9 flex-none items-center justify-center rounded-full bg-s2" aria-hidden>
+      <I size={16} strokeWidth={1.75} />
+    </span>
   );
 }

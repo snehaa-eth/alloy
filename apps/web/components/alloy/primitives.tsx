@@ -217,6 +217,7 @@ export function AlloyBar({
   legend = true,
   order,
   label,
+  multi,
 }: {
   parts: RecipePart[];
   tone: Tone;
@@ -225,6 +226,8 @@ export function AlloyBar({
   /** Fixed band order (tickers) so before → after pairs line up. */
   order?: string[];
   label?: string;
+  /** v5: one muted jewel tone per stock (instead of one tone fading by rank). */
+  multi?: boolean;
 }) {
   const items = order ? order.map((t) => ({ ticker: t, bps: parts.find((p) => p.ticker === t)?.bps ?? 0 })) : [...parts].sort((a, b) => b.bps - a.bps);
   const total = items.reduce((a, p) => a + p.bps, 0) || 1;
@@ -234,7 +237,14 @@ export function AlloyBar({
     <div className="flex flex-col gap-2">
       <div className={cn("c-alloy", `t-${tone}`, size === "lg" && "c-alloy--lg", size === "sm" && "c-alloy--sm")} role="img" aria-label={aria}>
         {items.map((p, k) => (
-          <i key={p.ticker} style={{ flexGrow: p.bps / total, flexBasis: 0, opacity: Math.max(0.15, 1 - (0.55 * k) / Math.max(n - 1, 1)) }} />
+          <i
+            key={p.ticker}
+            style={{
+              flexGrow: p.bps / total,
+              flexBasis: 0,
+              color: MULTI[k % MULTI.length],
+            }}
+          />
         ))}
       </div>
       {legend && (
@@ -249,6 +259,9 @@ export function AlloyBar({
     </div>
   );
 }
+
+/** v5 alloy ramp by rank: burgundy → rose → bone → greys. */
+const MULTI = ["#8C1230", "#B0485F", "#CBB8A6", "#E8DCC8", "#9A948C", "#6E6A66", "#4E4B48", "#3A3836", "#2C2A29", "#222120"];
 
 /** now → after pair with a diff legend (amendments, receipts). */
 export function AlloyBarPair({ before, after, tone }: { before: RecipePart[]; after: RecipePart[]; tone: Tone }) {

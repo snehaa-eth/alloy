@@ -138,7 +138,7 @@ export function ExitSheet({
               { k: "You keep", v: formatUsd6(keepUsd6) },
               mode === "usdc"
                 ? { k: "Cost", v: costUsd6 !== null ? `≈ ${formatUsd6(costUsd6)}` : "pool fees" }
-                : { k: "Rebalancing", v: "Stops for these" },
+                : { k: "Autopilot", v: "Stops for these" },
             ]}
             action={
               stage === "running" ? (

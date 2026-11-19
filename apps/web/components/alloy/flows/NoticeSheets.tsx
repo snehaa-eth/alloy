@@ -8,12 +8,14 @@ import { useFaucetStatus } from "@/lib/hooks/use-reads";
 import { useAccount } from "../hooks";
 import { TxProgress } from "./shared";
 import type { RebalanceEvent } from "@/lib/types";
-import { STRATEGY_MODES, STRATEGY_MODE_LIST } from "@/lib/strategy";
+import type { StrategyMode } from "@/lib/types";
+import { STYLES, STYLE_ORDER } from "../styles";
 import { formatUsd6 } from "@/lib/units";
 import { Certificate } from "../Certificate";
 import { Countdown, LocalTime } from "../Countdown";
 import { Sheet } from "../Sheet";
-import { AlloyBarPair, Button, Figure, InlineToast, QuietLink, Stamp } from "../primitives";
+import { Button, Figure, InlineToast, QuietLink, Stamp } from "../primitives";
+import { AlloyBarMorph } from "../motion/AlloyBarMorph";
 import { clock, recipeAfter, type BasketView } from "../basket-view";
 
 /** I-04 Amendment notice: now → after, exact time, Keep is primary. Doing nothing = staying in. */
@@ -56,7 +58,7 @@ export function ChangeSheet({
         title={b.name}
         label={holding ? "Of yours that moves" : "Of the basket that moves"}
         figure={holding ? `≈ ${formatUsd6(moves, 0)}` : `${Math.round(movedBps / 100)}%`}
-        bar={<AlloyBarPair before={v.target} after={after} tone={v.id.tone} />}
+        bar={<AlloyBarMorph before={v.target} after={after} tone={v.id.tone} />}
         ledger={[
           { k: "Runs", v: <LocalTime at={at} /> },
           {
@@ -118,15 +120,22 @@ export function AddMoneySheet({ open, onOpenChange, backLabel }: { open: boolean
 }
 
 /** Strategy explainer: one line per mode. */
-export function StrategySheet({ mode, open, onOpenChange }: { mode: keyof typeof STRATEGY_MODES; open: boolean; onOpenChange: (o: boolean) => void }) {
+export function StrategySheet({ mode, open, onOpenChange }: { mode: StrategyMode; open: boolean; onOpenChange: (o: boolean) => void }) {
   return (
-    <Sheet open={open} onOpenChange={onOpenChange} title="Strategy">
+    <Sheet open={open} onOpenChange={onOpenChange} title="Creator style">
       <div className="flex flex-col">
-        {STRATEGY_MODE_LIST.map((m) => (
+        <p className="t-small c2 pb-1">Each basket follows its creator&apos;s plan. You don&apos;t lift a finger.</p>
+        {STYLE_ORDER.map((m) => (
           <div key={m} className="c-row">
+            <span className="c-rowicon" aria-hidden>
+              {(() => {
+                const I = STYLES[m].icon;
+                return <I size={18} strokeWidth={1.75} />;
+              })()}
+            </span>
             <div className="c-row__main">
-              <span className="c-row__title t-strong">{STRATEGY_MODES[m].label}</span>
-              <span className="t-small c2">{STRATEGY_MODES[m].oneLiner}</span>
+              <span className="c-row__title t-strong">{STYLES[m].label}</span>
+              <span className="t-small c2 !whitespace-normal">{STYLES[m].line}</span>
             </div>
             {m === mode && <Stamp>This one</Stamp>}
           </div>

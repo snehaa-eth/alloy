@@ -54,10 +54,12 @@ export function Certificate({
 }: Props) {
   return (
     <As className={cn("c-cert", flat && "c-cert--flat", className)}>
-      <div className="c-cert__head">
-        <span className="c-cert__serial">{serial}</span>
-        {stamp}
-      </div>
+      {stamp ? (
+        <div className="c-cert__head">
+          <span className="c-cert__serial">{serial}</span>
+          {stamp}
+        </div>
+      ) : null}
       {art && (
         <div className="c-cert__art">
           <Guilloche

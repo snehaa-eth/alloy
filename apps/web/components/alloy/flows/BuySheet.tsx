@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowUpRight, Award, Clock, FlaskConical, RefreshCw } from "lucide-react";
+import { Award, Clock, FlaskConical, RefreshCw } from "lucide-react";
 import { useBuyBasket } from "@/lib/hooks/use-basket-tx";
 import { DEFAULT_SLIPPAGE_BPS, MIN_BUY_USDC } from "@/lib/strategy";
 import { formatShares, formatUsd6, parseUsdc } from "@/lib/units";
@@ -115,11 +115,7 @@ export function BuySheet({
           <Certificate
             flat
             serial={v.id.serial}
-            stamp={
-              <Stamp icon={ArrowUpRight} intent="neutral">
-                Buy
-              </Stamp>
-            }
+            stamp={null}
             title={b.name}
             label="You pay"
             figure={formatUsd6(usdc)}
@@ -127,7 +123,7 @@ export function BuySheet({
             ledger={[
               {
                 k: "You get",
-                v: tooSmall ? <span className="down">Minimum $5</span> : `≈ ${formatShares(quote.out, 2)} ${v.id.code}`,
+                v: tooSmall ? <span className="down">Minimum $5</span> : `≈ ${formatShares(quote.out, 2)} shares`,
               },
               {
                 k: quote.source === "quote" ? "Cost" : "Fee",
@@ -139,7 +135,7 @@ export function BuySheet({
                 <TxProgress step={buy.step} />
               ) : (
                 <Button onClick={go} disabled={usdc === 0n || tooSmall} loading={quote.loading}>
-                  {acct.signedIn ? label : "Sign in to buy"}
+                  {acct.signedIn ? label : "Sign in with email to buy"}
                 </Button>
               )
             }
@@ -185,10 +181,21 @@ export function FoundingCertificate({ v, paid, refund = 0n, txHash }: { v: Baske
   const shareText = encodeURIComponent(`I'm Founding Follower #${n} of ${b.name} on Alloy (Base Sepolia test).`);
   return (
     <div className="flex flex-col gap-4">
+      {/* Success moment: check draws in a soft burgundy ring; facts, no confetti (MOTION.md §5.5). */}
+      <div className="flex flex-col items-center gap-3 pt-2">
+        <span className="relative inline-flex h-14 w-14 items-center justify-center rounded-full" style={{ background: "var(--s2)", boxShadow: "0 0 40px rgba(163,22,58,0.35)" }}>
+          <span className="v-ring" aria-hidden />
+          <svg className="v-check" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--gain)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M5 12.5l4.5 4.5L19 7.5" pathLength={1} />
+          </svg>
+        </span>
+        <span className="text-[17px] font-semibold">You&apos;re in.</span>
+      </div>
       <InlineToast>
         Bought {formatUsd6(paid)}
         {refund > 50_000n ? ` · Refunded ${formatUsd6(refund)}` : ""}
       </InlineToast>
+      <div className="v-slide-up">
       <Certificate
         serial={v.id.serial}
         stamp={
@@ -226,6 +233,7 @@ export function FoundingCertificate({ v, paid, refund = 0n, txHash }: { v: Baske
         }
         footMeta="Base Sepolia"
       />
+      </div>
     </div>
   );
 }

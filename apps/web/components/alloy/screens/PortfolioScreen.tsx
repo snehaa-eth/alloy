@@ -1,5 +1,6 @@
 "use client";
 
+import { Ticker } from "../motion/Ticker";
 import { useState } from "react";
 import { CalendarDays, Compass, FlaskConical, LogIn } from "lucide-react";
 import { formatUsd6, pnl, sharesToUsd6 } from "@/lib/units";
@@ -51,7 +52,7 @@ export function PortfolioScreen({ items }: { items: LoadedBasket[] }) {
   const firstChange = changes[0];
 
   return (
-    <div className="mx-auto max-w-app px-4 pb-8 pt-5 md:px-6 md:pt-8">
+    <div className="mx-auto max-w-app px-4 pb-8 pt-5 md:px-8 md:pt-8">
       {firstChange && (
         <StatusSignal
           id="portfolio-change"
@@ -66,7 +67,18 @@ export function PortfolioScreen({ items }: { items: LoadedBasket[] }) {
           <Skeleton className="h-[220px] w-full" />
         </div>
       ) : !acct.signedIn ? (
-        <EmptyState icon={LogIn} line="Sign in to see your baskets." action={<Button onClick={() => acct.login()}>Sign in</Button>} />
+        <EmptyState
+          icon={LogIn}
+          line="Your baskets, their value and every change land here."
+          action={
+            <div className="flex flex-col gap-2">
+              <Button onClick={() => acct.login()}>Sign in with email</Button>
+              <ButtonLink href="/explore" variant="secondary">
+                Explore baskets first
+              </ButtonLink>
+            </div>
+          }
+        />
       ) : !ready ? (
         <div className="mt-6 flex flex-col gap-3">
           <Skeleton className="h-8 w-40" />
@@ -79,7 +91,9 @@ export function PortfolioScreen({ items }: { items: LoadedBasket[] }) {
           <div className="flex flex-col gap-6 md:order-2">
             <div className="flex flex-col gap-1">
               <span className="t-label">{all ? "Test · since you joined" : "Test · value now"}</span>
-              <span className="t-hero">{formatUsd6(total)}</span>
+              <span className="t-hero">
+                <Ticker value={formatUsd6(total)} />
+              </span>
               {all && (
                 <span className="t-small">
                   <Signed bps={all.bps} /> <span className="c2">{formatUsd6(all.usd6)}</span>
@@ -94,7 +108,7 @@ export function PortfolioScreen({ items }: { items: LoadedBasket[] }) {
               figure={`${weekUsd6 < 0n ? "−" : "+"}${formatUsd6(weekUsd6 < 0n ? -weekUsd6 : weekUsd6)}`}
               unit={`on ${formatUsd6(total, 0)}`}
               ledger={[
-                { k: "Trims", v: `${trims.length}${trims.length ? ` · ${trims.map((t) => `${((t.costBps ?? 0) / 100).toFixed(2)}%`).join(", ")}` : ""}` },
+                { k: "Profit taken", v: `${trims.length}${trims.length ? ` · ${trims.map((t) => `${((t.costBps ?? 0) / 100).toFixed(2)}%`).join(", ")}` : ""}` },
                 {
                   k: "Change",
                   v: firstChange?.c ? (

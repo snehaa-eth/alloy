@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { DEFAULT_CHAIN, SUPPORTED_CHAINS } from "@/lib/chains";
 import { wagmiConfig } from "@/lib/wagmi";
+import { MotionRoot } from "@/components/alloy/motion/MotionRoot";
 
 export function Providers({ children }: { children: ReactNode }) {
   // One QueryClient per browser session (not per render).
@@ -33,7 +34,7 @@ export function Providers({ children }: { children: ReactNode }) {
     >
       <QueryClientProvider client={queryClient}>
         <WagmiProvider config={wagmiConfig}>
-          {children}
+          <MotionRoot>{children}</MotionRoot>
           <Toaster position="top-center" richColors closeButton />
         </WagmiProvider>
       </QueryClientProvider>

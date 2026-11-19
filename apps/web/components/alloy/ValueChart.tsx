@@ -107,16 +107,17 @@ export function ValueChart({ values, times, tone, ticks = [], creator, height = 
       >
         <defs>
           <linearGradient id={`fill-${gid}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={TONE_HEX[tone].mid} stopOpacity="0.18" />
-            <stop offset="100%" stopColor={TONE_HEX[tone].mid} stopOpacity="0" />
+            <stop offset="0%" stopColor="#A3163A" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="#A3163A" stopOpacity="0" />
           </linearGradient>
         </defs>
         {[0.25, 0.5, 0.75].map((g) => (
           <line key={g} className="c-chart__grid" x1="0" x2={W} y1={H * g} y2={H * g} strokeWidth="1" opacity="0.6" />
         ))}
-        <path d={view.area} fill={`url(#fill-${gid})`} />
+        <path className="v-fade-late" d={view.area} fill={`url(#fill-${gid})`} />
         {view.cline && <path className="c-chart__creator" d={view.cline} />}
-        <path className="c-chart__line" d={view.line} strokeDasharray={stale ? "5 4" : undefined} />
+        {/* Draw-in on enter (600ms, once per range); pathLength=1 drives the dash animation */}
+        <path key={range} className={cn("c-chart__line", !stale && "v-draw")} pathLength={stale ? undefined : 1} d={view.line} strokeDasharray={stale ? "5 4" : undefined} />
         {view.tx.map((k) => (
           <line key={k.t} className="c-chart__tick" x1={k.x} x2={k.x} y1="0" y2={H} strokeWidth="1">
             <title>{k.label}</title>
@@ -126,6 +127,7 @@ export function ValueChart({ values, times, tone, ticks = [], creator, height = 
           <>
             <rect x={view.x(at)} y="0" width={W - view.x(at)} height={H} fill="var(--bg)" fillOpacity="0.6" />
             <line className="c-chart__scrub" x1={view.x(at)} x2={view.x(at)} y1="0" y2={H} strokeWidth="1" />
+            <circle cx={view.x(at)} cy={view.y(cur)} r="4" fill="var(--tx)" stroke="var(--acc)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
           </>
         )}
       </svg>

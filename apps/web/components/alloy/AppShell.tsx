@@ -7,7 +7,7 @@ import { Activity, Compass, PieChart, User, X } from "lucide-react";
 import { useWallet } from "@/lib/hooks/use-wallet";
 import { DEFAULT_CHAIN } from "@/lib/chains";
 import { StatusProvider, StatusStrip } from "./status";
-import { BrandMark, SiteFooter } from "./v5/parts";
+import { BrandMark, CreatorAvatar, SiteFooter } from "./v5/parts";
 
 const TABS = [
   { href: "/explore", label: "Explore", icon: Compass, match: (p: string) => p.startsWith("/explore") || p.startsWith("/b/") },
@@ -26,15 +26,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <StatusProvider>
       <InAppBar />
-      <header
-        className="sticky top-0 z-40 border-b border-white/[0.07] bg-bg/80 backdrop-blur-xl"
-        style={DEFAULT_CHAIN.testnet ? { boxShadow: "inset 0 2px 0 var(--test)" } : undefined}
-      >
+      <header className="sticky top-0 z-40 border-b border-white/[0.07] bg-bg/85 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-app items-center justify-between gap-6 px-4 md:px-8">
-          <Link href="/" className="text-tx no-underline" aria-label="Alloy home">
+          <Link href="/" className="flex h-9 items-center text-tx no-underline" aria-label="Alloy home">
             <BrandMark />
           </Link>
-          <nav className="hidden flex-1 items-center gap-1 md:flex" aria-label="Main">
+          <nav className="hidden h-full flex-1 items-center gap-1 md:flex" aria-label="Main">
             {TABS.map((t) => {
               const on = t.match(path);
               return (
@@ -43,21 +40,28 @@ export function AppShell({ children }: { children: ReactNode }) {
                   href={t.href}
                   aria-current={on ? "page" : undefined}
                   className={
-                    "rounded-full px-4 py-2 text-[14px] font-medium no-underline transition " +
-                    (on ? "bg-white/[0.08] text-tx" : "text-tx2 hover:bg-white/[0.04] hover:text-tx")
+                    "relative flex h-9 items-center rounded-full px-3.5 text-[14px] font-medium no-underline transition-colors " +
+                    (on ? "text-tx" : "text-tx2 hover:text-tx")
                   }
                 >
                   {t.label}
+                  {/* Active: 2px burgundy underline sitting on the header's bottom edge */}
+                  {on && <span aria-hidden className="absolute inset-x-3.5 -bottom-[14px] h-[2px] rounded-full" style={{ background: "var(--acc)" }} />}
                 </Link>
               );
             })}
           </nav>
           <div className="flex items-center gap-2">
+            {DEFAULT_CHAIN.testnet && (
+              <span className="hidden h-7 items-center gap-1.5 rounded-full border border-white/10 px-2.5 text-[12px] text-tx2 lg:inline-flex" title={DEFAULT_CHAIN.name}>
+                <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--test)" }} aria-hidden /> Test network
+              </span>
+            )}
             <span className={landing ? "hidden sm:inline-flex" : "inline-flex"}>
               <AccountButton />
             </span>
             {landing && (
-              <Link href="/explore" className="c-btn c-btn--primary c-btn--auto c-btn--sm !h-10 !rounded-full !px-5 !text-[14px]">
+              <Link href="/explore" className="c-btn c-btn--primary c-btn--auto c-btn--sm !h-9 !rounded-full !px-4 !text-[14px]">
                 Launch app
               </Link>
             )}
@@ -93,12 +97,15 @@ function AccountButton() {
   if (!w.ready) return <span className="h-9 w-20" aria-hidden />;
   if (!w.authenticated || !w.address)
     return (
-      <button type="button" className="c-btn c-btn--secondary c-btn--auto c-btn--sm !h-10 !rounded-full !px-5 !text-[14px]" onClick={() => w.login()}>
-        Sign in
+      <button type="button" className="c-btn c-btn--secondary c-btn--auto c-btn--sm !h-9 !rounded-full !px-4 !text-[14px]" onClick={() => w.login()}>
+        <span>
+          Sign in<span className="hidden sm:inline"> with email</span>
+        </span>
       </button>
     );
   return (
-    <Link href="/me" className="t-num rounded-full bg-white/[0.06] px-3 py-2 text-tx3 no-underline hover:text-tx" aria-label="Your account">
+    <Link href="/me" className="inline-flex h-9 items-center gap-2 rounded-full border border-white/10 pl-1.5 pr-3.5 text-[14px] font-medium text-tx3 no-underline hover:text-tx" aria-label="Your account">
+      <CreatorAvatar handle={w.address.slice(2)} seed={w.address} size={22} />
       {w.address.slice(0, 6)}…{w.address.slice(-4)}
     </Link>
   );

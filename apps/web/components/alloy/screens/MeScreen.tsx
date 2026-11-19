@@ -32,11 +32,22 @@ export function MeScreen({ items }: { items: LoadedBasket[] }) {
     );
 
   return (
-    <div className="mx-auto max-w-[720px] px-4 pb-8 pt-5 md:px-6 md:pt-8">
+    <div className="mx-auto max-w-[720px] px-4 pb-8 pt-5 md:px-8 md:pt-8">
       {!acct.signedIn ? (
         <>
           <h1 className="t-body t-strong md:text-[20px]">Me</h1>
-          <EmptyState icon={LogIn} line="Sign in with email. Test dollars included." action={<Button onClick={() => acct.login()}>Sign in</Button>} />
+          <EmptyState
+            icon={LogIn}
+            line="Your profile, your baskets and test dollars to try it with."
+            action={
+              <div className="flex flex-col gap-2">
+                <Button onClick={() => acct.login()}>Sign in with email</Button>
+                <ButtonLink href="/create" variant="secondary">
+                  Build a basket
+                </ButtonLink>
+              </div>
+            }
+          />
         </>
       ) : (
         <div className="flex flex-col gap-6">

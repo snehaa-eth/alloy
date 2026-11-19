@@ -25,7 +25,8 @@
     --brand: #6d001a;
     --acc: #c41a42;
     --tint: #2a000a;
-    --gold: #c9a96e;
+    --gold: #dcc7a1; /* v5: champagne (light companion to burgundy) */
+    --bone: #e8dcc8;
     --gold6: #a07d3e;
     --gold2: #e3cc9c;
     /* signal */
@@ -73,7 +74,12 @@
     --r-md: 16px;
     --bd-soft: rgba(242, 240, 237, 0.07);
     --rule: 2px;
-    --sheen: rgba(242, 240, 237, 0.28);
+    --sheen: rgba(242, 240, 237, 0.22);
+    /* v5: burgundy highlight on the alloy bar (accent, never means loss) */
+    --sheen-acc: rgba(232, 220, 200, 0.10);
+    --brand-hover: #a3163a;
+    /* v5 palette: rich luminous burgundy for CTAs/marks (#8C1230); --brand (#6D001A) is reserved for deep tints. */
+    --cta: #8c1230;
     --engrave: 0.55;
     --hair: 1px solid var(--bd);
 
@@ -154,16 +160,22 @@
     transition: background-color 150ms ease-out, border-color 150ms ease-out, transform 150ms ease-out;
   }
   .c-btn:active:not(:disabled) { transform: scale(0.98); }
-  .c-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--acc); }
-  .c-btn--primary { background: var(--tx); color: var(--on-pri); }
-  .c-btn--primary:hover:not(:disabled) { background: #fff; }
+  /*
+   * v5 primary = brand burgundy fill (#6D001A, hover #8C1230) + off-white text (12.6:1)
+   * + 1px #C41A42 inner hairline so the edge reads on #0A0A0A. Secondary stays outline.
+   * Focus ring is off-white (burgundy-on-burgundy would vanish) and keeps the hairline.
+   */
+  .c-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--tx); }
+  .c-btn--primary { background: var(--cta); color: var(--tx); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10), inset 0 0 0 1px rgba(255, 255, 255, 0.08); }
+  .c-btn--primary:hover:not(:disabled) { background: var(--brand-hover); }
+  .c-btn--primary:focus-visible { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 0 0 2px var(--bg), 0 0 0 4px var(--tx); }
   .c-btn--secondary { background: transparent; color: var(--tx); border-color: var(--bdi); }
   .c-btn--secondary:hover:not(:disabled) { border-color: var(--tx); }
   .c-btn:disabled, .c-btn[aria-disabled="true"] { background: var(--s2); color: var(--tx2); border-color: transparent; cursor: not-allowed; }
   .c-btn.is-loading { color: transparent !important; }
   .c-btn.is-loading::after {
     content: ""; position: absolute; width: 18px; height: 18px; border-radius: 50%;
-    border: 2px solid var(--bdi); border-top-color: var(--on-pri); animation: c-spin 700ms linear infinite;
+    border: 2px solid var(--bdi); border-top-color: var(--tx); animation: c-spin 700ms linear infinite;
   }
   .c-btn--auto { width: auto; }
   .c-btn--sm { height: 36px; padding: 0 var(--s3x); font-size: var(--fs-small); }
@@ -241,7 +253,7 @@
   /* ---------- alloy bar ---------- */
   .c-alloy { display: flex; flex-direction: column; gap: 1px; height: 28px; border-radius: 8px; overflow: hidden; }
   .c-alloy i { display: block; width: 100%; position: relative; background: currentColor; transition: flex-grow 700ms ease-out, opacity 300ms; }
-  .c-alloy i::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 0%, var(--sheen) 38%, transparent 62%); }
+  .c-alloy i::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 0%, var(--sheen) 30%, var(--sheen-acc) 40%, transparent 58%); }
   .c-alloy--lg { height: 56px; }
   .c-alloy--sm { height: 8px; gap: 0; border-radius: 4px; }
   .c-alloy__legend { display: flex; flex-wrap: wrap; gap: var(--s1x) var(--s3x); font-family: var(--font-mono), monospace; font-size: var(--fs-small); color: var(--tx2); }
@@ -293,7 +305,8 @@
   .c-strip__act { margin-left: auto; text-decoration: underline; text-underline-offset: 3px; color: inherit; background: none; border: 0; cursor: pointer; font: inherit; padding: 0; }
   .c-strip--change { background: var(--tint); }
   .c-strip--change svg { color: var(--acc); }
-  .c-strip--closed { background: var(--warnbg); color: var(--warn); }
+  .c-strip--closed { background: var(--s1); color: var(--tx3); }
+  .c-strip--closed svg { color: var(--warn); width: 12px; height: 12px; }
   .c-strip--held { background: var(--s2); }
   .c-strip--held svg { color: var(--gold); }
   .c-strip--test { background: var(--s1); color: var(--tx2); }
@@ -383,12 +396,14 @@
   .c-step { display: flex; align-items: center; gap: var(--s2x); font-size: var(--fs-small); color: var(--tx2); }
   .c-step svg { width: 14px; height: 14px; flex: none; }
   .c-step.is-on { color: var(--tx); }
+  .c-step.is-on svg { color: var(--acc); }
   .c-step.is-done svg { color: var(--gain); }
 }
 
 @keyframes c-spin { to { transform: rotate(360deg); } }
 @keyframes c-shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
-@keyframes c-sheet-in { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+/* uses the independent `translate` property so it composes with the desktop centring transform */
+@keyframes c-sheet-in { from { translate: 0 32px; opacity: 0; } to { translate: 0 0; opacity: 1; } }
 @keyframes c-fade-in { from { opacity: 0; } to { opacity: 1; } }
 
 @media (prefers-reduced-motion: reduce) {
@@ -397,4 +412,140 @@
 
 @layer components {
   button.c-row, button.c-mini { font: inherit; border-left: 0; border-right: 0; border-bottom: 0; padding: 0; cursor: pointer; }
+}
+
+/* ---------- v5 colour hierarchy: black + off-white + burgundy; jewel tones are quiet accents ---------- */
+@layer components {
+  /* Jewel-tone covers in lists/grids/basket hero: desaturated ~35% so they sit under burgundy. */
+  .v-muted, img.v-muted { filter: saturate(0.62) brightness(0.92); }
+  
+  /* Brand duotone for covers on brand surfaces (landing hero): grayscale + burgundy colour blend. */
+  /* Brand duotone for ALL basket covers: black → burgundy → bone (grayscale + colour blend + warm highlight). */
+  img.v-duo { filter: grayscale(1) contrast(1.1) brightness(0.62); }
+  .v-duo-tint { background: linear-gradient(160deg, #8c1230 0%, #6d001a 50%, #3a0010 100%); mix-blend-mode: color; opacity: 0.7; pointer-events: none; }
+  .v-duo-tint::after { content: ""; position: absolute; inset: 0; background: radial-gradient(70% 60% at 80% 15%, rgba(232, 220, 200, 0.35), transparent 70%); mix-blend-mode: soft-light; }
+  /* Deep burgundy band with a CSS silk sheen. */
+  /* Near-black band with a luminous burgundy glow + faint silk lines (no flat dark-red fills). */
+  .v-silk {
+    background:
+      radial-gradient(45% 80% at 8% 0%, rgba(140, 18, 48, 0.42), transparent 70%),
+      radial-gradient(35% 60% at 100% 100%, rgba(140, 18, 48, 0.18), transparent 70%),
+      repeating-linear-gradient(115deg, rgba(232, 220, 200, 0.022) 0 1px, transparent 1px 12px),
+      #0d0d0e;
+    color: var(--tx);
+    border-block: 1px solid rgba(242, 240, 237, 0.06);
+  }
+}
+
+/* =====================================================================
+ * v5 MOTION LAYER (docs/design/MOTION.md). transform/opacity only.
+ * Reduced motion: every effect below has a static variant.
+ * Low power (html[data-motion="low"], set by MotionRoot): parallax, loops, stagger and draw-in off.
+ * ===================================================================== */
+:root {
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-sheet: 280ms;
+  --dur-page: 240ms;
+  --dur-draw: 600ms;
+  --dur-ticker: 450ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  /* spring-sheet (stiffness 520, damping 46): critically damped, no visible bounce */
+  --spring: linear(0, 0.157 4.3%, 0.48 11.4%, 0.734 19.5%, 0.885 28%, 0.959 37.4%, 0.99 48.6%, 1);
+}
+
+@layer components {
+  /* Hero headline: words rise 24px, 60ms stagger, once. */
+  .v-word { display: inline-block; animation: v-rise 520ms var(--ease-out) both; animation-delay: calc(var(--i, 0) * 60ms + 80ms); }
+
+  /* Page transitions (app/template.tsx): fade + 16px slide, 240ms. */
+  /* No fill-mode: a lingering transform would make this wrapper the containing block for position:fixed bars. */
+  .v-page { animation: v-page-in var(--dur-page) var(--ease-out); }
+
+  /* Sheets: spring physics. */
+  .animate-sheet-in { animation: c-sheet-in var(--dur-sheet) var(--spring) both !important; }
+
+  /* Cards: cursor-following burgundy spotlight + gentle lift; tap feedback. */
+  .v-spot { position: relative; isolation: isolate; }
+  .v-spot::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 1; opacity: 0;
+    background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgba(196, 26, 66, 0.20), transparent 70%);
+    transition: opacity var(--dur-base) var(--ease-out);
+  }
+  .v-spot:hover::after { opacity: 1; }
+  .v-spot:active { transform: scale(0.98) !important; transition-duration: 80ms !important; }
+
+  /* Fade-up on first enter (scroll-driven where supported). */
+  @supports (animation-timeline: view()) {
+    .v-reveal { animation: v-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 40%; }
+    /* Hero parallax layers (landing only). */
+    .v-par-slow { animation: v-par-slow linear both; animation-timeline: scroll(root); animation-range: 0 900px; }
+    .v-par-fast { animation: v-par-fast linear both; animation-timeline: scroll(root); animation-range: 0 900px; }
+    .v-par-glow { animation: v-par-glow linear both; animation-timeline: scroll(root); animation-range: 0 900px; }
+  }
+
+  /* Live pulse dot on live prices. */
+  .v-live { position: relative; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--gain); flex: none; }
+  .v-live::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--gain); animation: v-pulse 2s var(--ease-out) infinite; }
+
+  /* Landing ticker strip (real tickers). */
+  .v-marquee { display: flex; width: max-content; animation: v-marquee 48s linear infinite; }
+  .v-marquee:hover { animation-play-state: paused; }
+
+  /* Chart draw-in. */
+  .v-draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: v-draw var(--dur-draw) var(--ease-in-out) 120ms forwards; }
+  .v-wipe { animation: v-wipe var(--dur-draw) var(--ease-in-out) 120ms both; }
+  .v-fade-late { animation: c-fade-in 300ms ease-out 500ms both; }
+
+  /* Rolling number ticker. */
+  .v-tick { display: inline-flex; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .v-tick__col { display: inline-block; height: 1em; line-height: 1; overflow: hidden; vertical-align: top; }
+  .v-tick__stack { display: flex; flex-direction: column; transition: transform var(--dur-ticker) var(--ease-out); transition-delay: calc(var(--i, 0) * 30ms); }
+  .v-tick__stack > span { height: 1em; line-height: 1; }
+  .v-tick--still .v-tick__stack { transition: none; }
+
+  /* Success moment: soft burgundy ring + check draw + card slide. */
+  .v-ring { position: absolute; inset: -8px; border-radius: 50%; box-shadow: 0 0 0 2px var(--acc); animation: v-ring 700ms var(--ease-out) both; }
+  .v-check path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: v-draw var(--dur-draw) var(--ease-out) forwards; }
+  .v-slide-up { animation: v-rise 420ms var(--ease-out) 260ms both; }
+
+  /* Story steps crossfade (low-power / step changes). */
+  .v-swap { transition: opacity var(--dur-fast) ease-out, transform var(--dur-base) var(--ease-out); }
+}
+
+/* Shimmer via transform on a pseudo-element (no background-position repaint). Stops after ~8s. */
+.c-skel { position: relative; overflow: hidden; background: var(--s1) !important; animation: none !important; }
+.c-skel::after {
+  content: ""; position: absolute; inset: 0; transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(242, 240, 237, 0.06), transparent);
+  animation: v-shimmer 1.6s ease-in-out 5;
+}
+
+@keyframes v-rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+@keyframes v-page-in { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
+@keyframes v-par-slow { to { transform: translateY(60px); } }
+@keyframes v-par-fast { to { transform: translateY(-80px); } }
+@keyframes v-par-glow { to { transform: translateY(120px) scale(1.1); opacity: 0.4; } }
+@keyframes v-pulse { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(3); opacity: 0; } }
+@keyframes v-marquee { to { transform: translateX(-50%); } }
+@keyframes v-draw { to { stroke-dashoffset: 0; } }
+@keyframes v-ring { from { transform: scale(0.8); opacity: 0.5; } to { transform: scale(1.6); opacity: 0; } }
+@keyframes v-wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes v-shimmer { to { transform: translateX(100%); } }
+
+/* Low power: keep fades, drop parallax / loops / stagger / draw. */
+html[data-motion="low"] .v-par-slow, html[data-motion="low"] .v-par-fast, html[data-motion="low"] .v-par-glow,
+html[data-motion="low"] .v-marquee, html[data-motion="low"] .v-live::after, html[data-motion="low"] .v-reveal { animation: none !important; }
+html[data-motion="low"] .v-word { animation: c-fade-in 200ms ease-out both; }
+html[data-motion="low"] .v-draw { animation: none; stroke-dashoffset: 0; }
+html[data-motion="low"] .v-wipe { animation: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .v-word, .v-page, .v-reveal, .v-par-slow, .v-par-fast, .v-par-glow, .v-marquee, .v-live::after, .v-slide-up, .v-ring, .c-skel::after { animation: none !important; }
+  .v-draw, .v-check path { animation: none !important; stroke-dashoffset: 0; }
+  .v-wipe { animation: none !important; }
+  .v-tick__stack { transition: none !important; }
+  .v-spot:active { transform: none !important; opacity: 0.85; }
+  .animate-sheet-in { animation: c-fade-in 150ms ease-out both !important; }
 }
