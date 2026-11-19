@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 import { FlaskConical, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Performance } from "@/lib/types";
+import { BaseLogo } from "../brand/ChainLogos";
 import { AlloyBar, AlloyLegend, StockLogo } from "../primitives";
 import { Ticker } from "../motion/Ticker";
 import { hash32 } from "../guilloche-gen";
@@ -268,7 +269,12 @@ export function SiteFooter() {
         </div>
         <div className="flex flex-col gap-2 border-t border-line pt-6 text-[12px] text-dim md:flex-row md:items-center md:justify-between">
           <p>You own a token that tracks these stocks, not the shares themselves · Not available to US persons · You can lose money</p>
-          <p>Not investment advice</p>
+          <p className="flex items-center gap-4">
+            <span className="inline-flex items-center gap-1.5">
+              Built on <BaseLogo size="xs" className="rounded-[2px]" /> <span className="text-mute">Base</span>
+            </span>
+            <span>Not investment advice</span>
+          </p>
         </div>
       </div>
     </footer>

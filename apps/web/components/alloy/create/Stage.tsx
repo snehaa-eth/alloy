@@ -98,6 +98,7 @@ export function Stage({
     own: null as null | { t: number; r: number },
     cast: null as null | { t: number; flashed: boolean; done: boolean },
     empty: 1,
+    lgw: 0,
     grab: null as null | { t: string; y: number; w0: number },
     lastPv: "",
   });
@@ -266,6 +267,9 @@ export function Stage({
       } else g.style.opacity = "0";
     }
 
+    // engraved company marks only while the drops sit apart (gone while the cast gathers / fuses them)
+    s.lgw = reduced ? (L.phase === "edit" && !s.cast ? 1 : 0) : damp(s.lgw, L.phase === "edit" && !s.cast ? 1 : 0, 0.02, dt);
+
     // empty mould ghost
     s.empty = damp(s.empty, L.picks.length || s.cast ? 0 : 1, L.picks.length ? 0.02 : 0.1, dt);
 
@@ -292,14 +296,14 @@ export function Stage({
         // fused: the one smooth form, growing out of the flash
         const grow = easeOut(ss(0.8, 1.6, c.t));
         const R = 1.25 * Math.cbrt(alive.reduce((a, d) => a + d.r ** 3, 0) || 0.2);
-        const posed = posedDrops(finalShape, { ang: Math.sin(c.t * 0.4) * 0.5, rs: R * lerp(0.85, 1, grow), t: T });
-        return formSpec(cam, posed, [], { t: T, rip: s.rip, shim: s.shim, shimPos: lerp(2.6, -2.6, 1 - Math.min(1, s.shim)), glow: bump(0.7, 1.6, c.t) * 1.2 });
+        const posed = posedDrops(finalShape, { ang: Math.sin(c.t * 0.4) * 0.3, rs: R * lerp(0.85, 1, grow), t: T });
+        return formSpec(cam, posed, [], { t: T, rip: s.rip, shim: s.shim, shimPos: lerp(2.6, -2.6, 1 - Math.min(1, s.shim)), glow: bump(0.7, 1.6, c.t) * 1.2, zl: ss(1.3, 2.1, c.t) });
       }
     }
     const ds: (Drop | null)[] = [...alive]
       .sort((a, b) => b.r - a.r)
       .slice(0, 6 - extra.length)
-      .map((d) => drop([d.p[0] * (1 + sep), d.p[1] * (1 + sep), d.p[2]], d.r, tintFor(d.t)));
+      .map((d) => ({ ...drop([d.p[0] * (1 + sep), d.p[1] * (1 + sep), d.p[2]], d.r, tintFor(d.t)), logo: d.t, lw: s.lgw * ss(0.15, 0.3, d.r) }));
     for (const d of list.filter((x) => x.die && s.drops.has(x.t)).slice(0, Math.max(0, 6 - extra.length - ds.length))) ds.push(drop(d.p, d.r, tintFor(d.t)));
     ds.push(...extra);
     if (s.empty > 0.02 && !ds.length)

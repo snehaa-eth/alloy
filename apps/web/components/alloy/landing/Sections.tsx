@@ -1,6 +1,7 @@
 "use client";
 
 /** Landing sections after the story: baskets shelf, "fine print, made big", footer sculpture + wordmark. */
+import { BaseLogo } from "../brand/ChainLogos";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useWallet } from "@/lib/hooks/use-wallet";
@@ -211,7 +212,7 @@ export function TrustSection({ feeBps, testnet }: { feeBps: number; testnet: boo
           title="In your own wallet."
           body={
             <>
-              Your basket sits in your wallet on Base, not with us.
+              Your basket sits in your wallet on <BaseLogo size="xs" className="mx-0.5 rounded-[2px]" /> Base, not with us.
               {testnet && <span className="text-dim"> Test mode for now: prices are real, money is pretend.</span>}
             </>
           }
@@ -282,6 +283,9 @@ export function EndSection({ featured }: { featured: LBasket | null }) {
           <a href="https://x.com/alloy_fi" target="_blank" rel="noreferrer" className="no-underline hover:text-ink">
             X
           </a>
+          <span className="inline-flex items-center gap-1.5">
+            Built on <BaseLogo size="xs" className="rounded-[2px]" /> Base
+          </span>
           <span>© 2026 Alloy</span>
         </div>
       </div>

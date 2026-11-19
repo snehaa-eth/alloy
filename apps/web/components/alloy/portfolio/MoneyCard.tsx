@@ -5,6 +5,7 @@
  * While the faucet runs, cream drops keep pouring in; on success the pool swells with a ripple + shimmer.
  * useFaucet itself shows the success / error toast.
  */
+import { BaseLogo, UsdcLogo } from "../brand/ChainLogos";
 import { useEffect, useRef } from "react";
 import { useFaucet } from "@/lib/hooks/use-basket-tx";
 import { useFaucetStatus } from "@/lib/hooks/use-reads";
@@ -75,13 +76,19 @@ export function MoneyCard({ address, id }: { address?: `0x${string}`; id?: strin
         <span>Wallet</span>
       </div>
       <div ref={ref} className="pf-pool" aria-hidden />
-      <div className="pf-money__bal">{bal !== undefined ? <Odometer value={formatUsd6(bal)} /> : <span className="text-dim">$—</span>}</div>
+      <div className="pf-money__bal flex items-center gap-3">
+        <UsdcLogo size="lg" title="USDC" />
+        {bal !== undefined ? <Odometer value={formatUsd6(bal)} /> : <span className="text-dim">$—</span>}
+      </div>
       <p>Free to use in Test mode. Prices are real, this money is pretend.</p>
       <button type="button" className="a-btn a-btn--cream mt-[18px] w-full" onClick={run} disabled={pending || cooldown > 0 || !address}>
         {pending ? "Pouring…" : cooldown > 0 ? wait(cooldown) : amt ? `Add ${amt} test money` : "Add test money"}
       </button>
       <div className="mt-3 flex justify-between text-[12px] text-dim">
-        <span>{DEFAULT_CHAIN.name}</span>
+        <span className="inline-flex items-center gap-1.5">
+          <BaseLogo size="xs" />
+          {DEFAULT_CHAIN.name}
+        </span>
         {address && (
           <span className="num">
             {address.slice(0, 6)}…{address.slice(-4)}

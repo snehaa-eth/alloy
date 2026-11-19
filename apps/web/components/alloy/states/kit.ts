@@ -22,9 +22,9 @@ export function looseSpec(c: Cam, drops: (Drop | null)[], o: { t: number; k?: nu
 }
 
 /** Spec for a basket form (zones on), with optional extra drops in slots 4–5. */
-export function formSpec(c: Cam, posed: Posed, extra: (Drop | null)[], o: { t: number; k2?: number; rip?: number; shim?: number; shimPos?: number; alpha?: number; zt?: number; glow?: number }): RenderSpec {
+export function formSpec(c: Cam, posed: Posed, extra: (Drop | null)[], o: { t: number; k2?: number; rip?: number; shim?: number; shimPos?: number; alpha?: number; zt?: number; glow?: number; zl?: number }): RenderSpec {
   const ds: (Drop | null)[] = [...posed.drops, ...extra.slice(0, 2)];
-  return { cam: c, drops: ds, o: { t: o.t, zone: posed.zone, zt: o.zt ?? 0.5, k: 0.8, k2: o.k2 ?? 0.32, rip: o.rip, shim: o.shim, shimPos: o.shimPos, alpha: o.alpha, glow: o.glow } };
+  return { cam: c, drops: ds, o: { t: o.t, zone: posed.zone, zt: o.zt ?? 0.5, k: 0.8, k2: o.k2 ?? 0.32, rip: o.rip, shim: o.shim, shimPos: o.shimPos, alpha: o.alpha, glow: o.glow, zl: o.zl } };
 }
 
 /** Pose a shape so its lowest point rests on `floor` at x = cx (one smooth form, gentle sway). */

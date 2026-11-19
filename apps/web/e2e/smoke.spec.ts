@@ -19,6 +19,8 @@ test.beforeAll(async ({ browser }, info) => {
   const ctx = await browser.newContext(info.project.use);
   // The Next.js dev-tools pill (bottom-left, dev only) sits on top of the phone tab bar's Explore tab and eats taps.
   await ctx.addInitScript(() => {
+    // Top-level localhost page only: injecting into Privy's iframe trips its nonce-based CSP.
+    if (window !== window.top || location.hostname !== "localhost") return;
     const css = "nextjs-portal{display:none!important}";
     const add = () => { const s = document.createElement("style"); s.textContent = css; document.documentElement.appendChild(s); };
     if (document.documentElement) add(); else document.addEventListener("DOMContentLoaded", add);

@@ -12,7 +12,7 @@
  * `assemble`: the form gathers as the box scrolls into view (designer "rise").
  */
 import { useMemo, useRef, type CSSProperties } from "react";
-import { clamp, damp, easeOut, lerp } from "./math";
+import { clamp, damp, easeOut, lerp, ss } from "./math";
 import { pourFrame, surfaceTop } from "./actions";
 import { useMetalRegion } from "./MetalCanvas";
 import { posedDrops, shapeFromRecipe, type Drop, type Recipe } from "./shape";
@@ -34,11 +34,15 @@ type Props = {
   phase?: number;
   /** inner glow 0..1 (success / your share) */
   glow?: number;
+  /** engrave the pour drop (e.g. "USDC" for money pouring in); dissolves as it's absorbed. Default: none. */
+  pourLogo?: string | null;
+  /** engrave each stock's mark inside its tint zone (fused form). Default on. */
+  logos?: boolean;
   className?: string;
   style?: CSSProperties;
 };
 
-export function MetalBasket({ recipe, state = "idle", weights, zoom, assemble, lean, phase = 0, glow = 0, className, style }: Props) {
+export function MetalBasket({ recipe, state = "idle", weights, zoom, assemble, lean, phase = 0, glow = 0, pourLogo = null, logos = true, className, style }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const key = JSON.stringify(recipe);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -59,7 +63,7 @@ export function MetalBasket({ recipe, state = "idle", weights, zoom, assemble, l
     s.rip = d(s.rip, state === "reshape" ? 1 : 0, 0.05);
     if (assemble) s.rise = reduced ? 1 : Math.max(s.rise, easeOut(clamp((H - rect.top) / (H * 0.6))));
     s.ph += dt * (0.35 - s.h * 0.25);
-    const ang = Math.sin(s.ph) * 0.55;
+    const ang = Math.sin(s.ph) * 0.32; // gentle sway around the facing pose (biggest stock toward you)
     const t = T + phase * 3;
     const sep = lerp(0.35, 0, s.rise) + s.h * 0.28 + s.split * 0.9;
     const sh = state === "reshape" && reshaped ? reshaped : shape;
@@ -76,6 +80,8 @@ export function MetalBasket({ recipe, state = "idle", weights, zoom, assemble, l
       const pr = pourFrame(Math.min(1, u / 0.85), { y0: 2.8, top, yc: top - 0.4, r: 0.22 });
       P.p = pr.drop.p;
       P.r = u < 0.85 ? pr.drop.r : 0;
+      P.logo = pourLogo;
+      P.lw = 1 - ss(0.2, 0.6, pr.absorb);
       if (pr.tail && P.r > 0) tail = { i: 4, ...pr.tail };
       k2 = pr.k2;
       rip = Math.max(rip, pr.rip * (1 - pr.absorb * 0.4) * 0.7);
@@ -88,7 +94,7 @@ export function MetalBasket({ recipe, state = "idle", weights, zoom, assemble, l
       cam: { ro: [mouse[0] * 0.25 * m, 0.3 + mouse[1] * 0.15 * m, z], ta: [0, 0.1, 0], tan: 0.42 },
       drops: [...posed.drops, P],
       o: {
-        t, zone: posed.zone, zt: 0.5 + s.h * 0.14, k: lerp(0.8, 0.34, s.split), k2, rip, shim, shimPos, tail,
+        t, zone: posed.zone, zl: logos ? 1 - s.split : 0, zt: 0.5 + s.h * 0.14, k: lerp(0.8, 0.34, s.split), k2, rip, shim, shimPos, tail,
         light: glow > 0 ? [0, posed.ctr[1] - 0.05, 0.35, glow * (0.18 + 0.08 * Math.sin(T * 2.2))] : undefined,
       },
     };

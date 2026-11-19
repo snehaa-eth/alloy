@@ -12,6 +12,7 @@ import { useMetalRegion } from "../metal/MetalCanvas";
 import { clamp, damp, easeOut, lerp, ss } from "../metal/math";
 import { posedDrops, shapeFromRecipe } from "../metal/shape";
 import { placeTag, resolveTags, type TagEl } from "../metal/tags";
+import { TickerMark } from "../brand/StockMark";
 import { tintCss } from "../metal/palette";
 import { shortDate } from "../basket-view";
 import type { ExBasket } from "./data";
@@ -46,7 +47,7 @@ function CardMetal({ b, i, hover, clip }: { b: ExBasket; i: number; hover: boole
       st.h = reduced ? (hv.current ? 1 : 0) : damp(st.h, hv.current ? 1 : 0, 0.015, dt);
       st.ph += dt * (0.35 - st.h * 0.25);
       const t = T + i * 3;
-      const posed = posedDrops(shape, { ang: Math.sin(st.ph) * 0.55, sep: lerp(0.35, 0, rise) + st.h * 0.28 + (1 - a) * 0.3, rs: (1 + st.h * 0.03) * lerp(0.85, 1, rise), t });
+      const posed = posedDrops(shape, { ang: Math.sin(st.ph) * 0.32, sep: lerp(0.35, 0, rise) + st.h * 0.28 + (1 - a) * 0.3, rs: (1 + st.h * 0.03) * lerp(0.85, 1, rise), t });
       const cam = { ro: [mouse[0] * 0.25 * st.h, 0.3 + mouse[1] * 0.15 * st.h, phone ? 4.5 : 4.3] as [number, number, number], ta: [0, 0.1, 0] as [number, number, number], tan: 0.42 };
       // labels: the five biggest front-facing zones, only while hovered
       const box = tagBox.current;
@@ -69,7 +70,7 @@ function CardMetal({ b, i, hover, clip }: { b: ExBasket; i: number; hover: boole
       return {
         cam,
         drops: posed.drops,
-        o: { t, zone: posed.zone, alpha: a, zt: 0.5 + st.h * 0.14, shim: st.h * 0.6, shimPos: lerp(-2.4, 2.4, (T * 0.25 + i * 0.3) % 1) },
+        o: { t, zone: posed.zone, zl: 1, alpha: a, zt: 0.5 + st.h * 0.14, shim: st.h * 0.6, shimPos: lerp(-2.4, 2.4, (T * 0.25 + i * 0.3) % 1) },
       };
     },
     clip,
@@ -130,7 +131,7 @@ export const ExploreCard = forwardRef<HTMLElement, { b: ExBasket; i: number; cli
         <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11.5px] tracking-[0.04em] text-mute [@media(hover:hover)]:hidden">
           {mix.slice(0, 4).map((m) => (
             <span key={m.t} className="flex items-center gap-1.5">
-              <i className="h-1.5 w-1.5 rounded-full" style={{ background: tintCss(m.t) }} />
+              <TickerMark ticker={m.t} px={14} tint={tintCss(m.t)} />
               {m.t} <span className="num">{Math.round(m.w * 100)}%</span>
             </span>
           ))}

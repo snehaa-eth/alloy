@@ -11,6 +11,8 @@ import type { RebalanceEvent, StrategyMode } from "@/lib/types";
 import { useWallet } from "@/lib/hooks/use-wallet";
 import { useMetalRegion } from "../metal/MetalCanvas";
 import { bump, clamp, easeInOut, lerp } from "../metal/math";
+import { TickerMark } from "../brand/StockMark";
+import { BaseLogo, UsdcLogo, UsdtLogo } from "../brand/ChainLogos";
 import { tintCss } from "../metal/palette";
 import { OdometerOnView, Rise, WordReveal, useInView } from "../motion/alloy-motion";
 import { Countdown } from "../Countdown";
@@ -75,7 +77,7 @@ export function RecipeRows({ v, moves, hours = 24 }: { v: BasketView; moves: (nu
           className={`grid grid-cols-[1fr_auto_auto] items-center gap-x-4 gap-y-2.5 border-b border-line py-4 transition-colors duration-500 hover:bg-[linear-gradient(90deg,transparent,var(--fill),transparent)] md:gap-5 md:py-5 ${cols}`}
         >
           <div className="flex items-center gap-3">
-            <i className="h-2 w-2 flex-none rounded-full" style={{ background: tintCss(c.stock.ticker) }} />
+            <TickerMark ticker={c.stock.ticker} px={24} tint={tintCss(c.stock.ticker)} />
             <div className="min-w-0">
               <b className="text-[13.5px] font-semibold tracking-[0.06em]">{c.stock.ticker}</b>
               <span className="block truncate text-[12.5px] text-mute">{c.stock.name || c.stock.ticker}</span>
@@ -162,13 +164,13 @@ export function WinsSection({ v, style, capBps }: { v: BasketView; style: Strate
       const seg = [[1.2, 3.2], [3.2, 5.6], [5.6, 8.4]][i];
       el.style.setProperty("--p", String(clamp((x - seg[0]) / (seg[1] - seg[0]))));
     });
-    const posed = formAt(tickers, w, style, b.address.toLowerCase(), { ang: 0.25 + Math.sin(T * 0.2) * 0.2, t: T });
+    const posed = formAt(tickers, w, style, b.address.toLowerCase(), { ang: Math.sin(T * 0.2) * 0.2, t: T });
     const cam = camAt(phone ? 5.6 : 5.1, 0.25, 0.1);
     syncTags(tags.current, posed, cam, rect, (i) => ({ op: 1, v: `${Math.round(w[i] * 100)}%`, color: i === top && up * (1 - back) > 0.3 ? "var(--gain)" : undefined }), { top: 14 });
     return {
       cam,
       drops: posed.drops,
-      o: { t: T, zone: posed.zone, shim: bump(0.05, 0.3, x / 9) * 0.9 + bump(0.62, 0.9, x / 9) * 0.8, shimPos: lerp(-2.4, 2.4, ((x - 0.5) / 3.5) % 1), rip: goesBack ? bump(0.68, 0.92, x / 9) * 0.7 : 0 },
+      o: { t: T, zone: posed.zone, zl: 1, shim: bump(0.05, 0.3, x / 9) * 0.9 + bump(0.62, 0.9, x / 9) * 0.8, shimPos: lerp(-2.4, 2.4, ((x - 0.5) / 3.5) % 1), rip: goesBack ? bump(0.68, 0.92, x / 9) * 0.7 : 0 },
     };
   });
 
@@ -259,7 +261,7 @@ export function HistorySection({ v, events, onOpenPending }: { v: BasketView; ev
     const p = reduced ? 1 : easeInOut(clamp((s.t - 0.5) / 1.8));
     const w = s.to.map((x, i) => lerp(s.from[i], x, p));
     const tot = w.reduce((a, c) => a + c, 0);
-    const posed = formAt(tickers, w, styleOf(b), b.address.toLowerCase(), { ang: 0.3 + Math.sin(T * 0.18) * 0.25, t: T, rs: 0.25 + 0.75 * Math.sqrt(Math.min(1, tot)) });
+    const posed = formAt(tickers, w, styleOf(b), b.address.toLowerCase(), { ang: Math.sin(T * 0.18) * 0.22, t: T, rs: 0.25 + 0.75 * Math.sqrt(Math.min(1, tot)) });
     const cam = camAt(phone ? 5.6 : 5.1, 0.25, 0.1);
     syncTags(
       tags.current,
@@ -273,7 +275,7 @@ export function HistorySection({ v, events, onOpenPending }: { v: BasketView; ev
       },
       { top: 14, bottom: 40 },
     );
-    return { cam, drops: posed.drops, o: { t: T, zone: posed.zone, shim: bump(0.6, 1.15, p + 0.1) * 0.9, shimPos: lerp(-2.4, 2.4, p), rip: bump(0.85, 1.6, s.t / 2.3) * 0.8 } };
+    return { cam, drops: posed.drops, o: { t: T, zone: posed.zone, zl: 1, shim: bump(0.6, 1.15, p + 0.1) * 0.9, shimPos: lerp(-2.4, 2.4, p), rip: bump(0.85, 1.6, s.t / 2.3) * 0.8 } };
   });
 
   const cur = list[k];
@@ -371,14 +373,32 @@ export function FactsSection({ feeBps, noticeSeconds, testnet }: { feeBps: numbe
           }
           title="To start."
           body="Add any amount after that."
+          extra={
+            <p className="mt-2.5 max-w-[34ch] text-[12.5px] leading-[1.6] text-dim">
+              <b className="font-medium text-mute">Money in:</b> <UsdcLogo size="xs" className="mx-0.5" /> USDC on Base. Buy USDC or <UsdtLogo size="xs" className="mx-0.5" /> USDT on any
+              exchange, swap USDT to USDC, then send it to your wallet.
+            </p>
+          }
         />
         <Fact
           big="Yours."
           title="In your own wallet."
-          body="You hold the basket token on Base, not us."
+          body={
+            <>
+              You hold the basket token on <BaseLogo size="xs" className="mx-0.5 rounded-[2px]" /> Base, not us.
+            </>
+          }
           extra={w.address ? <div className="num mt-2.5 text-[12px] tracking-[0.06em] text-dim">{`${w.address.slice(0, 6)}…${w.address.slice(-4)}`}</div> : null}
         />
-        <Fact big="Anytime" title="Sell some or all." body="The money goes back to your wallet as USDC." />
+        <Fact
+          big="Anytime"
+          title="Sell some or all."
+          body={
+            <>
+              <b className="font-medium text-tx">Money out:</b> back to your wallet as <UsdcLogo size="xs" className="mx-0.5" /> USDC.
+            </>
+          }
+        />
         <Fact big={<span className="num">{notice}</span>} title="Notice before any change." body="If the creator changes the plan, you see it first and can leave." />
         {testnet && <Fact big="Test" title="Test mode is on." body="Prices are real. Money is pretend." />}
       </div>

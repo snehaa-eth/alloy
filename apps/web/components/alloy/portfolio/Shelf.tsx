@@ -85,13 +85,13 @@ function Pebble({ it, i, scale, geo, onPick }: { it: ShelfItem; i: number; scale
     st.grow = f.reduced ? 1 : easeOut(clamp((f.T - st.enter) * 1.2 - i * 0.12));
     const rs = scale * Math.max(0.02, st.grow);
     const c = solveCam(g.z, f.rect.width, f.rect.height, f.rect.height, TAN, f.mouse[0] * 0.3);
-    st.posed = restOn(shape, { cx: 0, floor: FLOOR, rs, ang: Math.sin(st.ang) * 0.55, t: f.T + i * 3, lift: st.lift * 0.22 });
+    st.posed = restOn(shape, { cx: 0, floor: FLOOR, rs, ang: Math.sin(st.ang) * 0.32, t: f.T + i * 3, lift: st.lift * 0.22 });
     if (sh.current) {
       const half = Math.abs(project(c, [1.0 * rs, FLOOR, 0], f.rect.width, f.rect.height)[0] - f.rect.width / 2);
       const w = half * 2 * (1 - st.lift * 0.25);
       sh.current.style.cssText = `width:${w}px;height:${w * 0.14}px;margin-left:${-w / 2}px;margin-top:${-w * 0.07}px;opacity:${st.grow * (1 - st.lift * 0.5)}`;
     }
-    return formSpec(c, st.posed, [], { t: f.T + i * 3, shim: st.lift * 0.5, shimPos: lerp(-2.4, 2.4, (f.T * 0.25 + i * 0.3) % 1), zt: 0.5 + st.lift * 0.12 });
+    return formSpec(c, st.posed, [], { t: f.T + i * 3, shim: st.lift * 0.5, shimPos: lerp(-2.4, 2.4, (f.T * 0.25 + i * 0.3) % 1), zt: 0.5 + st.lift * 0.12, zl: 1 });
   });
   useMetalRegion(down, (f: FrameInfo) => {
     const st = s.current;

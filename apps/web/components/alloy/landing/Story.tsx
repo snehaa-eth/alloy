@@ -151,6 +151,9 @@ export function Story({ b, moves }: { b: LBasket; moves: StoryMoves | null }) {
       const kS = reduced ? 1 : 1 - Math.pow(lerp(0.001 + 0.004 * i, 0.00001, fuse), dt);
       for (let a = 0; a < 3; a++) d.p[a] = lerp(d.p[a], tp[a], kS);
       d.r = reduced ? tr : lerp(d.r, tr, 1 - Math.pow(0.0005, dt));
+      // company mark engraved while the drops are separate; it dissolves into the metal as they start to melt
+      d.logo = stocks[i].t;
+      d.lw = 1 - ss(0.02, 0.4, fuse);
     });
 
     // pour drop ($25) and the cursor droplet in the hero
@@ -164,9 +167,12 @@ export function Story({ b, moves }: { b: LBasket; moves: StoryMoves | null }) {
       const pr = pourFrame(clamp(buy / 0.6), { x: 0.05, z: 0.25, y0: phone ? 3.6 : 3.0, top, yc: top - 0.35, r: 0.24 });
       P.p = pr.drop.p;
       P.r = pr.drop.r * ss(0, 0.04, buy);
+      P.logo = "USDC"; // your dollars pouring in
+      P.lw = 1 - ss(0.15, 0.55, pr.absorb);
       k2 = pr.k2;
       if (pr.tail && P.r > 0.005) tail = { i: s.cur.length, p: pr.tail.p, r: pr.tail.r * ss(0, 0.04, buy) };
     } else if (p < 0.06) {
+      P.logo = null;
       const hk = 1 - ss(0, 0.05, p);
       P.p = phone ? [Math.sin(T * 0.4) * 1.1, -1.4 + Math.cos(T * 0.31) * 1.4, 0.5] : [mouse[0] * 4.1, mouse[1] * 2.6, 0.55];
       P.r = (phone ? 0.11 : 0.13) * hk * (reduced ? 0 : ss(0, 1, T * 0.8));
@@ -312,7 +318,7 @@ export function Story({ b, moves }: { b: LBasket; moves: StoryMoves | null }) {
     const s = st.current;
     if (!s.cam || !s.posed || s.p >= 1 || s.o.alpha < 0.01) return null;
     const drops: (Drop | null)[] = [...s.cur, s.pour, s.sell];
-    return { cam: s.cam, drops, o: { ...s.o, t: T, n: 4, zone: s.posed.zone } };
+    return { cam: s.cam, drops, o: { ...s.o, t: T, n: 4, zone: s.posed.zone, zl: s.fuse > 0.995 ? ss(0.2, 0.26, s.ps) : 0 } };
   });
 
   // pad to 4 slots: fewer stocks → empty slots

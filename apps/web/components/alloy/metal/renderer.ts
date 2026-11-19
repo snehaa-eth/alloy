@@ -5,6 +5,17 @@
  */
 import type { Cam } from "./math";
 import type { Drop, ZoneSet } from "./shape";
+import { EngraveAtlas, engraveKey, spanFor } from "./engrave";
+
+const nrm3 = (a: number[]): [number, number, number] => {
+  const l = Math.hypot(a[0], a[1], a[2]) || 1;
+  return [a[0] / l, a[1] / l, a[2] / l];
+};
+const cross3 = (a: number[], b: number[]): [number, number, number] => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const ss3 = (a: number, b: number, x: number) => {
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+};
 
 const VS = `attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}`;
 const FS = (steps: number) => `precision highp float;
@@ -14,6 +25,9 @@ uniform vec4 uD[6];uniform vec3 uC[6];
 uniform vec4 uZ[10];uniform vec3 uZC[10];uniform vec3 uZO;uniform float uZN,uZM,uFq,uPh;
 uniform float uK,uK2,uN,uT,uWob,uTint,uShim,uShimPos,uRip,uAlpha,uGlow;uniform vec4 uB,uGl;
 uniform vec4 uTl;uniform float uTlI;
+uniform sampler2D uLg;uniform vec4 uLgD[6];uniform float uLgOn;
+uniform vec4 uZL[6],uZT[6];uniform float uZLOn;
+vec3 gR=vec3(1.,0.,0.),gU=vec3(0.,1.,0.);float gPx=.01;
 float smin(float a,float b,float k){float h=max(k-abs(a-b),0.)/k;return min(a,b)-h*h*k*.25;}
 /* round cone (iq): sphere a (r1) to sphere b (r2) with tangent walls. Used to stretch one action drop into a teardrop
    (pour: tail reaches the surface before the head arrives, so there is never a head-on-a-neck frame; sell: the thread thins and lets go). */
@@ -55,26 +69,77 @@ vec3 env(vec3 r){float az=atan(r.x,r.z);float y=r.y;
  c*=mix(.12,1.,smoothstep(-.06,.0,y));
  c+=vec3(.015)*smoothstep(-.1,-1.,y);
  return c;}
-vec3 shade(vec3 p,vec3 rd){vec3 n=nrm(p);vec3 r=reflect(rd,n);vec3 tn=tintAt(p);
+/* engraving (concept video decal): camera-facing planar projection on each engraved drop's front cap, upright.
+   uLgD[i] = (atlas col, row, strength, decal span in radii). lgM = recess mask, lgG = bevel gradient (world). */
+float lgM=0.;vec3 lgG=vec3(0.);
+void logoAt(vec3 p){lgM=0.;lgG=vec3(0.);if(uLgOn<.5)return;
+ for(int i=0;i<6;i++){vec4 L=uLgD[i];if(L.z<.002)continue;
+  vec3 c=uD[i].xyz;float r=uD[i].w;if(r<.05)continue;
+  float d=length(p-c)-r;float near=exp(-abs(d)*16.);if(near<.01)continue;
+  vec3 q=(p-c)/r;float fc=smoothstep(.3,.62,dot(normalize(q),normalize(uRo-c)));if(fc<.001)continue;
+  vec2 uv=vec2(dot(q,gR),dot(q,gU));float a=.06*sin(uT*.45+float(i)*1.7);uv=vec2(cos(a)*uv.x-sin(a)*uv.y,sin(a)*uv.x+cos(a)*uv.y);
+  float sp=L.w*mix(1.2,1.,smoothstep(26.,60.,r/gPx)); // small drops: the mark spreads over more of the cap
+  vec2 t=uv/sp+.5;if(t.x<0.||t.x>1.||t.y<0.||t.y>1.)continue;
+  vec2 tc=(L.xy+vec2(t.x,1.-t.y))*.25;float e=1.6/1024.;
+  vec3 s=texture2D(uLg,tc).rgb;
+  float fp=gPx*256./(sp*r); // texels per screen pixel: minified marks read the softer channels instead of shimmering
+  float m=mix(s.r,s.b,smoothstep(1.,2.4,fp));m=mix(m,min(1.,s.g*1.35),smoothstep(6.,14.,fp));
+  float gx=texture2D(uLg,tc+vec2(e,0.)).g-texture2D(uLg,tc-vec2(e,0.)).g;
+  float gy=texture2D(uLg,tc-vec2(0.,e)).g-texture2D(uLg,tc+vec2(0.,e)).g;
+  float w=L.z*near*fc*(1.-smoothstep(16.,26.,fp));
+  lgM+=m*w;lgG+=(gx*gR+gy*gU)*w;}
+ lgM=clamp(lgM,0.,1.);}
+/* zone logos on a fused form (founder option B): each stock's mark engraved inside its own tint zone.
+   uZL[i] = (zone centroid direction from uZO, strength), uZT[i] = (atlas col, row, half-size in tangent units, zone index).
+   Gnomonic projection around the centroid, upright to the camera; clipped to the zone's own area (never over a seam);
+   faded on the turning-away side and when it would be tiny. Subtler than the drop engraving (recess ~55% darker). */
+float zlM=0.;
+void zoneLogoAt(vec3 p){zlM=0.;if(uZLOn<.5||uZN<.5)return;
+ float da=1e3;for(int i=0;i<6;i++){if(float(i)<uN)continue;float r=uD[i].w;if(r>.005)da=min(da,length(p-uD[i].xyz)-r);}
+ if(da<.06)return; // action drops (pour / sell) keep their own look
+ vec3 q=p-uZO;float dl=length(q);vec3 dr=q/max(dl,1e-4);
+ float fc=smoothstep(.12,.42,dot(dr,normalize(uRo-p)));if(fc<.001)return;
+ for(int i=0;i<6;i++){vec4 Z0=uZL[i];if(Z0.w<.002)continue;vec4 T=uZT[i];
+  vec3 d=Z0.xyz;float c=dot(dr,d);if(c<.55)continue;
+  vec3 tU=normalize(gU-d*dot(gU,d));vec3 tR=cross(tU,d);
+  vec2 uv=vec2(dot(dr,tR),dot(dr,tU))/c;
+  vec2 t=uv/(2.*T.z)+.5;if(t.x<0.||t.x>1.||t.y<0.||t.y>1.)continue;
+  float si=-1e3,so=-1e3;
+  for(int k=0;k<10;k++){if(float(k)>=uZN)break;float s=dot(dr,uZ[k].xyz)+uZ[k].w;if(abs(float(k)-T.w)<.5)si=s;else so=max(so,s);}
+  float own=smoothstep(.035,.07,si-so);if(own<.001)continue;
+  vec2 tc=(T.xy+vec2(t.x,1.-t.y))*.25;float e=1.6/1024.;
+  vec3 sm=texture2D(uLg,tc).rgb;
+  float cpx=2.*T.z*dl/gPx; // cell width in screen px
+  float fp=256./max(cpx,1.);
+  float m=mix(sm.r,sm.b,smoothstep(1.,2.4,fp));m=mix(m,min(1.,sm.g*1.35),smoothstep(6.,14.,fp));
+  float gx=texture2D(uLg,tc+vec2(e,0.)).g-texture2D(uLg,tc-vec2(e,0.)).g;
+  float gy=texture2D(uLg,tc-vec2(0.,e)).g-texture2D(uLg,tc+vec2(0.,e)).g;
+  float w=Z0.w*fc*own*smoothstep(14.,22.,cpx*.8);
+  zlM+=m*w;lgG+=(gx*tR+gy*tU)*w*.75;}
+ zlM=clamp(zlM,0.,1.);}
+vec3 shade(vec3 p,vec3 rd){vec3 n=nrm(p);logoAt(p);zoneLogoAt(p);n=normalize(n+lgG*1.5);vec3 r=reflect(rd,n);vec3 tn=tintAt(p);
  vec3 F0=mix(vec3(.92),tn,clamp(uTint,0.,.85));float ct=clamp(dot(n,-rd),0.,1.);
  vec3 F=F0+(1.-F0)*pow(1.-ct,5.);
  float ao=clamp(map(p+n*.2)/.2,0.,1.);ao=.45+.55*ao;
  vec3 col=env(r)*F*ao;
  col+=tn*(.04+.16*pow(1.-ct,2.))*ao*uTint;
  col*=1.-.42*seam*uTint;
+ col=mix(col,col*.28+tn*.035+vec3(.03),lgM);
+ col=mix(col,col*.45+tn*.03+vec3(.02),zlM);
+ col+=vec3(1.,.98,.95)*min(length(lgG)*.45,.3);
  float b=exp(-pow((dot(p,normalize(vec3(.8,.5,.3)))-uShimPos)*3.2,2.))*uShim;
  col+=vec3(1.,.84,.70)*b*1.6*(.35+.65*pow(1.-ct,1.5));
  float gd=length(p-uGl.xyz);col+=vec3(1.,.86,.72)*uGl.w*exp(-gd*gd*7.)*(.25+.75*ct);
  return col;}
 void main(){vec2 uv=((gl_FragCoord.xy-uView.xy)/uView.zw)*2.-1.;float asp=uView.z/uView.w;
  vec3 f=normalize(uTa-uRo);vec3 rr=normalize(cross(f,vec3(0.,1.,0.)));vec3 u=cross(rr,f);
- vec3 rd=normalize(f+uv.x*asp*uTan*rr+uv.y*uTan*u);
+ vec3 rd=normalize(f+uv.x*asp*uTan*rr+uv.y*uTan*u);gR=rr;gU=u;
  vec3 oc=uRo-uB.xyz;float b=dot(oc,rd);float c=dot(oc,oc)-uB.w*uB.w;float h=b*b-c;
  if(h<0.){gl_FragColor=vec4(0.);return;}
  h=sqrt(h);float t=max(-b-h,0.);float te=-b+h;float md=1e3;float tm=t;bool hit=false;
  for(int i=0;i<MAXS;i++){vec3 p=uRo+rd*t;float d=map(p);if(d<md){md=d;tm=t;}if(d<.0012*t){hit=true;tm=t;break;}t+=d*.82;if(t>te)break;}
  float px=2.*uTan/uView.w*tm;float a=hit?1.:1.-smoothstep(0.,px*1.6,md);
- vec3 col=vec3(0.);if(a>0.){col=shade(uRo+rd*tm,rd);}
+ vec3 col=vec3(0.);gPx=px;if(a>0.){col=shade(uRo+rd*tm,rd);}
  col=col*(2.51*col+.03)/(col*(2.43*col+.59)+.14);
  col=pow(clamp(col,0.,1.),vec3(.4545));
  float g=exp(-max(md,0.)*3.2)*uGlow*(1.-a);
@@ -105,13 +170,18 @@ export type DrawOpts = {
    * Pour: the tail reaches the surface before the head does. Sell: the thread between bud and form thins and lets go.
    */
   tail?: { i: number; p: [number, number, number]; r: number } | null;
+  /**
+   * Zone logos 0..1 (fused forms only): engrave each stock's mark inside its own tint zone (top 6 zones by weight,
+   * ≥ 8%, facing the camera, sized by sqrt(weight) and shrunk until it sits fully inside its zone). Default off.
+   */
+  zl?: number;
   /** zone mix 0..1 (0 = each form drop shows its own colour) */
   zm?: number;
   /** tint strength when zones are on (designer default .5) */
   zt?: number;
 };
 
-const UNIFORMS = ["uView", "uRo", "uTa", "uTan", "uD", "uC", "uZ", "uZC", "uZO", "uZN", "uZM", "uFq", "uPh", "uK", "uK2", "uN", "uT", "uWob", "uTint", "uShim", "uShimPos", "uRip", "uAlpha", "uGlow", "uB", "uGl", "uTl", "uTlI"] as const;
+const UNIFORMS = ["uView", "uRo", "uTa", "uTan", "uD", "uC", "uZ", "uZC", "uZO", "uZN", "uZM", "uFq", "uPh", "uK", "uK2", "uN", "uT", "uWob", "uTint", "uShim", "uShimPos", "uRip", "uAlpha", "uGlow", "uB", "uGl", "uTl", "uTlI", "uLg", "uLgD", "uLgOn", "uZL", "uZT", "uZLOn"] as const;
 
 export class MetalRenderer {
   readonly gl: WebGLRenderingContext;
@@ -119,6 +189,10 @@ export class MetalRenderer {
   private U: Partial<Record<(typeof UNIFORMS)[number], WebGLUniformLocation | null>> = {};
   private D = new Float32Array(24);
   private C = new Float32Array(18);
+  private LG = new Float32Array(24);
+  private ZL = new Float32Array(24);
+  private ZT = new Float32Array(24);
+  private atlas: EngraveAtlas | null = null;
   steps = 0;
 
   constructor(gl: WebGLRenderingContext) {
@@ -156,6 +230,9 @@ export class MetalRenderer {
     gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
     for (const n of UNIFORMS) this.U[n] = gl.getUniformLocation(prog, n);
     gl.enable(gl.SCISSOR_TEST);
+    this.atlas = this.atlas ?? new EngraveAtlas(gl);
+    this.atlas.bind();
+    gl.uniform1i(this.U.uLg!, 0);
     this.prog = prog;
     this.steps = steps;
     return true;
@@ -163,10 +240,66 @@ export class MetalRenderer {
 
   clear(w: number, h: number) {
     const gl = this.gl;
+    this.atlas?.tick();
     gl.clearColor(0, 0, 0, 0);
     gl.scissor(0, 0, w, h);
     gl.viewport(0, 0, w, h);
     gl.clear(gl.COLOR_BUFFER_BIT);
+  }
+
+  /** Fill uZL / uZT for the zone logos of one fused form. Returns 1 when at least one zone is engraved. */
+  private zoneLogos(z: ZoneSet, cam: Cam, strength: number): number {
+    const L = z.L;
+    if (!L || !L.length || !this.atlas) return 0;
+    const ZL = this.ZL, ZT = this.ZT;
+    ZL.fill(0);
+    ZT.fill(0);
+    const nz = Math.min(10, z.n);
+    const f = nrm3([cam.ta[0] - cam.ro[0], cam.ta[1] - cam.ro[1], cam.ta[2] - cam.ro[2]]);
+    const r = nrm3(cross3(f, [0, 1, 0]));
+    const u = cross3(r, f);
+    const toCam = nrm3([cam.ro[0] - z.zo[0], cam.ro[1] - z.zo[1], cam.ro[2] - z.zo[2]]);
+    const score = (v: number[], k: number) => v[0] * z.Z[k * 4] + v[1] * z.Z[k * 4 + 1] + v[2] * z.Z[k * 4 + 2] + z.Z[k * 4 + 3];
+    // owned with margin: this zone beats every other zone by > .07 at v (seam is ~.03 wide)
+    const owns = (v: number[], k: number) => {
+      const sk = score(v, k);
+      for (let j = 0; j < nz; j++) if (j !== k && score(v, j) > sk - 0.07) return false;
+      return true;
+    };
+    const order = L.map((x, k) => ({ ...x, k })).filter((x) => x.k < nz && x.w >= 0.08).sort((a, b) => b.w - a.w).slice(0, 6);
+    let slot = 0, on = 0;
+    for (const x of order) {
+      const d = nrm3(x.dir as number[]);
+      const facing = ss3(0.5, 0.78, d[0] * toCam[0] + d[1] * toCam[1] + d[2] * toCam[2]); // whole mark on the visible side, never a sliver at the rim
+      if (facing < 0.01) continue;
+      const key = engraveKey(x.t);
+      if (!key) continue;
+      // tangent frame upright to the camera
+      const du = u[0] * d[0] + u[1] * d[1] + u[2] * d[2];
+      const tU = nrm3([u[0] - d[0] * du, u[1] - d[1] * du, u[2] - d[2] * du]);
+      const tR = cross3(tU, d);
+      let s = Math.min(0.34, Math.max(0.13, 0.46 * Math.sqrt(x.w)));
+      let fits = false;
+      for (let it = 0; it < 7 && s >= 0.085; it++) {
+        const m = 0.82 * s; // the mark fills ~80% of its cell
+        fits = owns(d, x.k);
+        for (let a = 0; a < 8 && fits; a++) {
+          const ang = (a / 8) * Math.PI * 2;
+          const ca = Math.cos(ang) * m, sa = Math.sin(ang) * m;
+          if (!owns(nrm3([d[0] + tR[0] * ca + tU[0] * sa, d[1] + tR[1] * ca + tU[1] * sa, d[2] + tR[2] * ca + tU[2] * sa]), x.k)) fits = false;
+        }
+        if (fits) break;
+        s *= 0.86;
+      }
+      if (!fits) continue;
+      const cell = this.atlas.cell(key);
+      if (!cell) continue;
+      ZL.set([d[0], d[1], d[2], Math.min(1, strength) * facing], slot * 4);
+      ZT.set([cell[0], cell[1], s, x.k], slot * 4);
+      slot++;
+      on = 1;
+    }
+    return on;
   }
 
   /** view / scissor: [x, y, w, h] in device px, GL origin (bottom-left). */
@@ -197,6 +330,22 @@ export class MetalRenderer {
     gl.uniform3fv(U.uTa!, cam.ta);
     gl.uniform1f(U.uTan!, cam.tan);
     gl.uniform4fv(U.uD!, D);
+    // engravings: per drop (atlas cell, strength, span); skipped entirely when no drop asks for one
+    const LG = this.LG;
+    let lgOn = 0;
+    LG.fill(0);
+    for (let i = 0; i < 6; i++) {
+      const d = drops[i];
+      const lw = d && d.logo && d.r > 0.05 ? (d.lw ?? 1) : 0;
+      if (lw <= 0.002 || !this.atlas) continue;
+      const key = engraveKey(d!.logo);
+      const cell = key ? this.atlas.cell(key) : null;
+      if (!cell) continue;
+      LG[i * 4] = cell[0]; LG[i * 4 + 1] = cell[1]; LG[i * 4 + 2] = Math.min(1, lw); LG[i * 4 + 3] = spanFor(key!);
+      lgOn = 1;
+    }
+    gl.uniform1f(U.uLgOn!, lgOn);
+    if (lgOn) gl.uniform4fv(U.uLgD!, LG);
     gl.uniform3fv(U.uC!, C);
     const z = o.zone;
     gl.uniform1f(U.uZN!, z ? z.n : 0);
@@ -206,6 +355,12 @@ export class MetalRenderer {
       gl.uniform3fv(U.uZO!, z.zo);
     }
     gl.uniform1f(U.uZM!, z ? (o.zm ?? 1) : 0);
+    const zlOn = z && (o.zl ?? 0) > 0.002 && this.atlas ? this.zoneLogos(z, cam, o.zl!) : 0;
+    gl.uniform1f(U.uZLOn!, zlOn);
+    if (zlOn) {
+      gl.uniform4fv(U.uZL!, this.ZL);
+      gl.uniform4fv(U.uZT!, this.ZT);
+    }
     gl.uniform1f(U.uFq!, z ? z.fq : 1);
     gl.uniform1f(U.uPh!, z ? z.ph : 0);
     gl.uniform1f(U.uK!, o.k ?? 0.8);

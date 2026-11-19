@@ -48,10 +48,15 @@ export function HeroStage({
     st.pulse = damp(st.pulse, 0, 0.2, dt);
     st.drag += st.dv;
     st.dv *= Math.pow(0.04, dt);
+    // let go: ease back to the facing pose (biggest stock toward you), via the nearest full turn
+    if (!st.dragging && Math.abs(st.dv) < 0.02) {
+      const home = Math.round(st.drag / (Math.PI * 2)) * Math.PI * 2;
+      st.drag = reduced ? home : damp(st.drag, home, 0.25, dt);
+    }
     const intro = reduced ? 1 : easeInOut(clamp((clock - st.t0 - 200) / 1800));
     // Today: exaggerate each real move ×12 so a 1% day is visible as a zone swelling
     const w = now.map((v, i) => v * (1 + (moves?.[i] ?? 0) * 12 * st.m));
-    const ang = Math.sin(T * 0.16) * 0.4 + st.drag + (1 - intro) * 1.2;
+    const ang = Math.sin(T * 0.16) * 0.28 + st.drag + (1 - intro) * 1.2;
     const posed = formAt(tickers, w, style, seed, { ang, sep: lerp(0.4, 0, intro), t: T, bob: 0.035, rs: lerp(0.6, 1, intro) });
     const cam = camAt(phone ? 5.3 : 4.5, 0.25, phone ? -0.05 : -0.02, mouse[0] * 0.3, mouse[1] * 0.15);
     const op = ss(0.6, 1, intro);
@@ -72,7 +77,7 @@ export function HeroStage({
     return {
       cam,
       drops: posed.drops,
-      o: { t: T, zone: posed.zone, zt: 0.5 + st.m * 0.2, shim: bump(0, 1, ss(0.45, 1, intro)) + st.pulse * 0.8, shimPos: lerp(-2.6, 2.6, ss(0.45, 1, intro)), rip: st.pulse * 0.6 },
+      o: { t: T, zone: posed.zone, zl: ss(0.5, 1, intro), zt: 0.5 + st.m * 0.2, shim: bump(0, 1, ss(0.45, 1, intro)) + st.pulse * 0.8, shimPos: lerp(-2.6, 2.6, ss(0.45, 1, intro)), rip: st.pulse * 0.6 },
     };
   });
 

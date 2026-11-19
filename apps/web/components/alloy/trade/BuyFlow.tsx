@@ -18,6 +18,8 @@ import { useFaucet } from "@/lib/hooks/use-basket-tx";
 import { useUsdcBalance } from "@/lib/hooks/use-reads";
 import { Odometer } from "../motion/alloy-motion";
 import { MetalBasket } from "../metal/MetalBasket";
+import { TickerMark } from "../brand/StockMark";
+import { UsdcLogo } from "../brand/ChainLogos";
 import { tintCss } from "../metal/palette";
 import type { Recipe } from "../metal/shape";
 import { useAccount, useAttestation, usePosition, useQuoteView } from "../hooks";
@@ -236,7 +238,7 @@ export function BuyFlow({
             <div className="tr-rows">
               {parts.map((p, i) => (
                 <div key={p.ticker}>
-                  <i style={{ background: tintCss(p.ticker) }} />
+                  <TickerMark ticker={p.ticker} px={16} tint={tintCss(p.ticker)} />
                   {p.name}
                   <span className="ln" />
                   <b>
@@ -266,7 +268,10 @@ export function BuyFlow({
             </div>
             <div>
               <span>Pay with</span>
-              <span>Test USDC</span>
+              <span className="inline-flex items-center gap-1.5">
+                <UsdcLogo size="sm" />
+                Test USDC
+              </span>
             </div>
           </div>
           {changeAt && (

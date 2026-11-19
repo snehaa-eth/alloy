@@ -5,6 +5,7 @@
  * quote → exact approve of basket shares → simulate → write → receipt) → the bud pinches off, turns to USDC and
  * rolls into your wallet chip. "Get the stocks instead" keeps the in-kind withdraw (useWithdraw) available.
  */
+import { UsdcLogo } from "../brand/ChainLogos";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { TxStep } from "@/lib/tx";
 import { describeTxError } from "@/lib/tx";
@@ -175,7 +176,10 @@ export function SellFlow({
           <div className="v num">
             <Odometer value={walletVal} />
           </div>
-          <div className="u">{mode === "usdc" ? "USDC" : "stocks"}</div>
+          <div className="u inline-flex items-center gap-1.5">
+            {mode === "usdc" && <UsdcLogo size="sm" />}
+            {mode === "usdc" ? "USDC" : "stocks"}
+          </div>
         </div>
       </SellStage>
 

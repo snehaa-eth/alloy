@@ -106,14 +106,14 @@ export function SellStage({
     const wr = walletRef.current?.getBoundingClientRect();
     const walX = wr ? unproject(cam, wr.left - rect.left + wr.width * 0.5, wr.top - rect.top + wr.height * 0.5, rect.width, rect.height)[0] : 3;
     const pv = s.ph === "pick" ? s.pv : P.p;
-    const posed = posedDrops(shape, { ang: 0.3 + Math.sin(T * 0.2) * 0.2, t: T, rs: Math.max(s.lr, 0), off: [cx, 0, 0] });
+    const posed = posedDrops(shape, { ang: Math.sin(T * 0.2) * 0.2, t: T, rs: Math.max(s.lr, 0), off: [cx, 0, 0] });
     // selling everything: the form itself drains away as the bud leaves
     if (P.p > 0.99 && s.ph !== "pick" && s.ph !== "err") posed.drops.forEach((d) => (d.r *= 1 - ss(0, 0.6, s.q)));
     const br = FORM_R * (P.p > 0.99 ? 1 : 0.72 * Math.cbrt(Math.max(pv, 0.001))) * (s.ph === "pick" ? 0.95 : 1) * (1 - s.gone);
     const bx = lerp(cx + s.ox, walX - 0.1, s.roll);
     const bounce = s.roll > 0 ? Math.abs(Math.sin(s.roll * Math.PI * 3)) * 0.28 * (1 - s.roll) : 0;
     const silver: V3 = [0.9, 0.92, 0.95], blue: V3 = [0.36, 0.58, 1];
-    const bud: Drop = { p: [bx, -0.1 + bounce - s.gone * 0.05, 0.15], r: br, c: silver.map((v, i) => lerp(v, blue[i], s.tint * 0.9)) as V3 };
+    const bud: Drop = { p: [bx, -0.1 + bounce - s.gone * 0.05, 0.15], r: br, c: silver.map((v, i) => lerp(v, blue[i], s.tint * 0.9)) as V3, logo: P.usdc ? "USDC" : null, lw: s.tint };
     let edge = -1e3;
     for (const d of posed.drops) if (d.r > 0.01) edge = Math.max(edge, d.p[0] + d.r);
     const tl = s.roll === 0 && edge > -1e2 ? pinchTail(s.q, { p: bud.p, r: bud.r }, edge) : null;

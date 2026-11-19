@@ -20,18 +20,10 @@ import { useFaucet } from "@/lib/hooks/use-basket-tx";
 import { useFaucetStatus } from "@/lib/hooks/use-reads";
 import { formatFixed, formatUsd6 } from "@/lib/units";
 import { cn } from "@/lib/utils";
+import { BaseLogo, UsdcLogo } from "./brand/ChainLogos";
 import { CreatorAvatar } from "./v5/parts";
 
 const TIP = "Test mode: prices are real, money is pretend.";
-
-function BaseMark({ size = 14 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden>
-      <circle cx="12" cy="12" r="12" fill="#0052FF" />
-      <path d="M11.95 20.4a8.4 8.4 0 1 0-8.36-9.2h11.1v1.6H3.59a8.4 8.4 0 0 0 8.36 7.6Z" fill="#fff" />
-    </svg>
-  );
-}
 
 const explorer = (addr: string) => `${DEFAULT_CHAIN.blockExplorers?.default.url ?? "https://sepolia.basescan.org"}/address/${addr}`;
 
@@ -52,7 +44,7 @@ function Panel({ children, label, align = "end" }: { children: ReactNode; label:
   );
 }
 
-function Item({ icon: I, children, onClick, href, external, disabled, primary, hint }: { icon?: typeof Copy; children: ReactNode; onClick?: () => void; href?: string; external?: boolean; disabled?: boolean; primary?: boolean; hint?: ReactNode }) {
+function Item({ icon: I, mark, children, onClick, href, external, disabled, primary, hint }: { icon?: typeof Copy; mark?: ReactNode; children: ReactNode; onClick?: () => void; href?: string; external?: boolean; disabled?: boolean; primary?: boolean; hint?: ReactNode }) {
   const cls = cn(
     "flex w-full items-center gap-3 rounded-[12px] px-3.5 py-[11px] text-left text-[13.5px] no-underline transition-colors",
     disabled ? "cursor-not-allowed text-dim" : "text-tx hover:bg-white/[0.04] focus-visible:bg-white/[0.06] focus-visible:outline-none",
@@ -61,6 +53,7 @@ function Item({ icon: I, children, onClick, href, external, disabled, primary, h
   const body = (
     <>
       {I && <I size={16} strokeWidth={1.5} className={primary ? "text-black" : "text-tx2"} aria-hidden />}
+      {mark}
       <span className="flex-1">{children}</span>
       {hint && <small className="text-[11.5px] text-dim">{hint}</small>}
       {external && <ExternalLink size={13} strokeWidth={1.75} className="text-tx2" aria-hidden />}
@@ -135,10 +128,8 @@ export function NetworkChip() {
       >
         {wrong ? (
           <span className="h-1.5 w-1.5 flex-none rounded-full bg-[var(--warn)]" aria-hidden />
-        ) : testnet ? (
-          <span className="a-test-dot h-1.5 w-1.5 flex-none rounded-full bg-ink" aria-hidden />
         ) : (
-          <BaseMark />
+          <BaseLogo size="sm" className="rounded-[3px]" />
         )}
         <span>{wrong ? (w.switching ? "Switching…" : "Wrong network") : testnet ? "Test mode" : c.name}</span>
       </Popover.Trigger>
@@ -157,19 +148,25 @@ export function NetworkChip() {
         <div className="mx-2 my-1.5 h-px bg-line" />
         <div className="px-3.5 pb-1.5 pt-3 text-[10.5px] uppercase tracking-[0.24em] text-dim">Network</div>
         <div className="flex items-center justify-between gap-2.5 rounded-[12px] px-3.5 py-[11px] text-[13.5px]">
-          <span>
-            {DEFAULT_CHAIN.name} <small className="text-[11.5px] text-dim">· test</small>
+          <span className="inline-flex items-center gap-2.5">
+            <BaseLogo size="md" />
+            <span>
+              {DEFAULT_CHAIN.name} <small className="text-[11.5px] text-dim">· test</small>
+            </span>
           </span>
           {!wrong && <Check size={15} strokeWidth={1.75} aria-label="Active" />}
         </div>
         <div className="flex items-center justify-between gap-2.5 rounded-[12px] px-3.5 py-[11px] text-[13.5px] text-dim" aria-disabled>
-          <span>Base</span>
+          <span className="inline-flex items-center gap-2.5">
+            <BaseLogo size="md" className="opacity-50" />
+            <span>Base</span>
+          </span>
           <small className="text-[11.5px]">Soon</small>
         </div>
         <div className="mx-2 my-1.5 h-px bg-line" />
         {/* Signed out: the one next step is signing in. Signed in: a plain row. */}
         <div className={w.authenticated ? undefined : "px-1 pb-1"}>
-          <Item onClick={faucet.run} disabled={faucet.pending} primary={!w.authenticated} hint={w.authenticated && !faucet.pending ? "Free" : undefined}>
+          <Item onClick={faucet.run} disabled={faucet.pending} primary={!w.authenticated} mark={<UsdcLogo size="md" />} hint={w.authenticated && !faucet.pending ? "Free" : undefined}>
             {faucet.pending ? "Adding test money…" : w.authenticated ? "Get test money" : "Sign in to get test money"}
           </Item>
         </div>
@@ -205,7 +202,12 @@ export function WalletMenu({ address }: { address: `0x${string}` }) {
         <span className="hidden tabular-nums tracking-[0.02em] sm:inline">
           {address.slice(0, 6)}…{address.slice(-4)}
         </span>
-        {status.data && <span className="hidden border-l border-line pl-[9px] tabular-nums text-mute md:inline">{formatUsd6(status.data.usdcBalance)}</span>}
+        {status.data && (
+          <span className="hidden items-center gap-1.5 border-l border-line pl-[9px] tabular-nums text-mute md:inline-flex">
+            <UsdcLogo size="xs" title="USDC" />
+            {formatUsd6(status.data.usdcBalance)}
+          </span>
+        )}
       </Popover.Trigger>
       <Panel label="Account">
         <div className="flex items-center gap-3 px-3 pb-2 pt-2">
@@ -219,7 +221,10 @@ export function WalletMenu({ address }: { address: `0x${string}` }) {
         <div className="grid grid-cols-2 gap-2 px-1.5 pb-1 pt-1">
           <div className="px-2 py-1.5">
             <span className="block text-[10.5px] uppercase tracking-[0.22em] text-dim">Test money</span>
-            <span className="mt-1 block font-display text-[22px] font-extralight tabular-nums tracking-[-0.02em]">{status.data ? formatUsd6(status.data.usdcBalance) : "—"}</span>
+            <span className="mt-1 flex items-center gap-2 font-display text-[22px] font-extralight tabular-nums tracking-[-0.02em]">
+              <UsdcLogo size="md" title="USDC" />
+              {status.data ? formatUsd6(status.data.usdcBalance) : "—"}
+            </span>
           </div>
           <div className="px-2 py-1.5">
             <span className="block text-[10.5px] uppercase tracking-[0.22em] text-dim">Gas</span>
@@ -227,7 +232,7 @@ export function WalletMenu({ address }: { address: `0x${string}` }) {
           </div>
         </div>
         <div className="mx-2 my-1.5 h-px bg-line" />
-        <Item onClick={faucet.run} disabled={faucet.pending} hint={faucet.pending ? undefined : "Free"}>
+        <Item onClick={faucet.run} disabled={faucet.pending} mark={<UsdcLogo size="md" />} hint={faucet.pending ? undefined : "Free"}>
           {faucet.pending ? "Adding test money…" : "Add test money"}
         </Item>
         <Item href="/portfolio">

@@ -1,5 +1,6 @@
 "use client";
 
+import { UsdcLogo } from "../brand/ChainLogos";
 import { useState } from "react";
 import { Download, FlaskConical, RefreshCw } from "lucide-react";
 import type { Address } from "viem";
@@ -98,7 +99,11 @@ export function AddMoneySheet({ open, onOpenChange, backLabel }: { open: boolean
   return (
     <Sheet open={open} onOpenChange={onOpenChange} title="Add test money">
       <Figure label="Test dollars · not real money" figure={formatUsd6(drip, 0)} />
-      {status.data && <span className="t-mono c2">Balance {formatUsd6(status.data.usdcBalance)}</span>}
+      {status.data && (
+        <span className="t-mono c2 inline-flex items-center gap-1.5">
+          <UsdcLogo size="xs" /> Balance {formatUsd6(status.data.usdcBalance)} test USDC
+        </span>
+      )}
       {faucet.step !== "idle" && faucet.step !== "done" && faucet.step !== "error" ? (
         <TxProgress step={faucet.step} skip={["approve"]} />
       ) : faucet.step === "done" ? (

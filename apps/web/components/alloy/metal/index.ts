@@ -4,3 +4,4 @@ export { shapeFromRecipe, posedDrops, recipeOf, K_REST, FORM_SLOTS, type Recipe,
 export { tintFor, tintCss, PAL } from "./palette";
 export { pourAt, neckK, pourFrame, hoverTail, pinchTail, topOf, surfaceTop, type PourOpts, type Tail } from "./actions";
 export { placeTag, resolveTags, type TagEl } from "./tags";
+export { engraveKey, hasLogo } from "./engrave";

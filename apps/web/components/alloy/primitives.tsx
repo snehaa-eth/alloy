@@ -7,6 +7,8 @@ import type { ButtonHTMLAttributes, ComponentType, ReactNode, SVGProps } from "r
 import { AlertTriangle, ArrowRight, Check, Circle, Info, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { STOCK_ICONS } from "@/lib/contracts";
+import { StockMarkChip } from "./brand/StockMark";
+import { hasMark } from "./brand/stockMarks";
 import { logoColor, type Tone } from "./identity";
 
 type Icon = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string; strokeWidth?: number | string }>;
@@ -130,8 +132,12 @@ export function Avatar({ creator, size = "md", seed }: { creator?: boolean; size
   );
 }
 
-/** Stock logo (Coinbase equity icon from lib/contracts STOCK_ICONS), monogram fallback in its brand colour. */
+/**
+ * Stock logo: the company mark from brand/stockMarks (same map as the metal engravings), then the Coinbase equity icon
+ * (lib/contracts STOCK_ICONS), then a monogram in its brand colour.
+ */
 export function StockLogo({ ticker, size = "md" }: { ticker: string; size?: "md" | "lg" }) {
+  if (hasMark(ticker)) return <StockMarkChip ticker={ticker} px={size === "lg" ? 32 : 24} className={cn("c-logo", size === "lg" && "c-logo--lg")} />;
   const src = STOCK_ICONS[ticker.toUpperCase()];
   if (src)
     return (

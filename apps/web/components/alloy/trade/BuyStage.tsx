@@ -168,10 +168,12 @@ export function BuyStage({
     const s = st.current;
     const p = props.current;
     const cam = { ro: [mouse[0] * 0.2, 0.35 + mouse[1] * 0.1, phone ? 5.4 : 4.9] as V3, ta: [0, -0.12, 0] as V3, tan: 0.42 };
-    const posed = posedDrops(shape, { ang: 0.35 + Math.sin(T * 0.2) * 0.25, t: T, rs: 1 + s.swell, off: [0, BASE_Y, 0] });
+    const posed = posedDrops(shape, { ang: Math.sin(T * 0.2) * 0.25, t: T, rs: 1 + s.swell, off: [0, BASE_Y, 0] });
     s.top = surfaceTop(posed.drops);
     const bob = s.ph === "amount" ? Math.sin(T * 1.4) * 0.04 : 0;
-    const drop: Drop = { p: [0.04, s.dy + bob, 0.12], r: s.dr, c: [0.92, 0.9, 0.88] };
+    // the money drop carries the USDC mark; it dissolves as the drop is absorbed
+    const lw = s.ph === "pour" ? 1 - ss(0.3, 0.62, clamp(s.t / DUR.pour)) : 1;
+    const drop: Drop = { p: [0.04, s.dy + bob, 0.12], r: s.dr, c: [0.92, 0.9, 0.88], logo: "USDC", lw };
     const tail = s.tail ? { i: 4, p: [s.tail.p[0], s.tail.p[1] + bob, s.tail.p[2]] as [number, number, number], r: s.tail.r } : null;
     const wob = 1 + (s.ph === "settle" ? 0.8 * Math.exp(-s.t * 2) : 0);
 

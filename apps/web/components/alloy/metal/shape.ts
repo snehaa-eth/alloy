@@ -32,11 +32,21 @@ export type MetalShape = {
   fq: number;
   ph: number;
   twist: number;
+  /** base yaw that turns the BIGGEST stock's zone toward the camera (slightly off-centre), replacing the seed twist */
+  face: number;
   style: "run" | "trend" | "mix";
 };
-export type Drop = { p: V3; r: number; c: RGB };
+/**
+ * `logo` (optional): engrave this drop (a ticker, or "USDC") as a camera-facing recessed decal; `lw` 0..1 fades it
+ * (default 1). Only for SEPARATE drops (hero, studio, pour, sell bud): never set it on a resting / fused form.
+ */
+export type Drop = { p: V3; r: number; c: RGB; logo?: string | null; lw?: number };
 /** Zone uniforms for the shader (≤ 10 zones). */
-export type ZoneSet = { Z: Float32Array; ZC: Float32Array; n: number; zo: V3; wob: number; fq: number; ph: number };
+export type ZoneSet = {
+  Z: Float32Array; ZC: Float32Array; n: number; zo: V3; wob: number; fq: number; ph: number;
+  /** per zone (same order as Z): ticker, weight, centroid direction of the area it covers (posed). Used by zone logos. */
+  L?: { t: string; w: number; dir: V3 }[];
+};
 export type Anchor = { p: V3; r: number; t: string; w: number; front: number };
 export type Posed = { drops: Drop[]; zone: ZoneSet; anchors: Anchor[]; ctr: V3; shape: MetalShape };
 
@@ -144,7 +154,12 @@ export function shapeFromRecipe({ weights, style: st, seed }: Recipe): MetalShap
     z.lab = q[3] > 2 ? norm([q[0], q[1], q[2]]) : z.dir;
     z.area = q[3] / SAMPLES.length;
   });
-  return { lobes, zones, conc, neff, wob: 0.5 + 0.1 * Math.min(neff, 10), fq: 0.65 + 0.16 * Math.min(neff, 10), ph: r5 * 20, twist: (r2 - 0.5) * 0.5, style };
+  // at rest the biggest stock faces the viewer: rotY(a) maps azimuth φ → φ − a, so a = φ − target.
+  // target: a little off-centre (side from the seed) so it reads naturally; the zone's own height keeps it upper-front.
+  const big = zones.reduce((bi, z, i) => (z.w > zones[bi].w ? i : bi), 0);
+  const lb = zones[big]?.lab ?? [0, 0, 1];
+  const face = Math.atan2(lb[0], lb[2]) - side * (0.12 + 0.08 * r2);
+  return { lobes, zones, conc, neff, wob: 0.5 + 0.1 * Math.min(neff, 10), fq: 0.65 + 0.16 * Math.min(neff, 10), ph: r5 * 20, twist: (r2 - 0.5) * 0.5, face, style };
 }
 
 const rotY = (v: V3, a: number): V3 => {
@@ -157,7 +172,7 @@ const rotY = (v: V3, a: number): V3 => {
  * o: ang (turn), sep (hover stretch / split), rs (scale), t (time), off (offset), bob.
  */
 export function posedDrops(sh: MetalShape, o: { ang?: number; sep?: number; rs?: number; t?: number; off?: V3; bob?: number } = {}): Posed {
-  const ang = (o.ang ?? 0) + sh.twist;
+  const ang = (o.ang ?? 0) + sh.face;
   const rs = o.rs ?? 1;
   const k = 1 + (o.sep ?? 0);
   const off = o.off ?? [0, 0, 0];
@@ -184,7 +199,8 @@ export function posedDrops(sh: MetalShape, o: { ang?: number; sep?: number; rs?:
     const l = rotY(z.lab, ang);
     return { p: [ctr[0] + l[0] * 0.5 * rs, ctr[1] + l[1] * 0.5 * rs, ctr[2] + l[2] * 0.5 * rs] as V3, r: 0.45 * rs, t: z.t, w: z.w, front: z.area > 0.004 ? 1 : -1 };
   });
-  return { drops, zone: { Z, ZC, n: Math.min(10, sh.zones.length), zo: ctr, wob: sh.wob, fq: sh.fq, ph: sh.ph }, anchors, ctr, shape: sh };
+  const L = sh.zones.slice(0, 10).map((z) => ({ t: z.t, w: z.w, dir: rotY(z.lab, ang) }));
+  return { drops, zone: { Z, ZC, n: Math.min(10, sh.zones.length), zo: ctr, wob: sh.wob, fq: sh.fq, ph: sh.ph, L }, anchors, ctr, shape: sh };
 }
 
 /** Convenience: recipe from parallel arrays. */
