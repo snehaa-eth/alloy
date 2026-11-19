@@ -71,9 +71,25 @@ function useTxBase<R>() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [result, setResult] = useState<R | null>(null);
 
-  function requireReady(): Ready & { ctx: TxCtx } {
+  const { wallets } = useWallets();
+
+  /** Puts the signing wallet on Base Sepolia before any transaction. Privy embedded wallets can sit on another
+   *  chain (e.g. a leftover default like Monad testnet 10143) that wagmi doesn't know about, so wagmi's chain
+   *  check alone misses it. */
+  async function ensureChain() {
+    const w = wallets.find((x) => x.address.toLowerCase() === wallet.address?.toLowerCase());
+    if (w && w.chainId !== `eip155:${DEFAULT_CHAIN_ID}`) {
+      setStep("switch");
+      await w.switchChain(DEFAULT_CHAIN_ID);
+    } else if (wallet.wrongChain) {
+      setStep("switch");
+      await wallet.switchToDefault();
+    }
+  }
+
+  async function requireReady(): Promise<Ready & { ctx: TxCtx }> {
     if (!wallet.address) throw new Error("Connect a wallet first.");
-    if (wallet.wrongChain) throw new Error("Switch to Base Sepolia first.");
+    await ensureChain();
     const chainId = DEFAULT_CHAIN_ID;
     if (!isDeployed(chainId)) throw new NotWiredError(`Alloy on chain ${chainId}`);
     return { chainId, account: wallet.address, ctx: { config, chainId, account: wallet.address, sender } };
@@ -161,7 +177,7 @@ export function useBuyBasket(basket: Address) {
   const mutation = useMutation({
     mutationFn: async ({ usdcIn, slippageBps }: { usdcIn: bigint; slippageBps: number }) => {
       b.begin();
-      const ready = b.requireReady();
+      const ready = await b.requireReady();
       const { router, usdc, usdcSymbol } = getDeployment(ready.chainId);
       b.setStep("quote");
       const [quote, bal] = await Promise.all([
@@ -194,7 +210,7 @@ export function useSellBasket(basket: Address) {
   const mutation = useMutation({
     mutationFn: async ({ shares, slippageBps }: { shares: bigint; slippageBps: number }) => {
       b.begin();
-      const ready = b.requireReady();
+      const ready = await b.requireReady();
       const { router } = getDeployment(ready.chainId);
       b.setStep("quote");
       const [quote, bal] = await Promise.all([
@@ -227,7 +243,7 @@ export function useWithdraw(basket: Address) {
   const mutation = useMutation({
     mutationFn: async ({ shares }: { shares: bigint }) => {
       b.begin();
-      const ready = b.requireReady();
+      const ready = await b.requireReady();
       const bal = await balanceOf(b.config, ready.chainId, basket, ready.account);
       if (bal < shares) throw new Error("You don't hold that many shares.");
       b.setStep("simulate");
@@ -252,7 +268,7 @@ export function useClaimOwed(basket: Address) {
   const mutation = useMutation({
     mutationFn: async ({ token, to }: { token: Address; to?: Address }) => {
       b.begin();
-      const ready = b.requireReady();
+      const ready = await b.requireReady();
       b.setStep("simulate");
       const tx = txs.claimOwed(ready.chainId, { basket, token, to: to ?? ready.account });
       const amount = await simulateTx<bigint>(ready.ctx, tx);
@@ -280,7 +296,7 @@ export function useCreateBasket() {
       args: Omit<CreateArgs, "minOuts"> & { slippageBps: number; thesis?: string; tags?: string[] },
     ) => {
       b.begin();
-      const ready = b.requireReady();
+      const ready = await b.requireReady();
       const { factory, usdc, usdcSymbol } = getDeployment(ready.chainId);
       b.setStep("quote");
       const [{ minOuts }, bal] = await Promise.all([
@@ -313,7 +329,7 @@ export function useProposeRecipe(basket: Address) {
   const mutation = useMutation({
     mutationFn: async ({ weightsBps, reason }: { weightsBps: number[]; reason: string }) => {
       b.begin();
-      const ready = b.requireReady();
+      const ready = await b.requireReady();
       const reasonHash = reasonHashOf(reason);
       b.setStep("simulate");
       const tx = txs.propose(ready.chainId, { basket, weightsBps, reasonHash });
@@ -336,7 +352,7 @@ export function useCancelRecipe(basket: Address) {
   const mutation = useMutation({
     mutationFn: async () => {
       b.begin();
-      const ready = b.requireReady();
+      const ready = await b.requireReady();
       b.setStep("simulate");
       const tx = txs.cancelRecipe(ready.chainId, basket);
       await simulateTx(ready.ctx, tx);
@@ -364,7 +380,7 @@ export function useFaucet() {
   const mutation = useMutation({
     mutationFn: async () => {
       b.begin();
-      const ready = b.requireReady();
+      const ready = await b.requireReady();
       b.setStep("quote");
       const relayed = await b.api.faucetRelay(ready.account);
       if (relayed) {

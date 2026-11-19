@@ -18,10 +18,11 @@ import type { SupportedChainId } from "./chains";
 import { BUILDER_DATA_SUFFIX, NotWiredError, encodeTx, type ContractTx } from "./contracts";
 import { describeTxErrorCore } from "./errors";
 
-export type TxStep = "idle" | "quote" | "approve" | "simulate" | "write" | "confirm" | "done" | "error";
+export type TxStep = "idle" | "switch" | "quote" | "approve" | "simulate" | "write" | "confirm" | "done" | "error";
 
 export const TX_STEP_LABEL: Record<TxStep, string> = {
   idle: "",
+  switch: "Switching to Base Sepolia…",
   quote: "Getting a quote…",
   approve: "Approving exact amount…",
   simulate: "Simulating…",

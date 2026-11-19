@@ -119,21 +119,27 @@ export function messageForError(e: DecodedError): string {
   return `Transaction would revert (${e.name}).`;
 }
 
+const WRONG_CHAIN_RE = /does not match the target chain|chain mismatch|unsupported chain|switch.*chain/i;
+const WRONG_CHAIN_MSG = "Your wallet was on a different network. Tap Try again and we'll move it to Base Sepolia.";
+const GAS_MSG = "Your wallet needs a little test ETH for fees. Tap Get test money in the network menu, then try again.";
+
 export function describeTxErrorCore(err: unknown): string {
+  const text = err instanceof BaseError ? `${err.shortMessage} ${err.details ?? ""}` : err instanceof Error ? err.message : "";
+  if (WRONG_CHAIN_RE.test(text)) return WRONG_CHAIN_MSG;
   if (err instanceof BaseError) {
     if (err.walk((e) => e instanceof UserRejectedRequestError)) return "You rejected the request in your wallet.";
     if (err.walk((e) => e instanceof InsufficientFundsError))
-      return "Your wallet has no Base Sepolia ETH for gas. Get some from a Base Sepolia faucet and retry.";
+      return GAS_MSG;
     const decoded = decodeTxError(err);
     if (decoded) return messageForError(decoded);
     if (/user rejected|denied/i.test(err.details ?? "")) return "You rejected the request in your wallet.";
-    return err.shortMessage;
+    return /[a-z]+:\s|0x[0-9a-f]{6,}|id:\s?\d+/i.test(err.shortMessage) ? "That didn't go through. Nothing was spent. Try again." : err.shortMessage;
   }
   if (err instanceof Error) {
     if (/user rejected|denied transaction|rejected the request/i.test(err.message))
       return "You rejected the request in your wallet.";
     if (/insufficient funds/i.test(err.message))
-      return "Your wallet has no Base Sepolia ETH for gas. Get some from a Base Sepolia faucet and retry.";
+      return GAS_MSG;
     return err.message;
   }
   return "Something went wrong.";
