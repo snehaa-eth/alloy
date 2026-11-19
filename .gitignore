@@ -19,3 +19,6 @@ docs/design/refboard/
 # Playwright e2e artifacts
 apps/web/test-results/
 apps/web/playwright-report/
+
+# Docs, design, marketing: local only, not on GitHub
+docs/
