@@ -1,19 +1,23 @@
 import type { Metadata } from "next";
-import { CreateBasketForm } from "@/components/create/CreateBasketForm";
 import { getStocks } from "@/lib/data";
+import { getDeployment } from "@/lib/contracts";
+import { DEFAULT_CHAIN_ID } from "@/lib/chains";
+import { CreateScreen, type PickStock } from "@/components/alloy/screens/CreateScreen";
 
-export const metadata: Metadata = { title: "Create a basket" };
+export const metadata: Metadata = { title: "Build a basket" };
+
+/** The six Base Sepolia test stocks (packages/testnet-env). */
+const TESTNET_TICKERS = ["NVDA", "MSFT", "GOOGL", "AMZN", "AAPL", "TSLA"];
 
 export default async function CreatePage() {
-  const stocks = await getStocks();
-  return (
-    <div className="mx-auto max-w-6xl px-4 pb-16 pt-28">
-      <h1 className="mb-2 text-3xl font-semibold">Create a basket</h1>
-      <p className="mb-8 max-w-2xl text-gray-400">
-        Pick stocks, set weights, choose how it rebalances, and seed it. One transaction creates the basket and buys
-        your seed position.
-      </p>
-      <CreateBasketForm stocks={stocks} />
-    </div>
-  );
+  const deployed = getDeployment(DEFAULT_CHAIN_ID).stocks;
+  let stocks: PickStock[] = deployed.map((s) => ({ ticker: s.ticker, name: s.name, token: s.token }));
+  if (stocks.length === 0) {
+    const all = await getStocks();
+    stocks = all.filter((s) => TESTNET_TICKERS.includes(s.ticker)).map((s) => ({ ticker: s.ticker, name: s.name, token: s.token }));
+  }
+  return <CreateScreen stocks={stocks} />;
 }
+
+/** Live chain data: re-read at most every 30s. */
+export const revalidate = 30;

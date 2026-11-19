@@ -3,3 +3,8 @@ docs/marketing/video/**/node_modules
 docs/marketing/video/**/scenes/node_modules
 .DS_Store
 **/.DS_Store
+node_modules/
+__pycache__/
+*.pyc
+.ponder/
+.playwright-mcp/

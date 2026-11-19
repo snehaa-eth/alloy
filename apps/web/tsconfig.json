@@ -25,6 +25,9 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@alloy/sdk": [
+        "../../packages/sdk/src/index.ts"
       ]
     }
   },
