@@ -7,7 +7,9 @@ import { Activity, Compass, PieChart, User, X } from "lucide-react";
 import { useWallet } from "@/lib/hooks/use-wallet";
 import { DEFAULT_CHAIN } from "@/lib/chains";
 import { StatusProvider, StatusStrip } from "./status";
-import { BrandMark, CreatorAvatar, SiteFooter } from "./v5/parts";
+import { BrandMark, SiteFooter } from "./v5/parts";
+import { NetworkChip, WalletMenu } from "./NetworkChip";
+import { useAccount } from "./hooks";
 
 const TABS = [
   { href: "/explore", label: "Explore", icon: Compass, match: (p: string) => p.startsWith("/explore") || p.startsWith("/b/") },
@@ -52,11 +54,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             })}
           </nav>
           <div className="flex items-center gap-2">
-            {DEFAULT_CHAIN.testnet && (
-              <span className="hidden h-7 items-center gap-1.5 rounded-full border border-white/10 px-2.5 text-[12px] text-tx2 lg:inline-flex" title={DEFAULT_CHAIN.name}>
-                <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--test)" }} aria-hidden /> Test network
-              </span>
-            )}
+            <NetworkChip />
             <span className={landing ? "hidden sm:inline-flex" : "inline-flex"}>
               <AccountButton />
             </span>
@@ -94,6 +92,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 function AccountButton() {
   const w = useWallet();
+  const acct = useAccount();
+  // Dev-only preview (?preview=holder) renders the signed-in menu without Privy, for review screenshots.
+  if (acct.preview && !w.address) return <WalletMenu address="0xc7000000000000000000000000000000000a1aeb" />;
   if (!w.ready) return <span className="h-9 w-20" aria-hidden />;
   if (!w.authenticated || !w.address)
     return (
@@ -103,12 +104,7 @@ function AccountButton() {
         </span>
       </button>
     );
-  return (
-    <Link href="/me" className="inline-flex h-9 items-center gap-2 rounded-full border border-white/10 pl-1.5 pr-3.5 text-[14px] font-medium text-tx3 no-underline hover:text-tx" aria-label="Your account">
-      <CreatorAvatar handle={w.address.slice(2)} seed={w.address} size={22} />
-      {w.address.slice(0, 6)}…{w.address.slice(-4)}
-    </Link>
-  );
+  return <WalletMenu address={w.address} />;
 }
 
 /** "Open in browser" bar, only inside X / Instagram / Telegram / Facebook webviews. */

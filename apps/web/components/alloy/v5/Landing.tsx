@@ -7,8 +7,8 @@ import Link from "next/link";
 import { ArrowRight, Clock, Coins, DoorOpen, HandCoins, KeyRound, MessageSquareText, Percent, Plus, ShieldCheck } from "lucide-react";
 import { formatUsd6 } from "@/lib/units";
 import { AlloyBar, fmtPct } from "../primitives";
-import { HeroParallax } from "../motion/HeroParallax";
 import { StoryScroll } from "../motion/StoryScroll";
+import { HeroStories } from "../motion/HeroStories";
 import { compactUsd6 } from "../basket-view";
 import type { LoadedBasket } from "../load";
 import { FEATURED_BASKET, isPublic } from "../config";
@@ -32,6 +32,17 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
   const followers = visible.reduce((a, i) => a + i.v.basket.followers, 0);
   const stocks = new Set(items.flatMap((i) => i.v.tickers)).size;
   const feePct = featured ? featured.v.basket.feeBps / 100 : 1;
+  // Hero stories: only themes with a live public basket; the card swaps in sync with the rolling word.
+  const heroStories = (
+    [
+      ["AI", featured],
+      ["Big Tech", visible.find((i) => /big tech/i.test(i.v.basket.name))],
+      ["Tesla", visible.find((i) => /conviction|tesla|\bev\b/i.test(i.v.basket.name))],
+    ] as [string, LoadedBasket | undefined][]
+  )
+    .filter((x): x is [string, LoadedBasket] => !!x[1])
+    .filter((x, k, a) => a.findIndex((y) => y[1] === x[1]) === k)
+    .map(([word, item]) => ({ word, item }));
 
   return (
     <div className="overflow-x-clip">
@@ -41,57 +52,40 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
           <div className="absolute -left-40 -top-40 hidden h-[520px] w-[520px] rounded-full opacity-[0.14] blur-[120px] md:block" style={{ background: "var(--cta)" }} />
           <div className="absolute -right-40 top-20 h-[520px] w-[620px] rounded-full opacity-[0.07] blur-[140px]" style={{ background: "var(--acc)" }} />
         </div>
-        <div className="mx-auto grid max-w-app items-center gap-12 px-4 pb-16 pt-10 md:px-8 md:pb-24 md:pt-20 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
-          <div className="flex flex-col gap-7">
+        <HeroStories
+          stories={heroStories.map(({ word, item }) => ({ word, card: <FeaturedStory item={item} fan={visible.filter((x) => x !== item).slice(0, 2)} /> }))}
+          top={
             <span className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[13px] text-tx3">
-              <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--acc)" }} aria-hidden /> Themed investing for everyone outside the US
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--acc)" }} aria-hidden /> Invest in stories, not symbols.
             </span>
-            <h1 className="font-display text-[56px] uppercase leading-[0.95] tracking-[0.01em] sm:text-[72px] xl:text-[92px]" aria-label="Invest in stories, not symbols.">
-              {/* Word-by-word reveal on load (CSS, 60ms stagger; static for reduced motion) */}
-              <span aria-hidden>
-                <W i={0}>Invest</W> <W i={1}>in</W>{" "}
-                <W i={2} style={{ color: "var(--acc)" }}>
-                  stories,
-                </W>
-                <br />
-                <W i={3}>
-                  not
-                </W>{" "}
-                <W i={4}>
-                  symbols.
-                </W>
-              </span>
-            </h1>
-            <p className="max-w-[480px] text-[18px] leading-relaxed text-tx3">
-              Buy a whole theme of US stocks, from $5. Each basket runs on its creator&apos;s plan.
-            </p>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Link href="/explore" className="c-btn c-btn--primary c-btn--auto !h-[52px] !rounded-full !px-7">
-                Explore baskets <ArrowRight size={16} strokeWidth={2} aria-hidden />
-              </Link>
-              <Link href="/create" className="c-btn c-btn--secondary c-btn--auto !h-[52px] !rounded-full !px-7">
-                <Plus size={16} strokeWidth={2} aria-hidden /> Build a basket
-              </Link>
-            </div>
-            <dl className="mt-2 grid max-w-[480px] grid-cols-3 gap-4 border-t border-white/[0.08] pt-6">
-              {[
-                ["$5", "minimum"],
-                [`${feePct}%`, "a year, nothing else"],
-                ["Anytime", "sell or withdraw"],
-              ].map(([k, v]) => (
-                <div key={k} className="flex flex-col gap-1">
-                  <dt className="text-[20px] font-semibold">{k}</dt>
-                  <dd className="text-[13px] text-tx2">{v}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-          {featured && (
-            <HeroParallax>
-              <FeaturedStory item={featured} fan={trending.slice(0, 2)} />
-            </HeroParallax>
-          )}
-        </div>
+          }
+          bottom={
+            <>
+              <p className="max-w-[480px] text-[18px] leading-relaxed text-tx3">Baskets of US stocks, built around one idea. From $5.</p>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Link href="/explore" className="c-btn c-btn--primary c-btn--auto !h-[52px] !rounded-full !px-7">
+                  Explore baskets <ArrowRight size={16} strokeWidth={2} aria-hidden />
+                </Link>
+                <Link href="/create" className="c-btn c-btn--secondary c-btn--auto !h-[52px] !rounded-full !px-7">
+                  <Plus size={16} strokeWidth={2} aria-hidden /> Build a basket
+                </Link>
+              </div>
+              <p className="-mt-3 text-[13px] text-tx2">Not available in the US. You can lose money.</p>
+              <dl className="mt-2 grid max-w-[480px] grid-cols-3 gap-4 border-t border-white/[0.08] pt-6">
+                {[
+                  ["$5", "minimum"],
+                  [`${feePct}%`, "a year, nothing else"],
+                  ["Anytime", "sell or withdraw"],
+                ].map(([k, v]) => (
+                  <div key={k} className="flex flex-col gap-1">
+                    <dt className="text-[20px] font-semibold">{k}</dt>
+                    <dd className="text-[13px] text-tx2">{v}</dd>
+                  </div>
+                ))}
+              </dl>
+            </>
+          }
+        />
       </section>
 
       {/* ---------------- Trust strip ---------------- */}
@@ -135,10 +129,12 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
       </section>
 
       {/* ---------------- How it works ---------------- */}
-      <section className="mx-auto max-w-app px-4 py-16 md:px-8 md:py-24" aria-labelledby="how">
-        <SectionHead id="how" title="How it works" />
+      <section className="mx-auto max-w-app px-4 py-16 md:px-8 md:py-24 lg:py-12" aria-label="How it works">
+        {!featured && <SectionHead id="how" title="How it works" />}
         {featured && (
           <StoryScroll
+            heading={<SectionHead id="how" title="How it works" />}
+            mobileHeading={<SectionHead title="How it works" />}
             parts={featured.v.target}
             tone={featured.v.id.tone}
             covers={visible.slice(0, 4).map((i) => ({ src: i.v.id.coverSrc, tone: i.v.id.tone }))}
@@ -373,14 +369,5 @@ function RecipeMock({ item }: { item: LoadedBasket }) {
       ))}
       <AlloyBar parts={parts} tone={item.v.id.tone} legend={false} />
     </div>
-  );
-}
-
-/** One hero headline word (CSS rise, staggered by --i). */
-function W({ i, children, className, style }: { i: number; children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
-  return (
-    <span className={`v-word ${className ?? ""}`} style={{ ...style, ["--i" as string]: i } as React.CSSProperties}>
-      {children}
-    </span>
   );
 }

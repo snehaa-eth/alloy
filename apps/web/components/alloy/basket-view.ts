@@ -71,7 +71,9 @@ export function basketView(basket: Basket, perf?: Performance | null, histories?
   const last = perf?.navSeries[perf.navSeries.length - 1]?.navPerShareUsd6 ?? 0n;
   const sinceBps = first > 0n ? Number(((last - first) * 10_000n) / first) : 0;
   const values = basket.components.map((c) => valueUsd6(c.balance8, c.stock.price8));
-  const nowBps = nav > 0n ? toWeightsBps(values) : basket.components.map((c) => c.targetBps);
+  // Guard: live data can briefly have zero-priced legs (fresh feeds) even when nav > 0.
+  const valueSum = values.reduce((x, y) => x + y, 0n);
+  const nowBps = nav > 0n && valueSum > 0n ? toWeightsBps(values) : basket.components.map((c) => c.targetBps);
   const creatorStakeUsd6 = basket.totalSupply > 0n ? sharesToUsd6(basket.creatorShares, nav, basket.totalSupply) : 0n;
   const creatorStakeBps = basket.totalSupply > 0n ? Number((basket.creatorShares * 10_000n) / basket.totalSupply) : 0;
   return {

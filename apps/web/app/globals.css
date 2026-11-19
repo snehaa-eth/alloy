@@ -549,3 +549,12 @@ html[data-motion="low"] .v-wipe { animation: none; }
   .v-spot:active { transform: none !important; opacity: 0.85; }
   .animate-sheet-in { animation: c-fade-in 150ms ease-out both !important; }
 }
+
+/* How it works pinned block (~560px): fixed card height so steps never shift; scale down on short viewports
+   so the heading always clears the navbar (64px + 24px). */
+@media (max-height: 700px) {
+  .v-story-pin { transform: scale(0.86); transform-origin: top center; }
+}
+@media (max-height: 620px) {
+  .v-story-pin { transform: scale(0.74); }
+}
