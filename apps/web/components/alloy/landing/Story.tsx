@@ -250,13 +250,14 @@ export function Story({ b, moves }: { b: LBasket; moves: StoryMoves | null }) {
     }
 
     // hero copy
-    const hOut = ss(0, 0.045, p);
+    // Stay crisp for the first ~15vh of scroll (and after the browser restores a small scroll), then fade out.
+    const hOut = ss(0.015, 0.06, p);
     const hero = q("[data-hero]");
     hero.style.opacity = String(1 - hOut);
-    hero.style.filter = hOut > 0.01 ? `blur(${hOut * 12}px)` : "none";
+    hero.style.filter = hOut > 0.35 ? `blur(${(hOut - 0.35) * 9}px)` : "none";
     hero.style.transform = (phone ? "" : "translateY(-50%) ") + `translateY(${-hOut * 40}px) scale(${1 - hOut * 0.04})`;
     hero.style.pointerEvents = hOut > 0.5 ? "none" : "auto";
-    q("[data-cue]").style.opacity = String(1 - ss(0, 0.02, p));
+    q("[data-cue]").style.opacity = String(1 - ss(0.01, 0.03, p));
     // morph caption
     const aIn = ss(0.04, 0.08, p) * (1 - ss(0.15, 0.19, p)), bIn = ss(0.19, 0.23, p) * (1 - ss(0.27, 0.3, p));
     const setM = (e: HTMLElement, v: number) => {
