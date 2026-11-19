@@ -11,3 +11,7 @@ __pycache__/
 docs/design/review/shots/
 docs/design/app-shots-v5/*-burgundy.png
 docs/design/app-shots-v5/*-v2palette.png
+
+# Design mockups and reference screenshots: keep local, not on GitHub
+docs/design/artdir/
+docs/design/refboard/

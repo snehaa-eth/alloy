@@ -65,6 +65,10 @@ const KNOWN_CREATION: Record<string, { block: bigint; t: number }> = {
 /** Known creators -> display identity. Unknown creators show a short address. */
 const KNOWN_CREATORS: Record<string, { handle: string; displayName: string }> = {
   "0xcbe600349ce4cf89842bc371e4a4062140cdcccd": { handle: "alloy_fi", displayName: "Alloy" },
+  // Fictional testnet creators (packages/contracts/deployments/creators.84532.json).
+  "0x0275d483000a0cf86792f3e529c5913e485e3fc2": { handle: "meera_invests", displayName: "Meera R." },
+  "0xb163100939d6c7e20fd514350456977740f30976": { handle: "tunde.builds", displayName: "Tunde A." },
+  "0xe466ea631914f4a84d9ed32ee38f68e400201a02": { handle: "lucia_longterm", displayName: "Lucia M." },
 };
 
 export function shortAddress(a: string): string {
@@ -571,6 +575,9 @@ export async function readFollowers(basket: Basket): Promise<number | null> {
     holders.delete("0x000000000000000000000000000000000000dead");
     holders.delete(basket.creator.address.toLowerCase());
     holders.delete(getDeployment(chainId).router.toLowerCase());
+    // Fee shares are minted to the treasury on every buy; it isn't a follower.
+    const treasury = (getDeployment(chainId) as { treasury?: string }).treasury;
+    if (treasury) holders.delete(treasury.toLowerCase());
     if (holders.size === 0) return 0;
     const bals = await client.multicall({
       allowFailure: false,

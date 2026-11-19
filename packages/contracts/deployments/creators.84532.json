@@ -1,0 +1,208 @@
+{
+  "aBRND": {
+    "basket": "0x9aaFEd79A3f47bB4Fa3F9CE262b7DD2F07D5Ba05",
+    "creator": "0x0275d483000A0CF86792F3e529c5913e485E3Fc2",
+    "creatorShares": "249750000000000000000",
+    "displayName": "Meera R.",
+    "feeBps": 75,
+    "followers": 3,
+    "handle": "meera_invests",
+    "mode": "balanced",
+    "name": "Everyday Brands",
+    "navUsd8": 32960039304,
+    "stakeUsdc6": 250000000,
+    "stocks": [
+      "tAAPLc",
+      "tAMZNc",
+      "tGOOGLc"
+    ],
+    "style": "Keep the mix",
+    "symbol": "aBRND",
+    "targetBps": [
+      4000,
+      3000,
+      3000
+    ],
+    "thesis": "Companies you already pay every week: phones, parcels, search.",
+    "totalSupply": "329949901041946064928"
+  },
+  "aCHIP": {
+    "basket": "0xd927Ad4E2DE74a06e81cA6C7b438A02598F4FD8D",
+    "creator": "0xb163100939D6C7e20fd514350456977740F30976",
+    "creatorShares": "399600000000000000000",
+    "displayName": "Tunde A.",
+    "feeBps": 100,
+    "followers": 4,
+    "handle": "tunde.builds",
+    "mode": "trend-aware",
+    "name": "Chips & Cloud",
+    "navUsd8": 52632127582,
+    "stakeUsdc6": 400000000,
+    "stocks": [
+      "tNVDAc",
+      "tMSFTc",
+      "tAMZNc"
+    ],
+    "style": "Ride the trend",
+    "symbol": "aCHIP",
+    "targetBps": [
+      4500,
+      3000,
+      2500
+    ],
+    "thesis": "The chips and cloud servers every AI app runs on.",
+    "totalSupply": "526917621378220320978"
+  },
+  "aEVNR": {
+    "basket": "0x95110Cd3074D0321Eaac20970f66f722569F4c45",
+    "creator": "0xE466Ea631914F4A84D9Ed32ee38f68e400201a02",
+    "creatorShares": "149850000000000000000",
+    "displayName": "Lucia M.",
+    "feeBps": 150,
+    "followers": 2,
+    "handle": "lucia_longterm",
+    "mode": "let-winners-run",
+    "name": "EV & Energy",
+    "navUsd8": 19781900160,
+    "stakeUsdc6": 150000000,
+    "stocks": [
+      "tTSLAc",
+      "tNVDAc",
+      "tGOOGLc"
+    ],
+    "style": "Let winners run",
+    "symbol": "aEVNR",
+    "targetBps": [
+      4000,
+      3500,
+      2500
+    ],
+    "thesis": "Electric cars, the chips inside them, and self-driving software.",
+    "totalSupply": "197967541385320300418"
+  },
+  "chainId": 84532,
+  "factory": "0x2AeA38fb99D411607201EE42058520Fe8B19785f",
+  "followerList": {
+    "follower_1": {
+      "address": "0x7D5F38c33d55158Dc256483a8C4a6508eD8d4B80",
+      "baskets": [
+        "0x9aaFEd79A3f47bB4Fa3F9CE262b7DD2F07D5Ba05",
+        "0xA6665F87702Ba1cDeF544E890147B2b5d305Cec3"
+      ],
+      "shares": [
+        "24985860597570935925",
+        "49745008510332622409"
+      ],
+      "usdc6": [
+        25000000,
+        50000000
+      ]
+    },
+    "follower_2": {
+      "address": "0x9DF8f465c0bC9D6853Feed0390ff8418B8fe734B",
+      "baskets": [
+        "0x9aaFEd79A3f47bB4Fa3F9CE262b7DD2F07D5Ba05",
+        "0xd927Ad4E2DE74a06e81cA6C7b438A02598F4FD8D"
+      ],
+      "shares": [
+        "39974639667276413593",
+        "59964310398843771502"
+      ],
+      "usdc6": [
+        40000000,
+        60000000
+      ]
+    },
+    "follower_3": {
+      "address": "0x717B515d4977A74507d1E35A0FB51899fa89E2e1",
+      "baskets": [
+        "0x9aaFEd79A3f47bB4Fa3F9CE262b7DD2F07D5Ba05",
+        "0x95110Cd3074D0321Eaac20970f66f722569F4c45"
+      ],
+      "shares": [
+        "14989400777098715410",
+        "29980867102840605383"
+      ],
+      "usdc6": [
+        15000000,
+        30000000
+      ]
+    },
+    "follower_4": {
+      "address": "0xc0A1C79FC7611b28C88ab14aDBD3D64952867Ea4",
+      "baskets": [
+        "0xd927Ad4E2DE74a06e81cA6C7b438A02598F4FD8D",
+        "0x59BbaAE469CBB1429a1a71e8a9154997db59b5BE"
+      ],
+      "shares": [
+        "34976495240686111012",
+        "29903828483471660593"
+      ],
+      "usdc6": [
+        35000000,
+        30000000
+      ]
+    },
+    "follower_5": {
+      "address": "0x1B0136C0aFC842439728B4333b60ff361156431a",
+      "baskets": [
+        "0xd927Ad4E2DE74a06e81cA6C7b438A02598F4FD8D",
+        "0xA6665F87702Ba1cDeF544E890147B2b5d305Cec3"
+      ],
+      "shares": [
+        "19985696372180430170",
+        "21886799914817018013"
+      ],
+      "usdc6": [
+        20000000,
+        22000000
+      ]
+    },
+    "follower_6": {
+      "address": "0x9a3Bd36B96F9dc323823B43e5Dc7a305E6cf8125",
+      "baskets": [
+        "0xd927Ad4E2DE74a06e81cA6C7b438A02598F4FD8D",
+        "0xA6665F87702Ba1cDeF544E890147B2b5d305Cec3"
+      ],
+      "shares": [
+        "11991119366510008294",
+        "14922484324173513681"
+      ],
+      "usdc6": [
+        12000000,
+        15000000
+      ]
+    },
+    "follower_7": {
+      "address": "0x0Fb36e03Eb9ca6F46227FA974CdDF4f9091eFA71",
+      "baskets": [
+        "0x95110Cd3074D0321Eaac20970f66f722569F4c45",
+        "0xa92a6e8DE62a96849c93D768b8E11eB242379B25"
+      ],
+      "shares": [
+        "17986674282479695035",
+        "44917886260269175569"
+      ],
+      "usdc6": [
+        18000000,
+        45000000
+      ]
+    }
+  },
+  "houseBasketSeededFollowers": {
+    "The AI Build-Out (aAIW) 0xA6665F87702Ba1cDeF544E890147B2b5d305Cec3": 3,
+    "Big Tech, Trimmed (aBIGT) 0x59BbaAE469CBB1429a1a71e8a9154997db59b5BE": 1,
+    "Conviction Bets (aCONV) 0xa92a6e8DE62a96849c93D768b8E11eB242379B25": 1
+  },
+  "note": "Testnet demo creators. No keys here; keys live in packages/testnet-env/.env.seed (gitignored).",
+  "router": "0xC772347B96c75648B6bB8F9d2B78416F2E9aC03d",
+  "seededAtBlocks": [
+    60815071,
+    60815313
+  ],
+  "webNotes": [
+    "followers = seeded follower wallets holding shares. apps/web readFollowers also counts the protocol treasury (deployer 0xcBe6...CCcD), which receives fee shares on every buy, so creator baskets show +1 until the treasury is excluded.",
+    "aCHIP 'Ride the trend' has balanced bands on-chain; the web shows it as trend-aware only if API metadata tags it 'trend-aware'.",
+    "aEVNR uses the exact Let Winners Run params (10000/10000/4000) so modeFromBands detects it."
+  ]
+}
