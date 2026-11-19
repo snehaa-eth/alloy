@@ -1,7 +1,8 @@
 "use client";
 
 /** Shared /waitlist pieces: sign-up (card + bar), facts, price strip, counter, metal vignettes, footer. */
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { ArrowRight, AtSign, Check, Mail } from "lucide-react";
 import { API_BASE_URL } from "@/lib/api/client";
 import { BaseLogo, UsdcLogo, UsdtLogo } from "../brand/ChainLogos";
@@ -10,11 +11,15 @@ import { MetalBasket, type MetalState } from "../metal/MetalBasket";
 import { tintCss } from "../metal/palette";
 import type { Recipe } from "../metal/shape";
 import { OdometerOnView, WordReveal } from "../motion/alloy-motion";
+import { AlloyPass, maskEmail } from "./AlloyPass";
 import { checkInput, joinWaitlist, warmWaitlistApi } from "./api";
 import { cn } from "@/lib/utils";
 
 export const X_URL = "https://x.com/alloy_fi";
-const SHARE_URL = `https://x.com/intent/post?text=${encodeURIComponent("I'm on the list for @alloy_fi: baskets of US stocks around one idea, from $5.")}&url=${encodeURIComponent("https://crates-ui.vercel.app/waitlist")}`;
+const shareUrl = (position: number | null) =>
+  `https://x.com/intent/post?text=${encodeURIComponent(
+    `${position ? `Pass #${String(position).padStart(4, "0")}` : "I'm on the list"} for @alloy_fi. Baskets of US stocks around one idea, from $5.`,
+  )}&url=${encodeURIComponent(position ? `https://alloyfi.vercel.app/waitlist/pass/${position}` : "https://alloyfi.vercel.app/waitlist")}`;
 export const SUBLINE = "Baskets of US stocks around one idea, from $5, built by creators you follow. Real money on Base is coming. Get in first.";
 export const FACTS = ["From $5", "1% a year, nothing else", "Sell anytime"];
 /** Show the public counter only once the list is big enough to be a signal, not a weakness. */
@@ -62,7 +67,7 @@ export function BuiltRow({ className }: { className?: string }) {
 
 /* ------------------------------------------------------------------ sign-up */
 
-type Done = { position: number | null; already: boolean };
+type Done = { position: number | null; already: boolean; holder: string };
 
 function useJoin() {
   const [email, setEmail] = useState("");
@@ -80,7 +85,7 @@ function useJoin() {
     setBusy(true);
     const r = await joinWaitlist(email, handle);
     setBusy(false);
-    if (r.ok) setDone({ position: r.position, already: r.already });
+    if (r.ok) setDone({ position: r.position, already: r.already, holder: handle.trim() ? `@${handle.trim().replace(/^@/, "")}` : maskEmail(email.trim()) });
     else setErr({ field: "form", msg: r.error });
   }
   const onEmail = (v: string) => {
@@ -174,31 +179,77 @@ function Note({ err, className, extra }: { err: { msg: string } | null; classNam
   );
 }
 
-function Success({ done, center }: { done: Done; center?: boolean }) {
-  return (
-    <div className={cn("flex flex-col", center ? "items-center text-center" : "items-start")} role="status" aria-live="polite" data-testid="join-success">
-      <span className="wl-check flex h-11 w-11 items-center justify-center rounded-full text-ink">
-        <Check size={18} strokeWidth={1.75} aria-hidden />
-      </span>
-      <h2 className="mt-4 font-display text-[26px] font-light tracking-[-0.02em]">{done.already ? "You're already on the list." : "You're on the list."}</h2>
-      <p className="mt-1.5 text-[14px] text-mute">
-        {done.position ? (
-          <>
-            You&apos;re <span className="num text-ink">#{done.position.toLocaleString("en-US")}</span> in line. We&apos;ll email you when your spot opens.
-          </>
-        ) : (
-          "We'll email you when your spot opens."
-        )}
-      </p>
-      <div className="mt-5 flex flex-wrap gap-2.5">
-        <a href={SHARE_URL} target="_blank" rel="noreferrer" className="a-btn a-btn--line a-btn--sm">
-          Share on X
+/** The pass moment: a focused overlay with the pass and the share action, so nothing collides with the hero. */
+function PassOverlay({ done, onClose }: { done: Done; onClose: () => void }) {
+  const close = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    close.current?.focus();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [onClose]);
+  return createPortal(
+    <div className="wl-pass-overlay" role="dialog" aria-modal="true" aria-label="Your Alloy pass" onClick={onClose} data-testid="pass-overlay">
+      <div className="flex w-full max-w-[420px] flex-col items-center px-4 text-center" onClick={(e) => e.stopPropagation()}>
+        <AlloyPass position={done.position} holder={done.holder} />
+        <h2 className="mt-8 font-display text-[30px] font-light tracking-[-0.02em]">{done.already ? "You're already in." : "You're in."}</h2>
+        <p className="mt-1.5 text-[14px] text-mute">
+          {done.position ? (
+            <>
+              <span className="num text-ink">#{done.position.toLocaleString("en-US")}</span> in line. We&apos;ll email you when your spot opens.
+            </>
+          ) : (
+            "We'll email you when your spot opens."
+          )}
+        </p>
+        <a href={shareUrl(done.position)} target="_blank" rel="noreferrer" className="a-btn a-btn--buy a-btn--lg mt-6 w-full max-w-[320px]" data-testid="share-pass">
+          Share your pass <ArrowRight size={16} strokeWidth={1.8} aria-hidden />
         </a>
-        <a href={X_URL} target="_blank" rel="noreferrer" className="a-btn a-btn--sm text-mute hover:text-ink">
-          Follow @alloy_fi
-        </a>
+        <div className="mt-4 flex items-center gap-5 text-[13px]">
+          <a href={X_URL} target="_blank" rel="noreferrer" className="text-mute transition-colors hover:text-ink">
+            Follow @alloy_fi
+          </a>
+          <span className="text-line2" aria-hidden>·</span>
+          <button ref={close} type="button" onClick={onClose} className="text-mute transition-colors hover:text-ink">
+            Close
+          </button>
+        </div>
       </div>
-    </div>
+    </div>,
+    document.body,
+  );
+}
+
+function Success({ done, center }: { done: Done; center?: boolean }) {
+  const [open, setOpen] = useState(true);
+  const hide = useCallback(() => setOpen(false), []);
+  return (
+    <>
+      <div className={cn("wl-bar wl-bar--slim", center ? "justify-center" : "justify-start")} role="status" aria-live="polite" data-testid="join-success">
+        <span className="wl-check flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink">
+          <Check size={14} strokeWidth={1.9} aria-hidden />
+        </span>
+        <span className="text-[14px] text-mute">
+          {done.position ? (
+            <>
+              You&apos;re <span className="num text-ink">#{done.position.toLocaleString("en-US")}</span> in line
+            </>
+          ) : (
+            "You're on the list"
+          )}
+        </span>
+        <span className="text-line2" aria-hidden>·</span>
+        <button type="button" onClick={() => setOpen(true)} className="text-[14px] text-ink underline decoration-line2 underline-offset-[4px] hover:decoration-ink">
+          View pass
+        </button>
+      </div>
+      {open && <PassOverlay done={done} onClose={hide} />}
+    </>
   );
 }
 
@@ -229,9 +280,7 @@ export function JoinBar({ className, noteExtra }: { className?: string; noteExtr
   return (
     <div className={cn("w-full", className)} data-testid="join-card">
       {j.done ? (
-        <div className="wl-bar wl-bar--done">
-          <Success done={j.done} center />
-        </div>
+        <Success done={j.done} center />
       ) : (
         <form onSubmit={j.submit} noValidate aria-label="Join the waitlist">
           <div className="wl-bar">
