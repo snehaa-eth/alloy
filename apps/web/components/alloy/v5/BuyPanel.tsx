@@ -10,7 +10,8 @@ import { DEFAULT_SLIPPAGE_BPS } from "@/lib/strategy";
 import { describeTxError } from "@/lib/tx";
 import { Button, ErrorState, QuietLink } from "../primitives";
 import { useAccount, useAttestation, useQuoteView } from "../hooks";
-import { AttestBlock, TxProgress } from "../flows/shared";
+import { AmountField, AttestBlock, QuoteRows, TxProgress } from "../flows/shared";
+import { DIR_HEX, dirOf } from "../ValueChart";
 import { FoundingCertificate } from "../flows/BuySheet";
 import type { Tone } from "../identity";
 import type { BasketView } from "../basket-view";
@@ -87,7 +88,7 @@ export function BuyPanel({
 
   return (
     <div id="buy-panel" className="scroll-mt-24 overflow-hidden rounded-[20px] border border-white/[0.1] bg-s1 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.9)]">
-      <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-3" style={{ boxShadow: "inset 0 2px 0 var(--cta)" }}>
+      <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-3" style={{ boxShadow: "inset 0 2px 0 var(--acc)" }}>
         <span className="inline-flex items-center gap-2 text-[15px] font-semibold">
           <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--acc)" }} aria-hidden /> {stage === "done" ? "You're in" : `Buy ${b.name}`}
         </span>
@@ -140,51 +141,27 @@ export function BuyPanel({
               </div>
             )}
 
-            <div className="flex flex-col gap-3">
-              <span className="text-[13px] text-tx2">You pay</span>
-              <label className="flex items-baseline gap-1 border-b border-white/[0.08] pb-3">
-                <span className="font-display text-[44px] leading-none text-tx2">$</span>
-                <input
-                  inputMode="decimal"
-                  aria-label="Amount in dollars"
-                  value={amount}
-                  disabled={stage === "running"}
-                  onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, "").slice(0, 9))}
-                  className="w-full bg-transparent font-display text-[44px] leading-none text-tx outline-none"
-                />
-              </label>
-              <div className="flex gap-2">
-                {PRESETS.map((p) => (
-                  <button key={p} type="button" className="c-preset flex-1" aria-pressed={amount === p} onClick={() => setAmount(p)} disabled={stage === "running"}>
-                    ${p}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <AmountField value={amount} onChange={setAmount} disabled={stage === "running"} presets={PRESETS} />
 
-            <div className="flex flex-wrap gap-2">
-              <span className="rounded-full bg-s2 px-3 py-1 text-[12px] text-tx3">Fee {b.feeBps / 100}% a year</span>
-              {quote.costUsd6 !== null && <span className="rounded-full bg-s2 px-3 py-1 text-[12px] text-tx3">Cost ≈ {formatUsd6(quote.costUsd6)}</span>}
-              {quote.impactBps !== null && quote.impactBps > 50 && (
-                <span className="rounded-full px-3 py-1 text-[12px]" style={{ background: "var(--warnbg)", color: "var(--warn)" }}>
-                  Fills ~{(quote.impactBps / 100).toFixed(1)}% lower now
-                </span>
-              )}
-            </div>
-
-            <div className="-mt-2 flex items-center justify-between text-[14px]">
-              <span className="text-tx2">≈ You get</span>
-              <span className="font-medium tabular-nums">
-                {tooSmall ? <span className="down">Minimum $5</span> : `${formatShares(quote.out, 2)} shares of this basket`}
+            <QuoteRows
+              rows={[
+                { k: "You get", v: tooSmall ? <span className="down">Minimum $5</span> : `≈ ${formatShares(quote.out, 2)} shares` },
+                ...(quote.costUsd6 !== null ? [{ k: "Trading cost (one-time)", v: `≈ ${formatUsd6(quote.costUsd6)}` }] : []),
+                { k: "Fee", v: `${b.feeBps / 100}% a year` },
+              ]}
+            />
+            {quote.impactBps !== null && quote.impactBps > 50 && (
+              <span className="-mt-2 self-start rounded-full px-3 py-1 text-[12px]" style={{ background: "var(--warnbg)", color: "var(--warn)" }}>
+                Fills ~{(quote.impactBps / 100).toFixed(1)}% lower now
               </span>
-            </div>
+            )}
 
             <div className="flex flex-col gap-2">
               {stage === "running" ? (
                 <TxProgress step={buy.step} />
               ) : (
-                <Button data-buy-primary className="!h-[52px] !rounded-full" onClick={go} disabled={usdc === 0n || tooSmall} loading={quote.loading}>
-                  {acct.signedIn ? label : "Sign in with email to buy"}
+                <Button data-buy-primary className="!h-[52px] !rounded-full" onClick={go} disabled={usdc === 0n || tooSmall}>
+                  {acct.signedIn ? label : "Sign in to buy"}
                 </Button>
               )}
               {holding && stage === "compose" && (
@@ -223,7 +200,8 @@ export function NewChart({ series, tone }: { series: number[]; tone: Tone }) {
   const y = (n: number) => H - ((n - (lo - pad)) / (hi - lo + 2 * pad)) * H;
   const x = (i: number) => (i / (series.length - 1)) * W;
   const line = series.map((n, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(n).toFixed(1)}`).join("");
-  const c = "#A3163A";
+  const dir = dirOf(((series[series.length - 1] - series[0]) / series[0]) * 100);
+  const c = DIR_HEX[dir];
   const at = scrub ?? series.length - 1;
   const chg = Math.round(((series[at] - series[0]) / series[0]) * 10_000);
   const move = (e: React.PointerEvent<SVGSVGElement>) => {
@@ -244,12 +222,12 @@ export function NewChart({ series, tone }: { series: number[]; tone: Tone }) {
       >
         <defs>
           <linearGradient id="nc-fill" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0" stopColor={c} stopOpacity="0.28" />
+            <stop offset="0" stopColor={c} stopOpacity={dir === "flat" ? 0.1 : 0.22} />
             <stop offset="1" stopColor={c} stopOpacity="0" />
           </linearGradient>
         </defs>
         <path d={`${line}L${W},${H}L0,${H}Z`} fill="url(#nc-fill)" />
-        <path d={line} fill="none" stroke="var(--tx)" strokeWidth="2" strokeDasharray="5 4" vectorEffect="non-scaling-stroke" />
+        <path d={line} fill="none" stroke={c} strokeWidth="2" strokeDasharray="5 4" vectorEffect="non-scaling-stroke" />
         {scrub !== null && (
           <>
             <rect x={x(at)} y="0" width={W - x(at)} height={H} fill="var(--s1)" fillOpacity="0.6" />

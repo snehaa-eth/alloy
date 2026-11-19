@@ -1,8 +1,70 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Delete, ShieldCheck } from "lucide-react";
 import type { TxStep } from "@/lib/tx";
+import { cn } from "@/lib/utils";
 import { Button, StepList } from "../primitives";
+
+/**
+ * One anatomy for every money/percent chip: Inter 600 with tabular figures (never mono), 44px tap
+ * target. Selected = brand burgundy outline + tint (the brand touch; filled buttons stay the CTA).
+ */
+export const CHIP =
+  "inline-flex h-11 min-w-[64px] flex-1 items-center justify-center rounded-full border border-white/[0.12] bg-transparent px-4 font-sans text-[15px] font-semibold tabular-nums text-tx transition-colors hover:border-white/30 disabled:cursor-not-allowed disabled:opacity-50 aria-pressed:border-[var(--acc)] aria-pressed:bg-[var(--tint)]";
+
+/** Amount first: big "$ 25" input (Inter 600, tabular) + $10 · $25 · $100 chips. No keypad, no Max. */
+export function AmountField({
+  value,
+  onChange,
+  disabled,
+  presets = ["10", "25", "100"],
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  disabled?: boolean;
+  presets?: string[];
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <label className="flex flex-col gap-1.5 border-b border-white/[0.08] pb-3">
+        <span className="text-[13px] text-tx2">You pay</span>
+        <span className="flex items-baseline gap-0.5">
+          <span className="text-[40px] font-semibold leading-none tabular-nums text-tx2">$</span>
+          <input
+            inputMode="decimal"
+            aria-label="Amount in dollars"
+            value={value}
+            disabled={disabled}
+            onChange={(e) => onChange(e.target.value.replace(/[^0-9.]/g, "").slice(0, 9))}
+            className="w-full min-w-0 bg-transparent text-[40px] font-semibold leading-none tracking-tight tabular-nums text-tx outline-none"
+          />
+        </span>
+      </label>
+      <div className="flex gap-2" role="group" aria-label="Preset amounts">
+        {presets.map((p) => (
+          <button key={p} type="button" className={CHIP} aria-pressed={value === p} onClick={() => onChange(p)} disabled={disabled}>
+            ${p}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Quote rows under the amount: label left, figure right (Inter, tabular). */
+export function QuoteRows({ rows, className }: { rows: { k: ReactNode; v: ReactNode }[]; className?: string }) {
+  return (
+    <dl className={cn("flex flex-col gap-2 text-[14px]", className)}>
+      {rows.map((r, i) => (
+        <div key={i} className="flex items-baseline justify-between gap-3">
+          <dt className="text-tx2">{r.k}</dt>
+          <dd className="text-right font-medium tabular-nums text-tx">{r.v}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
 
 /** Presets $10 · $25 · $100 (no Max) + 44px keypad. Never animates money while deciding. */
 export function AmountPad({ value, onChange, presets = [10, 25, 100], showKeys = true }: { value: string; onChange: (v: string) => void; presets?: number[]; showKeys?: boolean }) {
@@ -17,9 +79,9 @@ export function AmountPad({ value, onChange, presets = [10, 25, 100], showKeys =
   }
   return (
     <div className="flex flex-col gap-3">
-      <div className="c-presets" role="group" aria-label="Preset amounts">
+      <div className="flex gap-2" role="group" aria-label="Preset amounts">
         {presets.map((p) => (
-          <button key={p} type="button" className="c-preset" aria-pressed={value === String(p)} onClick={() => onChange(String(p))}>
+          <button key={p} type="button" className={CHIP} aria-pressed={value === String(p)} onClick={() => onChange(String(p))}>
             ${p}
           </button>
         ))}

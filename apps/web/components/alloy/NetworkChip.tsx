@@ -52,12 +52,12 @@ function Panel({ children, label }: { children: ReactNode; label: string }) {
 function Item({ icon: I, children, onClick, href, external, disabled, primary }: { icon: typeof Copy; children: ReactNode; onClick?: () => void; href?: string; external?: boolean; disabled?: boolean; primary?: boolean }) {
   const cls = cn(
     "flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-[14px] no-underline transition-colors",
-    disabled ? "cursor-not-allowed text-tx2 opacity-60" : "text-tx hover:bg-[rgba(140,18,48,0.22)] focus-visible:bg-[rgba(140,18,48,0.22)] focus-visible:outline-none",
-    primary && "bg-[var(--cta)] hover:bg-[var(--brand-hover)]",
+    disabled ? "cursor-not-allowed text-tx2 opacity-60" : "text-tx hover:bg-[rgba(var(--brand-rgb),0.35)] focus-visible:bg-[rgba(var(--brand-rgb),0.35)] focus-visible:outline-none",
+    primary && "bg-[var(--btn)] !text-[var(--on-btn)] hover:bg-[var(--btn-hover)]",
   );
   const body = (
     <>
-      <I size={16} strokeWidth={1.75} className={primary ? "text-tx" : "text-tx2"} aria-hidden />
+      <I size={16} strokeWidth={1.75} className={primary ? "text-[var(--on-btn)]" : "text-tx2"} aria-hidden />
       <span className="flex-1">{children}</span>
       {external && <ExternalLink size={13} strokeWidth={1.75} className="text-tx2" aria-hidden />}
     </>
@@ -121,17 +121,17 @@ export function NetworkChip() {
     <Popover.Root>
       <Popover.Trigger
         title={wrong ? `Switch to ${DEFAULT_CHAIN.name}` : TIP}
+        aria-label={wrong ? `Wrong network. Switch to ${DEFAULT_CHAIN.name}` : testnet ? `Test mode on ${c.name}` : c.name}
         className={cn(
-          "inline-flex h-9 items-center gap-1.5 rounded-full border px-2.5 text-[13px] lg:gap-2 lg:px-3 transition-colors data-[state=open]:border-[var(--acc)]",
-          wrong ? "font-medium" : "border-white/10 text-tx3 hover:border-white/25 hover:text-tx",
+          "inline-flex h-9 flex-none items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 text-[13px] font-medium transition-colors sm:px-3",
+          wrong || testnet
+            ? "border-[var(--warnbd)] bg-[var(--warnbg)] text-[var(--warn)] hover:border-[var(--warn)] data-[state=open]:border-[var(--warn)]"
+            : "border-white/10 text-tx3 hover:border-white/25 hover:text-tx data-[state=open]:border-[var(--acc)]",
         )}
-        style={wrong ? { borderColor: "var(--warnbd)", background: "var(--warnbg)", color: "var(--warn)" } : undefined}
       >
-        {wrong ? <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--warn)" }} aria-hidden /> : <BaseMark />}
-        <span className={wrong ? "" : "hidden lg:inline"}>{wrong ? (w.switching ? "Switching…" : "Wrong network") : c.name}</span>
-        {!wrong && testnet && <span className="hidden rounded-full bg-white/[0.08] px-1.5 py-px text-[11px] text-tx2 lg:inline">testnet</span>}
-        <span className="sr-only lg:hidden">{c.name}</span>
-        <ChevronDown size={13} strokeWidth={1.75} aria-hidden />
+        {wrong || testnet ? <span className="h-1.5 w-1.5 flex-none rounded-full bg-[var(--warn)]" aria-hidden /> : <BaseMark />}
+        <span>{wrong ? (w.switching ? "Switching…" : "Wrong network") : testnet ? "Test mode" : c.name}</span>
+        <ChevronDown size={13} strokeWidth={1.75} className="hidden sm:block" aria-hidden />
       </Popover.Trigger>
       <Panel label="Network">
         <p className="px-3 pb-1 pt-2 text-[12px] font-medium text-tx2">Network</p>
@@ -184,17 +184,19 @@ export function WalletMenu({ address }: { address: `0x${string}` }) {
     <Popover.Root>
       <Popover.Trigger
         aria-label="Your account"
-        className="inline-flex h-9 items-center gap-2 rounded-full border border-white/10 pl-1.5 pr-3 text-[14px] font-medium text-tx3 transition-colors hover:border-white/25 hover:text-tx data-[state=open]:border-[var(--acc)]"
+        className="inline-flex h-9 flex-none items-center gap-2 rounded-full border border-white/10 pl-1.5 pr-2.5 sm:pr-3 text-[14px] font-medium text-tx3 transition-colors hover:border-white/25 hover:text-tx data-[state=open]:border-[var(--acc)]"
       >
         <CreatorAvatar handle={address.slice(2)} seed={address} size={22} />
-        {address.slice(0, 6)}…{address.slice(-4)}
+        <span className="hidden tabular-nums sm:inline">
+          {address.slice(0, 6)}…{address.slice(-4)}
+        </span>
         <ChevronDown size={13} strokeWidth={1.75} aria-hidden />
       </Popover.Trigger>
       <Panel label="Account">
         <div className="flex items-center gap-3 px-3 pb-2 pt-2">
           <CreatorAvatar handle={address.slice(2)} seed={address} size={32} />
           <span className="t-num min-w-0 flex-1 break-all text-[12px] leading-snug text-tx3">{address}</span>
-          <button type="button" onClick={copy} aria-label="Copy address" className="inline-flex h-8 w-8 flex-none items-center justify-center rounded-full bg-s2 hover:bg-[rgba(140,18,48,0.3)]">
+          <button type="button" onClick={copy} aria-label="Copy address" className="inline-flex h-8 w-8 flex-none items-center justify-center rounded-full bg-s2 hover:bg-[rgba(var(--brand-rgb),0.45)]">
             <Copy size={14} strokeWidth={1.75} aria-hidden />
           </button>
         </div>

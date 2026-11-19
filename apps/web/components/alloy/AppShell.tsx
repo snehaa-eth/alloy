@@ -29,7 +29,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <StatusProvider>
       <InAppBar />
       <header className="sticky top-0 z-40 border-b border-white/[0.07] bg-bg/85 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-app items-center justify-between gap-6 px-4 md:px-8">
+        <div className="mx-auto flex h-16 max-w-app items-center justify-between gap-3 px-4 md:gap-6 md:px-8">
           <Link href="/" className="flex h-9 items-center text-tx no-underline" aria-label="Alloy home">
             <BrandMark />
           </Link>
@@ -53,13 +53,11 @@ export function AppShell({ children }: { children: ReactNode }) {
               );
             })}
           </nav>
-          <div className="flex items-center gap-2">
-            <NetworkChip />
-            <span className={landing ? "hidden sm:inline-flex" : "inline-flex"}>
-              <AccountButton />
-            </span>
+          {/* Same actions everywhere: signed out → Sign in; signed in → network + wallet. Home adds Launch app. */}
+          <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
+            <AccountButton />
             {landing && (
-              <Link href="/explore" className="c-btn c-btn--primary c-btn--auto c-btn--sm !h-9 !rounded-full !px-4 !text-[14px]">
+              <Link href="/explore" className="c-btn c-btn--primary c-btn--auto c-btn--sm !h-9 flex-none !rounded-full !px-3 !text-[13px] sm:!px-4 sm:!text-[14px]">
                 Launch app
               </Link>
             )}
@@ -94,17 +92,21 @@ function AccountButton() {
   const w = useWallet();
   const acct = useAccount();
   // Dev-only preview (?preview=holder) renders the signed-in menu without Privy, for review screenshots.
-  if (acct.preview && !w.address) return <WalletMenu address="0xc7000000000000000000000000000000000a1aeb" />;
-  if (!w.ready) return <span className="h-9 w-20" aria-hidden />;
+  const signedIn = (address: `0x${string}`) => (
+    <>
+      <NetworkChip />
+      <WalletMenu address={address} />
+    </>
+  );
+  if (acct.preview && !w.address) return signedIn("0xc7000000000000000000000000000000000a1aeb");
+  if (!w.ready) return <span className="h-9 w-[76px]" aria-hidden />;
   if (!w.authenticated || !w.address)
     return (
       <button type="button" className="c-btn c-btn--secondary c-btn--auto c-btn--sm !h-9 !rounded-full !px-4 !text-[14px]" onClick={() => w.login()}>
-        <span>
-          Sign in<span className="hidden sm:inline"> with email</span>
-        </span>
+        Sign in
       </button>
     );
-  return <WalletMenu address={w.address} />;
+  return signedIn(w.address);
 }
 
 /** "Open in browser" bar, only inside X / Instagram / Telegram / Facebook webviews. */

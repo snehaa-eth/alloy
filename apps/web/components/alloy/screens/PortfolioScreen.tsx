@@ -72,7 +72,7 @@ export function PortfolioScreen({ items }: { items: LoadedBasket[] }) {
           line="Your baskets, their value and every change land here."
           action={
             <div className="flex flex-col gap-2">
-              <Button onClick={() => acct.login()}>Sign in with email</Button>
+              <Button onClick={() => acct.login()}>Sign in</Button>
               <ButtonLink href="/explore" variant="secondary">
                 Explore baskets first
               </ButtonLink>

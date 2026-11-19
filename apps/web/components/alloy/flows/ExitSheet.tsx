@@ -11,7 +11,7 @@ import { Sheet } from "../Sheet";
 import { Banner, Button, ErrorState, InlineToast, QuietLink, Stamp, StockLogo, Tabs } from "../primitives";
 import type { BasketView } from "../basket-view";
 import { useAccount, useAttestation, useQuoteView } from "../hooks";
-import { AttestBlock, TxProgress } from "./shared";
+import { AttestBlock, CHIP, TxProgress } from "./shared";
 
 type Mode = "usdc" | "stocks";
 type Stage = "compose" | "attest" | "running" | "done" | "error";
@@ -132,12 +132,12 @@ export function ExitSheet({
             }
             title={b.name}
             label={`You receive · ${pctLabel}`}
-            figure={mode === "usdc" ? formatUsd6(quote.out) : `≈ ${formatUsd6(stocksUsd6)}`}
+            figure={<span className="font-sans text-[36px] font-semibold tracking-tight tabular-nums">{mode === "usdc" ? formatUsd6(quote.out) : `≈ ${formatUsd6(stocksUsd6)}`}</span>}
             unit={mode === "usdc" ? "USDC" : `in ${b.components.length} stocks`}
             ledger={[
               { k: "You keep", v: formatUsd6(keepUsd6) },
               mode === "usdc"
-                ? { k: "Cost", v: costUsd6 !== null ? `≈ ${formatUsd6(costUsd6)}` : "pool fees" }
+                ? { k: "Trading cost (one-time)", v: costUsd6 !== null ? `≈ ${formatUsd6(costUsd6)}` : "pool fees" }
                 : { k: "Autopilot", v: "Stops for these" },
             ]}
             action={
@@ -152,9 +152,9 @@ export function ExitSheet({
             footLink={mode === "usdc" ? <QuietLink onClick={() => setMode("stocks")}>Get the stocks instead</QuietLink> : undefined}
             footMeta={mode === "usdc" ? "any day" : "always available"}
           >
-            <div className="c-presets !justify-start" role="group" aria-label="How much">
+            <div className="flex gap-2" role="group" aria-label="How much">
               {PCTS.map((p) => (
-                <button key={p} type="button" className="c-preset" aria-pressed={pct === p} onClick={() => setPct(p)}>
+                <button key={p} type="button" className={CHIP} aria-pressed={pct === p} onClick={() => setPct(p)}>
                   {p === 10_000 ? "All" : `${p / 100}%`}
                 </button>
               ))}

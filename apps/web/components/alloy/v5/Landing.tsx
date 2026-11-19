@@ -1,5 +1,5 @@
 /**
- * v5 landing: hero + featured story, live numbers, how it works, trending, honesty band, create CTA.
+ * v5 landing: hero + featured basket, trust strip, how it works, live baskets, "Nothing hidden", create CTA.
  * Server component; all numbers come from lib/data via loadAll().
  */
 import Image from "next/image";
@@ -18,7 +18,7 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
   // Public lists hide demo / judge baskets (they live on /try) and retired baskets (config.ts).
   const visible = items.filter((i) => isPublic(i.v.basket));
   const sorted = [...visible].sort((a, b) => b.v.basket.followers - a.v.basket.followers);
-  // Featured story: FEATURED_BASKET (config.ts) → else an "AI Build-Out" by name (visible first) → else most followed.
+  // Featured basket: FEATURED_BASKET (config.ts) → else an "AI Build-Out" by name (visible first) → else most followed.
   const featured =
     (FEATURED_BASKET ? items.find((i) => i.v.basket.address.toLowerCase() === String(FEATURED_BASKET).toLowerCase()) : undefined) ||
     visible.find((i) => /ai build/i.test(i.v.basket.name)) ||
@@ -28,19 +28,16 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
   // Few public baskets: include the featured one so the row never looks half empty.
   const trending = (others.length < 3 && featured ? [featured, ...others] : others).slice(0, 4);
   const cols = Math.min(4, trending.length + (trending.length < 4 ? 1 : 0));
-  const totalNav = visible.reduce((a, i) => a + i.v.nav, 0n);
-  const followers = visible.reduce((a, i) => a + i.v.basket.followers, 0);
-  const stocks = new Set(items.flatMap((i) => i.v.tickers)).size;
   const feePct = featured ? featured.v.basket.feeBps / 100 : 1;
-  // Hero stories: only themes with a live public basket; the card swaps in sync with the rolling word.
+  // Hero themes: only themes (never a single company) with a live public basket; the card swaps in sync with the
+  // rolling word. Add a theme here only when its word fits the headline line ("BIG TECH STORY." is the widest).
   const heroStories = (
     [
       ["AI", featured],
       ["Big Tech", visible.find((i) => /big tech/i.test(i.v.basket.name))],
-      ["Tesla", visible.find((i) => /conviction|tesla|\bev\b/i.test(i.v.basket.name))],
     ] as [string, LoadedBasket | undefined][]
   )
-    .filter((x): x is [string, LoadedBasket] => !!x[1])
+    .filter((x): x is [string, LoadedBasket] => !!x[1] && x[1].v.tickers.length >= 3)
     .filter((x, k, a) => a.findIndex((y) => y[1] === x[1]) === k)
     .map(([word, item]) => ({ word, item }));
 
@@ -49,29 +46,33 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
       {/* ---------------- Hero ---------------- */}
       <section className="relative">
         <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute -left-40 -top-40 hidden h-[520px] w-[520px] rounded-full opacity-[0.14] blur-[120px] md:block" style={{ background: "var(--cta)" }} />
-          <div className="absolute -right-40 top-20 h-[520px] w-[620px] rounded-full opacity-[0.07] blur-[140px]" style={{ background: "var(--acc)" }} />
+          <div className="absolute -left-40 -top-40 hidden h-[520px] w-[520px] rounded-full opacity-[0.35] blur-[120px] md:block" style={{ background: "var(--brand)" }} />
+          <div className="absolute -right-40 top-20 h-[520px] w-[620px] rounded-full opacity-[0.22] blur-[140px]" style={{ background: "var(--brand)" }} />
         </div>
         <HeroStories
           stories={heroStories.map(({ word, item }) => ({ word, card: <FeaturedStory item={item} fan={visible.filter((x) => x !== item).slice(0, 2)} /> }))}
           top={
-            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[13px] text-tx3">
+            <span className="hidden w-fit items-center gap-2 rounded-full border sm:inline-flex border-white/10 bg-white/[0.04] px-3 py-1.5 text-[13px] text-tx3">
               <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--acc)" }} aria-hidden /> Invest in stories, not symbols.
             </span>
           }
           bottom={
             <>
-              <p className="max-w-[480px] text-[18px] leading-relaxed text-tx3">Baskets of US stocks, built around one idea. From $5.</p>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Link href="/explore" className="c-btn c-btn--primary c-btn--auto !h-[52px] !rounded-full !px-7">
+              <p className="max-w-[480px] text-[16px] leading-relaxed text-tx3 md:text-[18px]">Baskets of US stocks, built around one idea. From $5.</p>
+              <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-row">
+                <Link href="/explore" className="c-btn c-btn--primary c-btn--auto !h-[48px] !rounded-full !px-4 sm:!h-[52px] sm:!px-7">
                   Explore baskets <ArrowRight size={16} strokeWidth={2} aria-hidden />
                 </Link>
-                <Link href="/create" className="c-btn c-btn--secondary c-btn--auto !h-[52px] !rounded-full !px-7">
+                <Link href="/create" className="c-btn c-btn--secondary c-btn--auto !h-[48px] !rounded-full !px-4 sm:!h-[52px] sm:!px-7">
                   <Plus size={16} strokeWidth={2} aria-hidden /> Build a basket
                 </Link>
               </div>
-              <p className="-mt-3 text-[13px] text-tx2">Not available in the US. You can lose money.</p>
-              <dl className="mt-2 grid max-w-[480px] grid-cols-3 gap-4 border-t border-white/[0.08] pt-6">
+              <p className="-mt-2 text-[13px] text-tx2 md:-mt-3">Not available in the US. You can lose money.</p>
+            </>
+          }
+          after={
+            <>
+              <dl className="grid max-w-[480px] grid-cols-3 gap-4 border-t border-white/[0.08] pt-5 lg:pt-6">
                 {[
                   ["$5", "minimum"],
                   [`${feePct}%`, "a year, nothing else"],
@@ -111,25 +112,8 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
         </div>
       </section>
 
-      {/* ---------------- Live numbers ---------------- */}
-      <section aria-label="Alloy today" className="border-y border-white/[0.07] bg-s1/60">
-        <div className="mx-auto grid max-w-app grid-cols-2 gap-6 px-4 py-8 md:grid-cols-4 md:px-8">
-          {[
-            [String(visible.length), "Baskets live"],
-            followers > 0 ? [followers.toLocaleString("en-US"), "Followers"] : ["24/7", "Buy and sell"],
-            [compactUsd6(totalNav), "In baskets"],
-            [String(stocks), "US stocks inside"],
-          ].map(([k, v]) => (
-            <div key={v} className="flex flex-col gap-1">
-              <span className="font-display text-[36px] leading-none tracking-[0.01em] md:text-[44px]">{k}</span>
-              <span className="text-[14px] text-tx2">{v}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* ---------------- How it works ---------------- */}
-      <section className="mx-auto max-w-app px-4 py-16 md:px-8 md:py-24 lg:py-12" aria-label="How it works">
+      <section className="mx-auto max-w-app px-4 py-12 md:px-8 md:py-20 lg:py-12" aria-label="How it works">
         {!featured && <SectionHead id="how" title="How it works" />}
         {featured && (
           <StoryScroll
@@ -137,14 +121,14 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
             mobileHeading={<SectionHead title="How it works" />}
             parts={featured.v.target}
             tone={featured.v.id.tone}
-            covers={visible.slice(0, 4).map((i) => ({ src: i.v.id.coverSrc, tone: i.v.id.tone }))}
+            covers={[featured, ...visible.filter((i) => i !== featured)].slice(0, 3).map((i) => ({ src: i.v.id.coverSrc, tone: i.v.id.tone, name: i.v.basket.name }))}
           />
         )}
       </section>
 
       {/* ---------------- Trending ---------------- */}
       {trending.length > 0 && (
-        <section className="mx-auto max-w-app px-4 pb-20 md:px-8 md:pb-28" aria-labelledby="live">
+        <section className="mx-auto max-w-app px-4 pb-14 md:px-8 md:pb-24" aria-labelledby="live">
           <SectionHead
             id="live"
             title="Live baskets"
@@ -180,7 +164,7 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
       )}
 
       {/* ---------------- How your money is held (plain words, no performance claims) ---------------- */}
-      <section id="held" className="v-silk relative mb-20 scroll-mt-20 overflow-hidden md:mb-28" aria-labelledby="held-h">
+      <section id="held" className="v-silk relative mb-12 scroll-mt-20 overflow-hidden md:mb-24" aria-labelledby="held-h">
         <div className="relative mx-auto grid max-w-app items-start gap-10 px-4 py-14 md:px-8 md:py-16 lg:grid-cols-[1fr_440px] lg:gap-16">
           <div className="flex flex-col gap-8">
             <SectionHead id="held-h" title="Nothing hidden" sub="See the creator's own money, every change and why, and how followers did next to the creator, once there's history." onBrand />
@@ -207,7 +191,7 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
       </section>
 
       {/* ---------------- Create CTA ---------------- */}
-      <section className="mx-auto max-w-app px-4 pb-16 md:px-8 md:pb-24" aria-labelledby="create">
+      <section className="mx-auto max-w-app px-4 pb-10 md:px-8 md:pb-20" aria-labelledby="create">
         <div
           className="relative grid items-center gap-10 overflow-hidden rounded-[28px] p-6 md:p-12 lg:grid-cols-[1fr_420px]"
           style={{ background: "var(--s1)", boxShadow: "inset 0 0 0 1px rgba(242,240,237,0.07)" }}
@@ -230,14 +214,14 @@ function FeaturedStory({ item, fan }: { item: LoadedBasket; fan: LoadedBasket[] 
   const { v, perf } = item;
   const b = v.basket;
   const r = returnsOf(v, perf);
-  // Real data only: returns appear once there's history; until then stocks · fee · min · followers.
+  // Real data only: returns appear once there's history; until then stocks · fee · min · exit (no vanity zeros).
   const stats: [string, React.ReactNode][] =
     r.creator === null || b.followers === 0
       ? [
           ["Stocks", String(v.tickers.length)],
           ["Fee", `${b.feeBps / 100}%/yr`],
           ["Minimum", "$5"],
-          ["Followers", b.followers.toLocaleString("en-US")],
+          ["Sell", "Anytime"],
         ]
       : [
           ["Followers' return", <ReturnValue key="f" bps={r.followers} />],
@@ -246,9 +230,9 @@ function FeaturedStory({ item, fan }: { item: LoadedBasket; fan: LoadedBasket[] 
           ["Minimum", "$5"],
         ];
   return (
-    <article className="v-par-fast relative isolate">
-      {/* Burgundy radial glow behind the featured story */}
-      <div aria-hidden className="v-par-glow absolute -inset-4 -z-20 rounded-full opacity-50 blur-3xl md:-inset-10 md:opacity-70" style={{ background: "radial-gradient(closest-side, rgba(163,22,58,0.32), transparent 75%)" }} />
+    <article className="v-par-fast relative isolate flex w-full flex-1 flex-col">
+      {/* Oxblood (brand) radial glow behind the featured basket */}
+      <div aria-hidden className="v-par-glow absolute -inset-4 -z-20 rounded-full opacity-50 blur-3xl md:-inset-10 md:opacity-70" style={{ background: "radial-gradient(closest-side, color-mix(in srgb, var(--brand) 70%, transparent), transparent 75%)" }} />
       {/* Fanned basket covers behind the featured story (UX_MAP landing: real covers, fanned) */}
       {fan.map((f, k) => (
         <div
@@ -258,21 +242,22 @@ function FeaturedStory({ item, fan }: { item: LoadedBasket; fan: LoadedBasket[] 
           style={{
             [k === 0 ? "left" : "right"]: -56,
             transform: `rotate(${k === 0 ? -8 : 8}deg)`,
-            background: "#1a0a0e",
+            background: "var(--tint)",
           }}
         >
           <Image src={f.v.id.coverSrc} alt="" fill sizes="200px" className="v-duo object-cover" />
           <div className="v-duo-tint absolute inset-0" />
         </div>
       ))}
-      <div className="overflow-hidden rounded-[24px] border border-white/[0.1] bg-s1 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.85)]">
-        <div className="relative h-[150px] md:h-[170px] bg-[#1a0a0e]">
+      {/* Fixed anatomy: every rotating card is the same height (room for up to 4 tickers), so nothing jumps. */}
+      <div className="flex flex-1 flex-col overflow-hidden rounded-[24px] border border-white/[0.1] bg-s1 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.85)]">
+        <div className="relative h-[150px] md:h-[170px] bg-[var(--tint)]">
           <Image src={v.id.coverSrcLg} alt="" fill priority sizes="(min-width: 1024px) 560px, 100vw" className="v-duo object-cover" />
           <div className="v-duo-tint absolute inset-0" />
           <div className="absolute inset-0 bg-gradient-to-t from-s1 via-s1/20 to-transparent" />
-          <span className="absolute left-4 top-4 rounded-full px-3 py-1 text-[12px] font-medium text-tx" style={{ background: "var(--cta)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15)" }}>Featured story</span>
+          <span className="absolute left-4 top-4 rounded-full px-3 py-1 text-[12px] font-medium text-tx" style={{ background: "var(--brand)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15)" }}>Featured basket</span>
         </div>
-        <div className="-mt-8 flex flex-col gap-5 px-5 pb-5 md:px-6 md:pb-6">
+        <div className="-mt-8 flex flex-1 flex-col gap-5 px-5 pb-5 md:px-6 md:pb-6">
           <div className="relative flex items-end gap-3">
             <CreatorAvatar handle={b.creator.handle} seed={b.creator.address} size={52} ring />
             <div className="flex min-w-0 flex-col pb-0.5">
@@ -296,7 +281,7 @@ function FeaturedStory({ item, fan }: { item: LoadedBasket; fan: LoadedBasket[] 
           </dl>
           <div className="flex flex-col gap-3">
             <AlloyBar parts={v.target} tone={v.id.tone} legend={false} multi />
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <div className="flex min-h-[52px] flex-wrap content-start items-center gap-x-4 gap-y-2 sm:min-h-[22px]">
               {[...v.target]
                 .sort((a, c) => c.bps - a.bps)
                 .map((p) => (
@@ -308,7 +293,7 @@ function FeaturedStory({ item, fan }: { item: LoadedBasket; fan: LoadedBasket[] 
                 ))}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="mt-auto grid grid-cols-2 gap-3">
             <Link href={`/b/${b.address}`} className="c-btn c-btn--secondary !rounded-full">
               See inside
             </Link>

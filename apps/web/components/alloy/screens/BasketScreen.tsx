@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, ChevronDown, FlaskConical, Info, RefreshCw, Scale, Sparkles, XCircle } from "lucide-react";
 import { BrandWash, CreatorAvatar, Logos, ReturnValue, daysSince, returnsOf, thesisOf } from "../v5/parts";
 import { BuyPanel, Card, NewChart } from "../v5/BuyPanel";
-import { Ticker } from "../motion/Ticker";
 import type { Performance, RebalanceEvent } from "@/lib/types";
 import { STYLES, styleOf } from "../styles";
 import { DEFAULT_CHAIN, explorerTxUrl } from "@/lib/chains";
@@ -17,6 +16,7 @@ import { Countdown } from "../Countdown";
 import { ValueChart } from "../ValueChart";
 import { StatusSignal } from "../status";
 import { AlloyBar, Button, Signed, StockLogo, fmtPct } from "../primitives";
+import { cn } from "@/lib/utils";
 import { compactUsd6, pendingChange, shortDate, tickerOf, type BasketView } from "../basket-view";
 import { usePosition } from "../hooks";
 import { BuySheet } from "../flows/BuySheet";
@@ -48,6 +48,21 @@ export function BasketScreen({
   const heldUsd6 = sharesToUsd6(pos.shares, v.nav, b.totalSupply);
   const holding = pos.shares > 0n;
   const mode = STYLES[styleOf(b)];
+
+  // Height of the app's fixed bottom tab bar (0 when hidden at md+), so the buy bar sits flush on it.
+  const [navH, setNavH] = useState<number | null>(null);
+  useEffect(() => {
+    const nav = document.querySelector<HTMLElement>("nav.c-nav");
+    const measure = () => setNavH(nav && getComputedStyle(nav).display !== "none" ? nav.getBoundingClientRect().height : 0);
+    measure();
+    window.addEventListener("resize", measure);
+    const ro = nav ? new ResizeObserver(measure) : null;
+    if (nav) ro?.observe(nav);
+    return () => {
+      window.removeEventListener("resize", measure);
+      ro?.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     setMarket(usMarketStatus().open);
@@ -101,7 +116,7 @@ export function BasketScreen({
 
       <div className="relative isolate">
       <BrandWash />
-      <div className="mx-auto max-w-app px-4 pb-40 pt-4 md:px-8 md:pt-6 lg:pb-12">
+      <div className="mx-auto max-w-app px-4 pb-36 pt-4 md:px-8 md:pt-6 lg:pb-12">
         <Link href="/explore" className="inline-flex min-h-[40px] items-center gap-1.5 text-[14px] text-tx2 no-underline hover:text-tx">
           <ArrowLeft size={16} strokeWidth={1.75} aria-hidden /> Explore
         </Link>
@@ -109,7 +124,7 @@ export function BasketScreen({
         <div className="mt-2 grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-10">
           <div className="flex min-w-0 flex-col gap-6">
             {/* Cover hero */}
-            <div className="relative h-[220px] overflow-hidden rounded-[24px] bg-[#1a0a0e] md:h-[300px]">
+            <div className="relative h-[220px] overflow-hidden rounded-[24px] bg-[var(--tint)] md:h-[300px]">
               <Image src={v.id.coverSrcLg} alt="" fill priority sizes="(min-width: 1024px) 860px, 100vw" className="v-duo object-cover" />
               <div className="v-duo-tint absolute inset-0" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
@@ -166,12 +181,10 @@ export function BasketScreen({
                       <Info size={13} strokeWidth={1.75} aria-hidden />
                     </span>
                   </span>
-                  <span className="font-display text-[40px] leading-none md:text-[48px]">
-                    <Ticker value={formatUsd6(v.navPerShare)} />
-                  </span>
+                  <span className="text-[36px] font-semibold leading-none tracking-tight tabular-nums md:text-[44px]">{formatUsd6(v.navPerShare)}</span>
                 </div>
-                <span className="text-[14px]">
-                  <Signed bps={v.sinceBps} /> <span className="c2">since {shortDate(v.sinceDate)}</span>
+                <span className="text-[14px] tabular-nums">
+                  {Math.abs(v.sinceBps) < 5 ? <span className="c2">0.0%</span> : <Signed bps={v.sinceBps} />} <span className="c2">since {shortDate(v.sinceDate)}</span>
                 </span>
               </div>
               <div className="mt-5">
@@ -194,15 +207,6 @@ export function BasketScreen({
                     <p className="text-[15px] text-tx3">
                       Once this basket has a few days of history, you&apos;ll see followers&apos; return next to the creator&apos;s, here.
                     </p>
-                    <div className="flex items-center justify-between rounded-[14px] bg-s2 px-4 py-3 text-[14px]">
-                      <span className="text-tx2">Followers</span>
-                      <span className="font-semibold">{b.followers.toLocaleString("en-US")}</span>
-                    </div>
-                    {b.followers === 0 && (
-                      <button type="button" onClick={() => startBuy(buyAmount)} className="c-btn c-btn--secondary !h-11 !rounded-full">
-                        Be the first follower
-                      </button>
-                    )}
                   </div>
                 ) : (
                   <div className="mt-4 flex flex-col gap-2">
@@ -226,7 +230,7 @@ export function BasketScreen({
                 <div className="mt-4 flex items-center gap-3">
                   <CreatorAvatar handle={b.creator.handle} seed={b.creator.address} size={40} />
                   <div className="flex flex-col">
-                    <span className="font-display text-[32px] leading-none gold">{compactUsd6(v.creatorStakeUsd6)}</span>
+                    <span className="text-[28px] font-semibold leading-none tracking-tight tabular-nums gold">{compactUsd6(v.creatorStakeUsd6)}</span>
                     <span className="mt-1 text-[13px] text-tx2">
                       @{b.creator.handle} · {v.creatorStakeBps < 100 ? "under 1%" : `${Math.round(v.creatorStakeBps / 100)}%`} of basket
                     </span>
@@ -346,10 +350,13 @@ export function BasketScreen({
                 {(
                   [
                     ["In basket", compactUsd6(v.nav)],
-                    ["Followers", b.followers.toLocaleString("en-US")],
+                    ...(b.followers > 0 ? [["Followers", b.followers.toLocaleString("en-US")] as [string, React.ReactNode]] : []),
                     ["Creator's own money", <span key="c" className="gold">{compactUsd6(v.creatorStakeUsd6)}</span>],
                     ["Fee", `${b.feeBps / 100}% a year`],
-                    ...(v.series.length >= 3 ? [["Biggest drop", `−${(perf.maxDrawdownBps / 100).toFixed(1)}%`] as [string, React.ReactNode]] : []),
+                    // Only once there is real history and a drop that shows as at least 0.1%; "−0.0%" reads as broken data.
+                    ...(v.series.length >= 3 && perf.maxDrawdownBps >= 5
+                      ? [["Biggest drop", `−${(perf.maxDrawdownBps / 100).toFixed(1)}%`] as [string, React.ReactNode]]
+                      : []),
                     ["Recipe changes", b.noticeSeconds >= 86_400 ? "Announced a day early" : b.noticeSeconds >= 3600 ? `Announced ${b.noticeSeconds / 3600}h early` : `Announced ${b.noticeSeconds / 60} min early`],
                   ] as [string, React.ReactNode][]
                 ).map(([k, val]) => (
@@ -367,18 +374,23 @@ export function BasketScreen({
       </div>
 
       {/* Mobile / tablet action bar */}
-      <div className="fixed inset-x-0 bottom-[60px] z-30 border-t border-white/[0.07] bg-bg/90 px-4 py-3 backdrop-blur-xl md:bottom-0 lg:hidden">
+      {/* Phone/tablet: one compact bar sitting flush on the tab bar (measured), opaque so no content peeks between. */}
+      <div
+        data-buy-bar
+        className={cn("fixed inset-x-0 z-30 border-t border-white/[0.07] bg-bg px-4 py-2 lg:hidden", navH === null && "bottom-[53px] md:bottom-0")}
+        style={navH === null ? undefined : { bottom: navH }}
+      >
         <div className="mx-auto flex max-w-[640px] items-center gap-3">
-          <div className="flex min-w-0 flex-1 flex-col">
-            <span className="text-[12px] text-tx2">{holding ? "Your value" : "Price per share"}</span>
-            <span className="text-[16px] font-semibold tabular-nums">{holding ? formatUsd6(heldUsd6) : formatUsd6(v.navPerShare)}</span>
+          <div className="flex min-w-0 flex-1 items-baseline gap-1.5">
+            <span className="text-[17px] font-semibold tabular-nums">{holding ? formatUsd6(heldUsd6) : formatUsd6(v.navPerShare)}</span>
+            <span className="truncate text-[13px] text-tx2">{holding ? "your value" : "per share"}</span>
           </div>
           {holding && (
-            <Button variant="secondary" auto className="!rounded-full" onClick={() => openSheet("exit")}>
+            <Button variant="secondary" auto className="!h-11 !rounded-full" onClick={() => openSheet("exit")}>
               Exit
             </Button>
           )}
-          <Button auto className="!rounded-full !px-8" onClick={() => openSheet("buy", "25")}>
+          <Button auto className="!h-11 !rounded-full !px-8" onClick={() => openSheet("buy", buyAmount)}>
             Buy
           </Button>
         </div>

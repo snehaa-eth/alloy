@@ -26,7 +26,14 @@ export function Providers({ children }: { children: ReactNode }) {
     <PrivyProvider
       appId={appId}
       config={{
-        appearance: { theme: "dark", walletChainType: "ethereum-only", showWalletLoginFirst: false },
+        appearance: {
+          theme: "#0C0A0A",
+          accentColor: "#C77B4A",
+          logo: PRIVY_LOGO,
+          landingHeader: "Sign in to Alloy",
+          walletChainType: "ethereum-only",
+          showWalletLoginFirst: false,
+        },
         loginMethods: ["email", "google", "twitter", "passkey", "wallet"],
         defaultChain: DEFAULT_CHAIN,
         supportedChains: [...SUPPORTED_CHAINS],
@@ -43,3 +50,13 @@ export function Providers({ children }: { children: ReactNode }) {
     </PrivyProvider>
   );
 }
+
+
+/** Alloy mark for the Privy login modal (the header already says "Sign in to Alloy"). A bare <svg>: Privy clones it and sets its style. */
+const PRIVY_LOGO = (
+  <svg width="40" height="40" viewBox="0 0 28 28" role="img" aria-label="Alloy">
+    <rect width="28" height="28" rx="8" fill="#6D0F24" />
+    <rect x="6" y="10.5" width="16" height="2.5" rx="1.25" fill="#E8DCC8" />
+    <rect x="6" y="15.5" width="11" height="2.5" rx="1.25" fill="#E8DCC8" opacity="0.6" />
+  </svg>
+);

@@ -10,28 +10,29 @@
 @layer base {
   :root {
     /* surfaces + text (dark default) */
-    --bg: #0a0a0a;
-    --s1: #141416;
-    --s2: #1c1c1f;
-    --sheet: #0f0f10;
-    --bd: #26262a;
-    --bdi: #6b6b70;
-    --tx: #f2f0ed;
-    --tx2: #9a9894;
-    --tx3: #c9c7c3;
-    --on-pri: #0a0a0a;
+    /* v6 "Oxblood & Copper" (docs/design/COLOUR_RESEARCH.md): warm ink family */
+    --bg: #0c0a0a;
+    --s1: #1b1213;
+    --s2: #251a1b;
+    --sheet: #140e0f;
+    --bd: #332526;
+    --bdi: #6f6264;
+    --tx: #f2ede8;
+    --tx2: #a39892;
+    --tx3: #cdc4bd;
+    --on-pri: #0c0a0a;
     --scrim: rgba(0, 0, 0, 0.6);
     /* brand + accents (burgundy <=10%, gold <=3%) */
-    --brand: #6d001a;
-    --acc: #c41a42;
-    --tint: #2a000a;
-    --gold: #dcc7a1; /* v5: champagne (light companion to burgundy) */
+    --brand: #6d0f24; /* oxblood: brand surfaces, glows, fills, tints */
+    --acc: #c77b4a; /* copper: small bright accents (active marks, dots, focus) */
+    --tint: #2a0b12;
+    --gold: #c9a96e; /* rare: creator's own money only */
     --bone: #e8dcc8;
     --gold6: #a07d3e;
     --gold2: #e3cc9c;
     /* signal */
     --gain: #3dbe8b;
-    --loss: #ff6a3d;
+    --loss: #f0545c;
     --warn: #f2b33d;
     --warnbg: #1f1806;
     --warnbd: #5a4410;
@@ -41,8 +42,8 @@
     --j-sapp-d: #10223f;
     --j-emer: #2e8b6a;
     --j-emer-d: #0f2e24;
-    --j-burg: #b5304f;
-    --j-burg-d: #3a0010;
+    --j-burg: #a53a4f;
+    --j-burg-d: #3a0a14;
     --j-amb: #c98a2e;
     --j-amb-d: #3a2a08;
     --j-plum: #8e5ba6;
@@ -72,37 +73,50 @@
     --r-xs: 12px;
     --r-sm: 20px;
     --r-md: 16px;
-    --bd-soft: rgba(242, 240, 237, 0.07);
+    --bd-soft: rgba(242, 237, 232, 0.07);
     --rule: 2px;
-    --sheen: rgba(242, 240, 237, 0.22);
+    --sheen: rgba(242, 237, 232, 0.22);
     /* v5: burgundy highlight on the alloy bar (accent, never means loss) */
     --sheen-acc: rgba(232, 220, 200, 0.10);
-    --brand-hover: #a3163a;
-    /* v5 palette: rich luminous burgundy for CTAs/marks (#8C1230); --brand (#6D001A) is reserved for deep tints. */
-    --cta: #8c1230;
+    --brand-hover: #8a1a32;
+    /* v6: oxblood (--brand/--cta) is the brand mark and glow; copper (--btn, --acc) is the action and small accents. */
+    --cta: #6d0f24; /* oxblood brand mark: logo, glows, badges (not button fills) */
+    --brand-rgb: 109, 15, 36; /* oxblood for rgba() glows/tints */
+    --copper-rgb: 199, 123, 74;
+    /* primary action: copper fill, dark text (~4.8:1+) */
+    --btn: #c77b4a;
+    --btn-hover: #a9633a;
+    --on-btn: #0c0a0a;
+    /* allocation bar: one oxblood hue, stepped lightness (rank 1 = darkest = biggest weight) */
+    --al-1: #6d0f24;
+    --al-2: #8a2238;
+    --al-3: #a63b50;
+    --al-4: #bf5c6e;
+    --al-5: #d38290;
+    --al-6: #e3aab4;
     --engrave: 0.55;
     --hair: 1px solid var(--bd);
 
     /* shadcn bridge (components/ui/*) mapped onto Alloy tokens */
-    --background: 0 0% 4%;
-    --foreground: 30 12% 94%;
-    --card: 240 4% 8%;
-    --card-foreground: 30 12% 94%;
-    --popover: 240 3% 6%;
-    --popover-foreground: 30 12% 94%;
-    --primary: 30 12% 94%;
-    --primary-foreground: 0 0% 4%;
-    --secondary: 240 5% 12%;
-    --secondary-foreground: 30 12% 94%;
-    --muted: 240 5% 12%;
-    --muted-foreground: 40 2% 59%;
-    --accent: 240 5% 12%;
-    --accent-foreground: 30 12% 94%;
-    --destructive: 14 100% 62%;
-    --destructive-foreground: 0 0% 4%;
-    --border: 240 5% 16%;
-    --input: 240 3% 43%;
-    --ring: 345 77% 44%;
+    --background: 0 9% 4%;
+    --foreground: 27 30% 93%;
+    --card: 354 20% 9%;
+    --card-foreground: 27 30% 93%;
+    --popover: 350 18% 7%;
+    --popover-foreground: 27 30% 93%;
+    --primary: 23 53% 54%;
+    --primary-foreground: 0 9% 4%;
+    --secondary: 356 17% 12%;
+    --secondary-foreground: 27 30% 93%;
+    --muted: 356 17% 12%;
+    --muted-foreground: 21 8% 61%;
+    --accent: 356 17% 12%;
+    --accent-foreground: 27 30% 93%;
+    --destructive: 357 84% 64%;
+    --destructive-foreground: 0 9% 4%;
+    --border: 357 16% 17%;
+    --input: 353 6% 41%;
+    --ring: 23 53% 54%;
     --radius: 12px;
   }
 
@@ -119,7 +133,7 @@
     background: var(--bg);
     color: var(--tx);
     font: 400 var(--fs-body) / 1.4 var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    font-feature-settings: "tnum" 1, "cv11" 1;
+    font-feature-settings: "cv11" 1; /* tabular figures only on number classes (tnum on prose spaced "1 %" and "Build - Out") */
     -webkit-font-smoothing: antialiased;
   }
   p {
@@ -136,10 +150,12 @@
   .t-body { font-size: var(--fs-body); }
   .t-small { font-size: var(--fs-small); }
   .t-hero { font: 600 var(--fs-hero) / 1.05 var(--font-inter); letter-spacing: -0.5px; }
-  .t-display { font: 400 var(--fs-hero) / 1 var(--font-anton), Impact, "Arial Narrow", sans-serif; letter-spacing: 0.02em; }
+  /* Money + stat figures: Inter 600 tabular (Anton is for hero headline words only). */
+  .t-display { font: 600 var(--fs-hero) / 1.05 var(--font-inter), system-ui, sans-serif; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .t-figure { font-family: var(--font-inter), system-ui, sans-serif; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
   .t-display-upper { text-transform: uppercase; letter-spacing: 0.5px; }
   .t-mono { font-family: var(--font-inter), system-ui, sans-serif; font-size: 13px; letter-spacing: 0; font-variant-numeric: tabular-nums; }
-  .t-num { font-family: var(--font-mono), ui-monospace, Menlo, monospace; font-size: var(--fs-small); letter-spacing: 0.02em; }
+  .t-num { font-family: var(--font-inter), system-ui, sans-serif; font-size: var(--fs-small); font-weight: 500; letter-spacing: 0.01em; font-variant-numeric: tabular-nums; }
   .t-label { font: 500 13px/1.3 var(--font-inter), sans-serif; color: var(--tx2); }
   .t-strong { font-weight: 600; }
   .c2 { color: var(--tx2); }
@@ -161,14 +177,15 @@
   }
   .c-btn:active:not(:disabled) { transform: scale(0.98); }
   /*
-   * v5 primary = brand burgundy fill (#6D001A, hover #8C1230) + off-white text (12.6:1)
-   * + 1px #C41A42 inner hairline so the edge reads on #0A0A0A. Secondary stays outline.
+   * v6 primary = copper fill (--btn) + dark ink text (--on-btn), hover/pressed --btn-hover.
+   * Secondary stays outline.
    * Focus ring is off-white (burgundy-on-burgundy would vanish) and keeps the hairline.
    */
   .c-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--tx); }
-  .c-btn--primary { background: var(--cta); color: var(--tx); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10), inset 0 0 0 1px rgba(255, 255, 255, 0.08); }
-  .c-btn--primary:hover:not(:disabled) { background: var(--brand-hover); }
-  .c-btn--primary:focus-visible { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 0 0 2px var(--bg), 0 0 0 4px var(--tx); }
+  .c-btn--primary { background: var(--btn); color: var(--on-btn); }
+  .c-btn--primary:hover:not(:disabled) { background: var(--btn-hover); }
+  .c-btn--primary:focus-visible { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px rgba(var(--copper-rgb), 0.45); }
+  .c-btn--primary:active:not(:disabled) { background: var(--btn-hover); }
   .c-btn--secondary { background: transparent; color: var(--tx); border-color: var(--bdi); }
   .c-btn--secondary:hover:not(:disabled) { border-color: var(--tx); }
   .c-btn:disabled, .c-btn[aria-disabled="true"] { background: var(--s2); color: var(--tx2); border-color: transparent; cursor: not-allowed; }
@@ -251,12 +268,15 @@
   .c-ledger__v { font-size: var(--fs-body); font-weight: 600; display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
 
   /* ---------- alloy bar ---------- */
-  .c-alloy { display: flex; flex-direction: column; gap: 1px; height: 28px; border-radius: 8px; overflow: hidden; }
-  .c-alloy i { display: block; width: 100%; position: relative; background: currentColor; transition: flex-grow 700ms ease-out, opacity 300ms; }
-  .c-alloy i::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 0%, var(--sheen) 30%, var(--sheen-acc) 40%, transparent 58%); }
-  .c-alloy--lg { height: 56px; }
-  .c-alloy--sm { height: 8px; gap: 0; border-radius: 4px; }
-  .c-alloy__legend { display: flex; flex-wrap: wrap; gap: var(--s1x) var(--s3x); font-family: var(--font-mono), monospace; font-size: var(--fs-small); color: var(--tx2); }
+  /* Segmented weight bar: width = weight, one burgundy hue stepped by rank, 2px gaps as separators. */
+  .c-alloy { display: flex; flex-direction: row; gap: 2px; height: 12px; border-radius: 6px; overflow: hidden; }
+  .c-alloy i { display: block; height: 100%; min-width: 3px; position: relative; background: currentColor; border-radius: 2px; transition: flex-grow 700ms ease-out, opacity 300ms; }
+  .c-alloy--lg { height: 20px; border-radius: 8px; }
+  .c-alloy--sm { height: 6px; gap: 2px; border-radius: 3px; }
+  .c-alloy__legend { display: flex; flex-wrap: wrap; gap: var(--s1x) var(--s3x); font: 500 var(--fs-small) / 1.4 var(--font-inter), sans-serif; font-variant-numeric: tabular-nums; color: var(--tx2); }
+  .c-alloy__key { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .c-alloy__key b { font-weight: 600; color: var(--tx); }
+  .c-alloy__sw { width: 8px; height: 8px; border-radius: 2px; flex: none; background: currentColor; }
   .c-alloy-pair { display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--s2x); align-items: center; }
 
   /* jewel tones (currentColor drives art + bars) */
@@ -354,7 +374,7 @@
   .c-presets { display: flex; gap: var(--s2x); justify-content: center; }
   .c-preset {
     height: 36px; min-width: 56px; padding: 0 var(--s3x); border-radius: 999px; border: 1px solid var(--bd);
-    background: transparent; color: var(--tx); font: 500 var(--fs-small) var(--font-mono), monospace; cursor: pointer;
+    background: transparent; color: var(--tx); font: 600 14px var(--font-inter), sans-serif; font-variant-numeric: tabular-nums; cursor: pointer;
   }
   .c-preset[aria-pressed="true"] { background: var(--tx); color: var(--on-pri); border-color: var(--tx); }
   .c-keypad { display: grid; grid-template-columns: repeat(3, 1fr); }
@@ -389,7 +409,7 @@
   /* ---------- cover hero (basket page only) ---------- */
   .c-cover { position: relative; overflow: hidden; background: var(--bg); }
   .c-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .c-cover__scrim { position: absolute; inset: 0; background: linear-gradient(to top, var(--bg) 4%, rgba(10, 10, 10, 0.55) 45%, transparent 80%); }
+  .c-cover__scrim { position: absolute; inset: 0; background: linear-gradient(to top, var(--bg) 4%, rgba(12, 10, 10, 0.55) 45%, transparent 80%); }
 
   /* ---------- steps ---------- */
   .c-steps { display: flex; flex-direction: column; gap: var(--s2x); }
@@ -422,18 +442,18 @@
   /* Brand duotone for covers on brand surfaces (landing hero): grayscale + burgundy colour blend. */
   /* Brand duotone for ALL basket covers: black → burgundy → bone (grayscale + colour blend + warm highlight). */
   img.v-duo { filter: grayscale(1) contrast(1.1) brightness(0.62); }
-  .v-duo-tint { background: linear-gradient(160deg, #8c1230 0%, #6d001a 50%, #3a0010 100%); mix-blend-mode: color; opacity: 0.7; pointer-events: none; }
+  .v-duo-tint { background: linear-gradient(160deg, #8a2238 0%, var(--brand) 50%, #3a0a14 100%); mix-blend-mode: color; opacity: 0.7; pointer-events: none; }
   .v-duo-tint::after { content: ""; position: absolute; inset: 0; background: radial-gradient(70% 60% at 80% 15%, rgba(232, 220, 200, 0.35), transparent 70%); mix-blend-mode: soft-light; }
   /* Deep burgundy band with a CSS silk sheen. */
   /* Near-black band with a luminous burgundy glow + faint silk lines (no flat dark-red fills). */
   .v-silk {
     background:
-      radial-gradient(45% 80% at 8% 0%, rgba(140, 18, 48, 0.42), transparent 70%),
-      radial-gradient(35% 60% at 100% 100%, rgba(140, 18, 48, 0.18), transparent 70%),
+      radial-gradient(45% 80% at 8% 0%, rgba(var(--brand-rgb), 0.42), transparent 70%),
+      radial-gradient(35% 60% at 100% 100%, rgba(var(--brand-rgb), 0.18), transparent 70%),
       repeating-linear-gradient(115deg, rgba(232, 220, 200, 0.022) 0 1px, transparent 1px 12px),
       #0d0d0e;
     color: var(--tx);
-    border-block: 1px solid rgba(242, 240, 237, 0.06);
+    border-block: 1px solid rgba(242, 237, 232, 0.06);
   }
 }
 
@@ -470,7 +490,7 @@
   .v-spot { position: relative; isolation: isolate; }
   .v-spot::after {
     content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 1; opacity: 0;
-    background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgba(196, 26, 66, 0.20), transparent 70%);
+    background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgba(var(--brand-rgb), 0.35), transparent 70%);
     transition: opacity var(--dur-base) var(--ease-out);
   }
   .v-spot:hover::after { opacity: 1; }
@@ -518,7 +538,7 @@
 .c-skel { position: relative; overflow: hidden; background: var(--s1) !important; animation: none !important; }
 .c-skel::after {
   content: ""; position: absolute; inset: 0; transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(242, 240, 237, 0.06), transparent);
+  background: linear-gradient(90deg, transparent, rgba(242, 237, 232, 0.06), transparent);
   animation: v-shimmer 1.6s ease-in-out 5;
 }
 
@@ -557,4 +577,43 @@ html[data-motion="low"] .v-wipe { animation: none; }
 }
 @media (max-height: 620px) {
   .v-story-pin { transform: scale(0.74); }
+}
+
+/* =====================================================================
+ * v5.3 numbers: Anton only for uppercase hero headline words.
+ * Any `font-display` that is NOT an uppercase headline is a money/stat figure → Inter 600 tabular.
+ * (Fixes the "$1 .00" gap: Anton's uneven digit widths inside Ticker columns.)
+ * JetBrains Mono is no longer loaded; --font-mono resolves to Inter so stray mono uses stay on-brand.
+ * ===================================================================== */
+:root { --font-mono: var(--font-inter); }
+.font-display:not(.uppercase) {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Privy login modal: Alloy neutrals (warm ink) instead of Privy's generated navy greys.
+ * `html:root` outranks the `:root` block Privy injects at runtime. */
+html:root {
+  --privy-color-background: #140e0f;
+  --privy-color-background-2: #1b1213;
+  --privy-color-background-hover: #251a1b;
+  --privy-color-background-clicked: #332526;
+  --privy-color-border-default: #332526;
+  --privy-color-border-hover: #6f6264;
+  --privy-color-border-focus: #c77b4a;
+  --privy-color-border-interactive: #6f6264;
+  --privy-color-border-interactive-hover: #c77b4a;
+  --privy-color-foreground: #f2ede8;
+  --privy-color-foreground-2: #cdc4bd;
+  --privy-color-foreground-3: #a39892;
+  --privy-color-foreground-4: #332526;
+  --privy-color-foreground-accent: #0c0a0a;
+  --privy-color-accent: #c77b4a;
+  --privy-color-accent-light: #d9976b;
+  --privy-color-accent-dark: #a9633a;
+  --privy-color-icon-muted: #a39892;
+  --privy-color-success: #3dbe8b;
+  --privy-color-error: #f0545c;
 }

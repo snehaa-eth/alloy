@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { Anton, Inter, JetBrains_Mono } from "next/font/google";
+import { Anton, Inter } from "next/font/google";
 
 import "./globals.css";
 import { Providers } from "./providers";
@@ -8,7 +8,6 @@ import { AppShell } from "@/components/alloy/AppShell";
 
 const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-inter", display: "swap" });
 const anton = Anton({ subsets: ["latin"], weight: "400", variable: "--font-anton", display: "swap" });
-const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono", display: "swap" });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://crates-ui.vercel.app";
 
@@ -21,7 +20,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0A0A0A",
+  themeColor: "#0C0A0A",
   colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
@@ -30,7 +29,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`dark ${inter.variable} ${anton.variable} ${mono.variable}`}>
+    <html lang="en" className={`dark ${inter.variable} ${anton.variable}`}>
       <body>
         <Providers>
           <AppShell>{children}</AppShell>

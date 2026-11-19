@@ -10,9 +10,9 @@ import { DEFAULT_CHAIN_ID, explorerTxUrl } from "@/lib/chains";
 import { Certificate } from "../Certificate";
 import { Sheet } from "../Sheet";
 import { AlloyBar, Banner, Button, ErrorState, InlineToast, QuietLink, Stamp } from "../primitives";
-import { clock, longDate, type BasketView } from "../basket-view";
-import { useAccount, useAge, useAttestation, useQuoteView } from "../hooks";
-import { AmountPad, AttestBlock, TxProgress } from "./shared";
+import { longDate, type BasketView } from "../basket-view";
+import { useAccount, useAttestation, useQuoteView } from "../hooks";
+import { AmountField, AttestBlock, QuoteRows, TxProgress } from "./shared";
 
 type Stage = "compose" | "attest" | "running" | "done" | "error";
 
@@ -24,6 +24,10 @@ function safeParse(s: string): bigint {
   }
 }
 
+/**
+ * Phone buy sheet. Order: amount (input + chips) → You get / Trading cost / Fee → CTA.
+ * The quote refreshes silently in the background (useQuote refetches every 15s); no visible timer.
+ */
 export function BuySheet({
   v,
   open,
@@ -49,12 +53,10 @@ export function BuySheet({
   const attest = useAttestation();
   const buy = useBuyBasket(b.address);
   const [amount, setAmount] = useState(initial);
-  const [keys, setKeys] = useState(false);
   const [stage, setStage] = useState<Stage>("compose");
   const [err, setErr] = useState("");
   const usdc = safeParse(amount);
   const quote = useQuoteView(b.address, "buy", usdc, v.nav, b.totalSupply);
-  const age = useAge(quote.updatedAt);
   const tooSmall = usdc > 0n && usdc < MIN_BUY_USDC;
 
   useEffect(() => {
@@ -66,7 +68,6 @@ export function BuySheet({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initial]);
 
-  const costUsd6 = quote.costUsd6;
   const label = `Buy ${formatUsd6(usdc, usdc % 1_000_000n === 0n ? 0 : 2)}`;
 
   async function go() {
@@ -82,10 +83,10 @@ export function BuySheet({
     }
   }
 
-  const title = stage === "done" ? "You're in" : b.name;
+  const title = stage === "done" ? "You're in" : `Buy ${b.name}`;
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange} title={title} hideTitle>
+    <Sheet open={open} onOpenChange={onOpenChange} title={title} hideTitle={stage === "done"}>
       {stage === "attest" && (
         <AttestBlock
           onConfirm={() => {
@@ -112,57 +113,44 @@ export function BuySheet({
 
       {(stage === "compose" || stage === "running") && (
         <>
-          <Certificate
-            flat
-            serial={v.id.serial}
-            stamp={null}
-            title={b.name}
-            label="You pay"
-            figure={formatUsd6(usdc)}
-            unit="test"
-            ledger={[
-              {
-                k: "You get",
-                v: tooSmall ? <span className="down">Minimum $5</span> : `≈ ${formatShares(quote.out, 2)} shares`,
-              },
-              {
-                k: quote.source === "quote" ? "Cost" : "Fee",
-                v: costUsd6 !== null ? `≈ ${formatUsd6(costUsd6)}` : `${b.feeBps / 100}%/yr`,
-              },
+          <AmountField value={amount} onChange={setAmount} disabled={stage === "running"} />
+
+          <QuoteRows
+            rows={[
+              { k: "You get", v: tooSmall ? <span className="down">Minimum $5</span> : `≈ ${formatShares(quote.out, 2)} shares` },
+              ...(quote.costUsd6 !== null ? [{ k: "Trading cost (one-time)", v: `≈ ${formatUsd6(quote.costUsd6)}` }] : []),
+              { k: "Fee", v: `${b.feeBps / 100}% a year` },
             ]}
-            action={
-              stage === "running" ? (
-                <TxProgress step={buy.step} />
-              ) : (
-                <Button onClick={go} disabled={usdc === 0n || tooSmall} loading={quote.loading}>
-                  {acct.signedIn ? label : "Sign in with email to buy"}
-                </Button>
-              )
-            }
-            footLink={<QuietLink onClick={() => setKeys((k) => !k)}>{keys ? "Done" : "Change amount"}</QuietLink>}
-            footMeta={quote.source === "quote" ? `quote ${clock(age).slice(3)}` : quote.loading ? "quoting…" : "estimate · oracle value"}
-          >
-            {quote.impactBps !== null && quote.impactBps > 50 && (
-              <Banner intent="closed" icon={Clock}>
-                Fills ~{(quote.impactBps / 100).toFixed(1)}% below value now.
-              </Banner>
-            )}
-            {marketOpen === false && quote.impactBps === null && (
-              <Banner intent="closed" icon={Clock}>
-                US market closed. Fills can differ from value.
-              </Banner>
-            )}
-            {changeAt && (
-              <Banner intent="notice" icon={RefreshCw} action={onSeeChange ? <QuietLink onClick={onSeeChange}>See</QuietLink> : undefined}>
-                Recipe changes soon.
-              </Banner>
-            )}
-          </Certificate>
-          {stage === "compose" && <AmountPad value={amount} onChange={setAmount} showKeys={keys} />}
+          />
+
+          {quote.impactBps !== null && quote.impactBps > 50 && (
+            <Banner intent="closed" icon={Clock}>
+              Fills ~{(quote.impactBps / 100).toFixed(1)}% below value now.
+            </Banner>
+          )}
+          {marketOpen === false && quote.impactBps === null && (
+            <Banner intent="closed" icon={Clock}>
+              US market closed. Fills can differ from value.
+            </Banner>
+          )}
+          {changeAt && (
+            <Banner intent="notice" icon={RefreshCw} action={onSeeChange ? <QuietLink onClick={onSeeChange}>See</QuietLink> : undefined}>
+              Recipe changes soon.
+            </Banner>
+          )}
+
+          {stage === "running" ? (
+            <TxProgress step={buy.step} />
+          ) : (
+            <Button className="!h-[52px] !rounded-full" onClick={go} disabled={usdc === 0n || tooSmall}>
+              {acct.signedIn ? label : "Sign in to buy"}
+            </Button>
+          )}
+
           {stage === "compose" && (
-            <div className="flex items-center justify-between">
-              <span className="t-mono c2 inline-flex items-center gap-1">
-                <FlaskConical size={12} strokeWidth={1.75} aria-hidden /> test dollars
+            <div className="-mt-2 flex items-center justify-between">
+              <span className="inline-flex items-center gap-1 text-[13px] text-tx2">
+                <FlaskConical size={12} strokeWidth={1.75} aria-hidden /> Test dollars
               </span>
               <QuietLink onClick={onAddMoney}>Add test money</QuietLink>
             </div>

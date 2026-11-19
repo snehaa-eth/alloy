@@ -170,7 +170,7 @@ export function Signed({ bps, className, suffix }: { bps: number; className?: st
   );
 }
 
-/** Mono label over an Anton figure + mono unit. The ONE Anton element on a screen. */
+/** Label over a figure (Inter 600, tabular) + unit. */
 export function Figure({ label, figure, unit, className }: { label: ReactNode; figure: ReactNode; unit?: ReactNode; className?: string }) {
   return (
     <div className={cn("flex flex-col gap-2", className)}>
@@ -209,7 +209,7 @@ export function Ledger({ cells, className }: { cells: [LedgerCell, LedgerCell]; 
 
 export type RecipePart = { ticker: string; bps: number };
 
-/** Layered recipe bands: thickness = weight, jewel tone fading by rank, metallic sheen. */
+/** Segmented recipe bar: width = weight, one burgundy hue stepped by rank, 2px separators. */
 export function AlloyBar({
   parts,
   tone,
@@ -242,26 +242,37 @@ export function AlloyBar({
             style={{
               flexGrow: p.bps / total,
               flexBasis: 0,
-              color: MULTI[k % MULTI.length],
+              color: alloyColor(k),
             }}
           />
         ))}
       </div>
-      {legend && (
-        <div className="c-alloy__legend">
-          {items.map((p) => (
-            <span key={p.ticker}>
-              {p.ticker} {fmtPct(p.bps)}
-            </span>
-          ))}
-        </div>
-      )}
+      {legend && <AlloyLegend items={items} />}
     </div>
   );
 }
 
-/** v5 alloy ramp by rank: burgundy → rose → bone → greys. */
-const MULTI = ["#8C1230", "#B0485F", "#CBB8A6", "#E8DCC8", "#9A948C", "#6E6A66", "#4E4B48", "#3A3836", "#2C2A29", "#222120"];
+/** One burgundy hue at stepped lightness by rank (rank 1 = darkest = biggest weight). Tokens: --al-1…--al-6. */
+export function alloyColor(rank: number): string {
+  return `var(--al-${Math.min(rank, 5) + 1})`;
+}
+
+/** Ticker + weight key, swatch matching the bar segment (rank order). */
+export function AlloyLegend({ items, max, className }: { items: RecipePart[]; max?: number; className?: string }) {
+  const shown = max ? items.slice(0, max) : items;
+  const extra = items.length - shown.length;
+  return (
+    <div className={cn("c-alloy__legend", className)}>
+      {shown.map((p, k) => (
+        <span key={p.ticker} className="c-alloy__key">
+          <i className="c-alloy__sw" style={{ color: alloyColor(k) }} aria-hidden />
+          <b>{p.ticker}</b> {fmtPct(p.bps)}%
+        </span>
+      ))}
+      {extra > 0 && <span className="c-alloy__key">+{extra} more</span>}
+    </div>
+  );
+}
 
 /** now → after pair with a diff legend (amendments, receipts). */
 export function AlloyBarPair({ before, after, tone }: { before: RecipePart[]; after: RecipePart[]; tone: Tone }) {

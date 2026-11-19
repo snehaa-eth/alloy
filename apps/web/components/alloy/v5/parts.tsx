@@ -8,7 +8,7 @@ import type { ReactNode } from "react";
 import { FlaskConical, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Performance } from "@/lib/types";
-import { AlloyBar, StockLogo } from "../primitives";
+import { AlloyBar, AlloyLegend, StockLogo } from "../primitives";
 import { Ticker } from "../motion/Ticker";
 import { hash32 } from "../guilloche-gen";
 import { compactUsd6, type BasketView } from "../basket-view";
@@ -20,7 +20,7 @@ import { compactUsd6, type BasketView } from "../basket-view";
 export function BrandMark({ className }: { className?: string }) {
   return (
     <span className={cn("inline-flex items-center gap-2", className)}>
-      {/* Brand mark: solid #8C1230 rounded square, subtle top highlight, two bone hairlines (the alloy bands). */}
+      {/* Brand mark: solid oxblood (--cta) rounded square, subtle top highlight, two bone hairlines (the alloy bands). */}
       <span
         aria-hidden
         className="flex h-[20px] w-[20px] flex-col justify-center gap-[3px] rounded-[6px] px-[4px]"
@@ -40,14 +40,14 @@ export function BrandMark({ className }: { className?: string }) {
 
 export function CreatorAvatar({ handle, seed, size = 32, ring }: { handle: string; seed?: string; size?: number; ring?: boolean }) {
   const h = hash32((seed ?? handle).toLowerCase());
-  // Burgundy family (brand), varied by handle so creators still differ.
+  // Oxblood family (brand), varied by handle so creators still differ.
   const fam = [
-    { mid: "#C41A42", deep: "#3A0010" },
-    { mid: "#8C1230", deep: "#2A000A" },
-    { mid: "#A8324F", deep: "#4A0618" },
+    { mid: "#A63B50", deep: "#3A0A14" },
+    { mid: "#8A2238", deep: "#2A0B12" },
+    { mid: "#6D0F24", deep: "#1B1213" },
   ];
-  const a = fam[h % fam.length];
-  const b = fam[(h >> 3) % fam.length];
+  const a = fam[(h >>> 0) % fam.length];
+  const b = fam[(h >>> 3) % fam.length];
   const letter = (handle.replace(/^@/, "").match(/[a-z0-9]/i)?.[0] ?? "A").toUpperCase();
   return (
     <span
@@ -141,9 +141,9 @@ export function BasketCard({ v, perf, priority }: { v: BasketView; perf?: Perfor
   return (
     <Link
       href={`/b/${b.address}`}
-      className="v-spot group flex flex-col overflow-hidden rounded-[20px] border border-white/[0.07] bg-s1 text-tx no-underline transition duration-200 hover:-translate-y-0.5 hover:border-[var(--acc)] hover:bg-[#17171a]"
+      className="v-spot group flex flex-col overflow-hidden rounded-[20px] border border-white/[0.07] bg-s1 text-tx no-underline transition duration-200 hover:-translate-y-0.5 hover:border-[var(--acc)] hover:bg-s2"
     >
-      <div className="relative h-[136px] overflow-hidden bg-[#1a0a0e] sm:h-[160px]">
+      <div className="relative h-[136px] overflow-hidden bg-[var(--tint)] sm:h-[160px]">
         <Image
           src={v.id.coverSrc}
           alt=""
@@ -159,9 +159,12 @@ export function BasketCard({ v, perf, priority }: { v: BasketView; perf?: Perfor
             <FlaskConical size={12} strokeWidth={1.75} aria-hidden /> Demo
           </span>
         )}
-        <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-[12px] font-medium text-tx3 backdrop-blur">
-          <Users size={12} strokeWidth={1.75} aria-hidden /> {b.followers}
-        </span>
+        {b.followers > 0 && (
+          <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-[12px] font-medium tabular-nums text-tx3 backdrop-blur">
+            <Users size={12} strokeWidth={1.75} aria-hidden /> {b.followers}
+            <span className="sr-only"> followers</span>
+          </span>
+        )}
       </div>
 
       <div className="-mt-6 flex flex-1 flex-col gap-4 px-5 pb-5">
@@ -173,7 +176,7 @@ export function BasketCard({ v, perf, priority }: { v: BasketView; perf?: Perfor
         </div>
         <div className="flex flex-col gap-1.5">
           <h3 className="truncate text-[18px] font-semibold leading-tight tracking-tight">{b.name}</h3>
-          <p className="truncate text-[14px] leading-[20px] text-tx2">{thesisOf(v)}</p>
+          <p className="line-clamp-2 min-h-[40px] text-[14px] leading-[20px] text-tx2">{thesisOf(v)}</p>
         </div>
 
         {/* Real data only: returns once there's history, otherwise fee + minimum. */}
@@ -197,10 +200,7 @@ export function BasketCard({ v, perf, priority }: { v: BasketView; perf?: Perfor
 
         <div className="mt-auto flex flex-col gap-3">
           <AlloyBar parts={v.target} tone={v.id.tone} size="sm" legend={false} />
-          <div className="flex items-center justify-between gap-2">
-            <Logos tickers={v.tickers} max={3} />
-            <span className="text-[13px] text-tx2">{v.tickers.length} stocks</span>
-          </div>
+          <AlloyLegend items={[...v.target].sort((a, c) => c.bps - a.bps)} max={4} />
         </div>
       </div>
     </Link>
@@ -235,7 +235,7 @@ export function BrandWash() {
     <div
       aria-hidden
       className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[460px]"
-      style={{ background: "radial-gradient(38% 70% at 6% -25%, rgba(140,18,48,0.45), transparent 70%)" }}
+      style={{ background: "radial-gradient(38% 70% at 6% -25%, rgba(var(--brand-rgb),0.55), transparent 70%)" }}
     />
   );
 }

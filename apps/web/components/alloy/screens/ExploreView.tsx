@@ -83,16 +83,16 @@ export function ExploreView({ items }: { items: { v: BasketView; perf?: Performa
             type="button"
             onClick={() => setSort(sort === "followed" ? "new" : "followed")}
             className="h-10 flex-none rounded-full border border-white/10 px-4 text-[14px] font-medium text-tx2 md:hidden"
-            aria-label={`Sort: ${sort === "followed" ? "Most followed" : "New"}. Tap to change.`}
+            aria-label={`Sort: ${sort === "followed" ? "Popular" : "New"}. Tap to change.`}
           >
-            ↕ {sort === "followed" ? "Most followed" : "New"}
+            ↕ {sort === "followed" ? "Popular" : "New"}
           </button>
         </div>
         <div className="flex items-center gap-3">
         <div role="radiogroup" aria-label="Sort" className="hidden h-11 flex-none items-center rounded-full border border-white/10 p-1 md:flex">
           {(
             [
-              ["followed", "Most followed"],
+              ["followed", "Popular"],
               ["new", "New"],
             ] as [Sort, string][]
           ).map(([id, label]) => (

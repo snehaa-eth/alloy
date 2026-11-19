@@ -41,7 +41,7 @@ export function MeScreen({ items }: { items: LoadedBasket[] }) {
             line="Your profile, your baskets and test dollars to try it with."
             action={
               <div className="flex flex-col gap-2">
-                <Button onClick={() => acct.login()}>Sign in with email</Button>
+                <Button onClick={() => acct.login()}>Sign in</Button>
                 <ButtonLink href="/create" variant="secondary">
                   Build a basket
                 </ButtonLink>
@@ -103,7 +103,7 @@ export function MeScreen({ items }: { items: LoadedBasket[] }) {
                 ) : null}
                 <div className="flex flex-col">
                   {mine.map((it) => (
-                    <BasketRow key={it.v.basket.address} v={it.v} href={`/me/b/${it.v.basket.address}`} meta={`${it.v.basket.followers} followers`} />
+                    <BasketRow key={it.v.basket.address} v={it.v} href={`/me/b/${it.v.basket.address}`} meta={it.v.basket.followers > 0 ? `${it.v.basket.followers.toLocaleString("en-US")} followers` : undefined} />
                   ))}
                 </div>
               </>

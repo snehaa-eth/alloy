@@ -2,9 +2,9 @@
 
 /**
  * Landing "How it works" scroll storytelling (MOTION.md §5.2):
- * Pick a story → Start with $5 → Prices move → It runs on autopilot (creator styles).
- * Desktop: a ~190vh track; the stepper (left) and the live card (right) stay pinned and vertically centred while
- * scroll position picks the step, so the card morphs in place (no empty void, no scroll-jacking). Clicking a step
+ * Pick a basket → Start with $5 → Prices move → It runs on autopilot (creator styles).
+ * Desktop: a 500vh track (one full viewport of scroll per step); the stepper (left) and the live card (right) stay
+ * pinned while scroll position picks the step, so the card morphs in place (no scroll-jacking). Clicking a step
  * scrolls to it. Phones: no pinning; four compact stacked cards. Reduced motion: same layout, transitions off (CSS).
  */
 import Image from "next/image";
@@ -15,10 +15,10 @@ import { AlloyBar, StockLogo, fmtPct, type RecipePart } from "../primitives";
 import type { Tone } from "../identity";
 import { STYLES, STYLE_ORDER } from "../styles";
 
-type Cover = { src: string; tone: Tone };
+type Cover = { src: string; tone: Tone; name?: string };
 
 const STEPS = [
-  { t: "Pick a story", d: "AI build-out, space, big tech. Each basket is a recipe of US stocks." },
+  { t: "Pick a basket", d: "One theme, like AI or big tech. Each basket is a recipe of US stocks." },
   { t: "Start with $5", d: "Put in dollars. You get one basket share that holds all of it." },
   { t: "Prices move", d: "Winners grow. One stock can become a bigger slice." },
   { t: "It runs on autopilot", d: "Each basket follows its creator's plan. You don't lift a finger." },
@@ -65,26 +65,60 @@ export function StoryVisual({
           : `${top?.ticker} stays at ${fmtPct(topNow?.bps ?? 0)}%. It only sells if one stock passes ${TAKEOVER / 100}%.`;
 
   return (
-    <div className={cn("flex flex-col justify-center gap-4 rounded-[20px] border border-white/[0.07] bg-s1", compact ? "p-4" : "h-[468px] gap-3 overflow-hidden p-6")}>
-      <div className="flex items-center justify-between">
-        <div className="flex -space-x-4">
-          {covers.slice(0, compact ? 3 : 4).map((c, k) => (
-            <div
-              key={c.src + k}
-              className={cn("v-swap relative overflow-hidden rounded-[12px] border-2 border-s1 bg-[#1a0a0e]", compact ? "h-10 w-10" : "h-12 w-12", k > 0 && step >= 1 && "opacity-30")}
-              style={{ transform: `rotate(${(k - 1.5) * 6}deg)` }}
-            >
-              <Image src={c.src} alt="" fill sizes="48px" className="v-duo object-cover" />
-              <div className="v-duo-tint absolute inset-0" />
-            </div>
-          ))}
+    <div className={cn("flex flex-col rounded-[20px] border border-white/[0.07] bg-s1", compact ? "justify-center gap-4 p-4" : cn("h-[480px] overflow-hidden p-6", step >= 3 ? "gap-3" : "gap-5"))}>
+      {compact ? (
+        <div className="flex items-center justify-between">
+          <div className="flex -space-x-4">
+            {covers.slice(0, 3).map((c, k) => (
+              <div
+                key={c.src + k}
+                className={cn("v-swap relative h-10 w-10 overflow-hidden rounded-[12px] border-2 border-s1 bg-[var(--tint)]", k > 0 && step >= 1 && "opacity-30")}
+                style={{ transform: `rotate(${(k - 1) * 6}deg)` }}
+              >
+                <Image src={c.src} alt="" fill sizes="48px" className="v-duo object-cover" />
+                <div className="v-duo-tint absolute inset-0" />
+              </div>
+            ))}
+          </div>
+          <span className={cn("v-swap font-display text-[32px] leading-none", step >= 1 ? "opacity-100" : "translate-y-2 opacity-0")}>$25</span>
         </div>
-        <span className={cn("v-swap font-display leading-none", compact ? "text-[32px]" : "text-[44px]", step >= 1 ? "opacity-100" : "translate-y-2 opacity-0")}>$25</span>
-      </div>
+      ) : (
+        /* Desktop: step 1 = three real basket covers to pick from (first one picked); later steps = the picked basket + $25. */
+        <div className={cn("v-swap relative flex-none", step >= 1 ? "h-[80px]" : "h-[132px]")}>
+          <div className={cn("v-swap absolute inset-0 grid grid-cols-3 gap-3", step >= 1 && "pointer-events-none opacity-0")} aria-hidden={step >= 1}>
+            {covers.slice(0, 3).map((c, k) => (
+              <div
+                key={c.src + k}
+                className={cn("relative overflow-hidden rounded-[14px] bg-[var(--tint)]", k === 0 ? "shadow-[inset_0_0_0_2px_var(--acc)]" : "opacity-60")}
+              >
+                <Image src={c.src} alt="" fill sizes="180px" className="v-duo object-cover" />
+                <div className="v-duo-tint absolute inset-0" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+                {c.name && <span className="absolute inset-x-3 bottom-2.5 truncate text-[13px] font-semibold">{c.name}</span>}
+                {k === 0 && <span className="absolute left-2.5 top-2.5 h-2 w-2 rounded-full" style={{ background: "var(--acc)" }} aria-hidden />}
+              </div>
+            ))}
+          </div>
+          <div className={cn("v-swap absolute inset-0 flex items-center gap-4", step >= 1 ? "opacity-100" : "pointer-events-none translate-y-2 opacity-0")} aria-hidden={step < 1}>
+            {covers[0] && (
+              <div className="relative h-[72px] w-[72px] flex-none overflow-hidden rounded-[16px] bg-[var(--tint)] shadow-[inset_0_0_0_2px_var(--acc)]">
+                <Image src={covers[0].src} alt="" fill sizes="72px" className="v-duo object-cover" />
+                <div className="v-duo-tint absolute inset-0" />
+              </div>
+            )}
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <span className="truncate text-[17px] font-semibold">{covers[0]?.name}</span>
+              <span className="text-[14px] text-tx2">{step === 1 ? "1 basket share" : step === 2 ? "Prices moved" : "Following the creator's plan"}</span>
+            </div>
+            <span className="font-display text-[48px] leading-none">$25</span>
+          </div>
+        </div>
+      )}
 
+      <div className={cn("flex flex-col", compact ? "gap-4" : cn("flex-1 justify-center", step >= 3 ? "gap-3" : "gap-6"))}>
       <AlloyBar parts={now} tone={tone} legend={false} />
 
-      <ul className="flex flex-col gap-3">
+      <ul className={cn("flex flex-col", compact || step >= 3 ? "gap-3" : "gap-[22px]")}>
         {rows.map((p, k) => {
           const isTop = k === 0;
           return (
@@ -113,7 +147,7 @@ export function StoryVisual({
           {STYLE_ORDER.map((m, k) => {
             const I = STYLES[m].icon;
             return (
-              <li key={m} className={cn("flex items-start gap-3 rounded-[14px] px-3 py-2 text-[13px]", k === 0 ? "bg-s2 shadow-[inset_0_0_0_1px_rgba(196,26,66,0.45)]" : "bg-s2/50")}>
+              <li key={m} className={cn("flex items-start gap-3 rounded-[14px] px-3 py-2 text-[13px]", k === 0 ? "bg-s2 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--acc)_45%,transparent)]" : "bg-s2/50")}>
                 <I size={15} strokeWidth={1.75} className="mt-0.5 flex-none" style={{ color: k === 0 ? "var(--acc)" : "var(--tx2)" }} aria-hidden />
                 <span>
                   <span className="font-semibold">{STYLES[m].label}</span>
@@ -125,7 +159,9 @@ export function StoryVisual({
         </ul>
       )}
 
-      <p className="flex items-center gap-2 border-t border-white/[0.07] pt-3 text-[14px] text-tx3" aria-live="polite">
+      </div>
+
+      <p className={cn("flex items-center gap-2 border-t border-white/[0.07] pt-3 text-[14px] text-tx3", !compact && "mt-auto")} aria-live="polite">
         <span className="h-1.5 w-1.5 flex-none rounded-full" style={{ background: "var(--acc)" }} aria-hidden />
         {result}
       </p>
@@ -164,7 +200,7 @@ export function StoryScroll({ parts, tone, covers, heading, mobileHeading }: { p
       </ol>
 
       {/* Desktop: heading + stepper + card pinned together (top = navbar + 24px, centred in the rest); scroll picks the step */}
-      <div ref={track} className="relative hidden h-[200vh] lg:block">
+      <div ref={track} className="relative hidden h-[500vh] lg:block">
         <div className="v-story-pin sticky top-[max(88px,calc(32px+50vh-280px))] flex flex-col gap-6">
           {heading}
           <div className="grid grid-cols-[minmax(0,5fr)_minmax(0,6fr)] items-center gap-16">
@@ -190,7 +226,7 @@ function StepText({ n, t, d, on, done }: { n: number; t: string; d: string; on: 
     <div className={cn("v-swap flex gap-4 rounded-[16px] px-4 py-3", on ? "bg-s1 opacity-100" : done ? "opacity-75 hover:opacity-100" : "opacity-55 hover:opacity-100")}>
       <span
         className="inline-flex h-8 w-8 flex-none items-center justify-center rounded-full text-[14px] font-semibold"
-        style={on ? { background: "var(--cta)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15)" } : { background: "var(--s2)" }}
+        style={on ? { background: "var(--acc)", color: "var(--bg)" } : { background: "var(--s2)" }}
       >
         {n}
       </span>

@@ -12,7 +12,7 @@ export const TONES: Tone[] = ["sapp", "emer", "burg", "amb", "plum"];
 export const TONE_HEX: Record<Tone, { mid: string; deep: string }> = {
   sapp: { mid: "#3E6FB8", deep: "#10223F" },
   emer: { mid: "#2E8B6A", deep: "#0F2E24" },
-  burg: { mid: "#B5304F", deep: "#3A0010" },
+  burg: { mid: "#A53A4F", deep: "#3A0A14" },
   amb: { mid: "#C98A2E", deep: "#3A2A08" },
   plum: { mid: "#8E5BA6", deep: "#2A1433" },
 };

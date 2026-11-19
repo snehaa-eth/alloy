@@ -42,7 +42,7 @@ export function TryScreen({ demo, others }: { demo: LoadedBasket; others: Loaded
           </Banner>
         ) : (
           <Banner intent="test" icon={FlaskConical} action={<QuietLink onClick={() => acct.login()}>Start</QuietLink>}>
-            Sign in with email. Test dollars arrive automatically.
+            Sign in. Test dollars arrive automatically.
           </Banner>
         )}
       </div>
