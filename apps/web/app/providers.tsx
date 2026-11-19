@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { DEFAULT_CHAIN, SUPPORTED_CHAINS } from "@/lib/chains";
 import { wagmiConfig } from "@/lib/wagmi";
 import { MotionRoot } from "@/components/alloy/motion/MotionRoot";
+import { PreferEmbeddedWallet } from "@/components/alloy/PreferEmbeddedWallet";
 
 export function Providers({ children }: { children: ReactNode }) {
   // One QueryClient per browser session (not per render).
@@ -29,11 +30,12 @@ export function Providers({ children }: { children: ReactNode }) {
         loginMethods: ["email", "google", "twitter", "passkey", "wallet"],
         defaultChain: DEFAULT_CHAIN,
         supportedChains: [...SUPPORTED_CHAINS],
-        embeddedWallets: { ethereum: { createOnLogin: "users-without-wallets" } },
+        embeddedWallets: { ethereum: { createOnLogin: "all-users" } },
       }}
     >
       <QueryClientProvider client={queryClient}>
         <WagmiProvider config={wagmiConfig}>
+          <PreferEmbeddedWallet />
           <MotionRoot>{children}</MotionRoot>
           <Toaster position="bottom-right" richColors closeButton visibleToasts={3} />
         </WagmiProvider>
