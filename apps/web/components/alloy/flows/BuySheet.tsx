@@ -1,32 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Award, FlaskConical, RefreshCw } from "lucide-react";
-import { useBuyBasket } from "@/lib/hooks/use-basket-tx";
-import { DEFAULT_SLIPPAGE_BPS, MIN_BUY_USDC } from "@/lib/strategy";
-import { formatUsd6, parseUsdc } from "@/lib/units";
-import { describeTxError } from "@/lib/tx";
+import { Award, FlaskConical } from "lucide-react";
+import { formatUsd6 } from "@/lib/units";
 import { DEFAULT_CHAIN_ID, explorerTxUrl } from "@/lib/chains";
 import { Certificate } from "../Certificate";
-import { Sheet } from "../Sheet";
-import { AlloyBar, Banner, Button, ErrorState, InlineToast, QuietLink, Stamp } from "../primitives";
+import { AlloyBar, InlineToast, QuietLink, Stamp } from "../primitives";
 import { longDate, type BasketView } from "../basket-view";
-import { useAccount, useAttestation, useQuoteView } from "../hooks";
-import { AmountField, AttestBlock, BuyQuote, TxProgress, splitParts } from "./shared";
-
-type Stage = "compose" | "attest" | "running" | "done" | "error";
-
-function safeParse(s: string): bigint {
-  try {
-    return parseUsdc(s || "0");
-  } catch {
-    return 0n;
-  }
-}
+import { TradeSheet } from "../trade/ui";
+import { BuyFlow } from "../trade/BuyFlow";
+import { useRealBuyTx } from "../trade/tx";
 
 /**
- * Phone buy sheet. Order: amount (input + chips) → You get / Trading cost / Fee (+ market line) → CTA.
- * The quote refreshes silently in the background (useQuote refetches every 15s); no visible timer.
+ * Buy sheet (phones; desktop uses the inline BuyPanel): the liquid-metal buy flow (trade/BuyFlow) in a bottom sheet.
+ * Real tx via lib useBuyBasket; the drop falls in on the receipt. Props unchanged for BasketScreen.
  */
 export function BuySheet({
   v,
@@ -45,104 +32,38 @@ export function BuySheet({
   /** executableAt of a pending recipe change, if any */
   changeAt?: number;
   onSeeChange?: () => void;
-  onAddMoney: () => void;
+  /** kept for compatibility; the sheet now tops up test USDC inline (useFaucet) */
+  onAddMoney?: () => void;
   marketOpen: boolean | null;
 }) {
-  const b = v.basket;
-  const acct = useAccount();
-  const attest = useAttestation();
-  const buy = useBuyBasket(b.address);
+  void onAddMoney;
+  const tx = useRealBuyTx(v.basket.address);
   const [amount, setAmount] = useState(initial);
-  const [stage, setStage] = useState<Stage>("compose");
-  const [err, setErr] = useState("");
-  const usdc = safeParse(amount);
-  const quote = useQuoteView(b.address, "buy", usdc, v.nav, b.totalSupply);
-  const tooSmall = usdc > 0n && usdc < MIN_BUY_USDC;
-
+  const [pane, setPane] = useState("compose");
+  const [run, setRun] = useState(0);
   useEffect(() => {
     if (open) {
       setAmount(initial);
-      setStage("compose");
-      buy.resetStep();
+      setRun((n) => n + 1);
+      tx.reset();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initial]);
-
-  const label = `Buy ${formatUsd6(usdc, usdc % 1_000_000n === 0n ? 0 : 2)}`;
-
-  async function go() {
-    if (!acct.signedIn) return acct.login();
-    if (!attest.attested) return setStage("attest");
-    setStage("running");
-    try {
-      await buy.mutateAsync({ usdcIn: usdc, slippageBps: DEFAULT_SLIPPAGE_BPS });
-      setStage("done");
-    } catch (e) {
-      setErr(describeTxError(e));
-      setStage("error");
-    }
-  }
-
-  const title = stage === "done" ? "You're in" : `Buy ${b.name}`;
-
   return (
-    <Sheet open={open} onOpenChange={onOpenChange} title={title} hideTitle={stage === "done"}>
-      {stage === "attest" && (
-        <AttestBlock
-            buy
-          onConfirm={() => {
-            attest.confirm();
-            setStage("compose");
-          }}
-          onCancel={() => setStage("compose")}
-        />
-      )}
-
-      {stage === "error" && (
-        <ErrorState
-          line="Didn't go through. Your test dollars are still there."
-          action={
-            <div className="flex flex-col gap-2">
-              <span className="t-mono c2 break-words">{err}</span>
-              <Button onClick={() => setStage("compose")}>Try again</Button>
-            </div>
-          }
-        />
-      )}
-
-      {stage === "done" && <FoundingCertificate v={v} paid={usdc} refund={buy.result?.quote.refundUsd6 ?? 0n} txHash={buy.txHash ?? undefined} />}
-
-      {(stage === "compose" || stage === "running") && (
-        <>
-          <AmountField value={amount} onChange={setAmount} disabled={stage === "running"} />
-
-          <BuyQuote parts={splitParts(v)} usdc={usdc} quote={quote} feeBps={b.feeBps} marketOpen={marketOpen} />
-
-          {changeAt && (
-            <Banner intent="notice" icon={RefreshCw} action={onSeeChange ? <QuietLink onClick={onSeeChange}>See</QuietLink> : undefined}>
-              Recipe changes soon.
-            </Banner>
-          )}
-
-          {stage === "running" ? (
-            <TxProgress step={buy.step} />
-          ) : (
-            <Button variant="buy" className="!h-[52px] !rounded-full" onClick={go} disabled={usdc === 0n || tooSmall}>
-              {tooSmall ? "Minimum is $5" : acct.signedIn ? label : "Sign in to buy"}
-            </Button>
-          )}
-
-          {stage === "compose" && (
-            <div className="-mt-2 flex items-center justify-between">
-              <span className="inline-flex items-center gap-1 text-[13px] text-tx2">
-                <FlaskConical size={12} strokeWidth={1.75} aria-hidden /> Test dollars
-              </span>
-              <QuietLink onClick={onAddMoney}>Add test money</QuietLink>
-            </div>
-          )}
-        </>
-      )}
-    </Sheet>
+    <TradeSheet open={open} onOpenChange={onOpenChange} eyebrow="Buy" title={v.basket.name} scrollKey={pane}>
+      <BuyFlow
+        key={run}
+        v={v}
+        tx={tx}
+        amount={amount}
+        setAmount={setAmount}
+        onDone={() => onOpenChange(false)}
+        changeAt={changeAt}
+        onSeeChange={onSeeChange}
+        marketOpen={marketOpen}
+        onStage={setPane}
+      />
+    </TradeSheet>
   );
 }
 

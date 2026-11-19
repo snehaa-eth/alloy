@@ -1,11 +1,15 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
+/**
+ * Basket page (approved liquid-metal design, docs/design/artdir/wow/app/basket.html) on real data:
+ * live sculpture (Weights / Today), title + creator + style, return since start, value chart, recipe,
+ * "what happens when one wins" for this basket's style, history replay from real rebalance events, key facts.
+ * Desktop: sticky BuyPanel on the right. Phone: bottom bar opening BuySheet / ExitSheet. ?buy= and ?sheet= kept.
+ */
 import { useEffect, useState } from "react";
-import { ArrowLeft, ChevronDown, FlaskConical, Info, RefreshCw, Scale, Sparkles, XCircle } from "lucide-react";
-import { BrandWash, CreatorAvatar, Logos, Pct, ReturnValue, isNew, returnsOf, thesisOf } from "../v5/parts";
-import { BuyPanel, Card, NewChart } from "../v5/BuyPanel";
+import { RefreshCw, Scale, Sparkles, XCircle } from "lucide-react";
+import { CreatorAvatar, isNew } from "../v5/parts";
+import { BuyPanel } from "../v5/BuyPanel";
 import type { Performance, RebalanceEvent } from "@/lib/types";
 import { STYLES, styleOf } from "../styles";
 import { DEFAULT_CHAIN, explorerTxUrl } from "@/lib/chains";
@@ -15,26 +19,63 @@ import { storyDisclosure } from "@/components/compliance/copy";
 import { Countdown } from "../Countdown";
 import { ValueChart } from "../ValueChart";
 import { StatusSignal } from "../status";
-import { AlloyBar, Button, StockLogo, fmtPct } from "../primitives";
+import { fmtPct } from "../primitives";
 import { cn } from "@/lib/utils";
-import { compactUsd6, pendingChange, shortDate, tickerOf, type BasketView } from "../basket-view";
+import { compactUsd6, longDate, pendingChange, shortDate, tickerOf, type BasketView } from "../basket-view";
 import { usePosition } from "../hooks";
 import { BuySheet } from "../flows/BuySheet";
 import { ExitSheet } from "../flows/ExitSheet";
 import { AddMoneySheet, ChangeSheet, StrategySheet } from "../flows/NoticeSheets";
+import { OdometerOnView, Rise, WordReveal } from "../motion/alloy-motion";
+import { HeroStage } from "../basket/HeroStage";
+import type { DayMoves } from "../explore/data";
+import { FactsSection, HistorySection, RecipeRows, SecHead, WinsSection, countWord } from "../basket/Sections";
 
 type SheetId = "buy" | "exit" | "stocks" | "change" | "money" | "strategy" | null;
+
+/** "The AI Build-Out" → ["The AI", "Build-Out"]: the last word carries the accent. */
+function splitName(name: string): [string, string] {
+  const i = name.trim().lastIndexOf(" ");
+  return i < 0 ? ["", name] : [name.slice(0, i), name.slice(i + 1)];
+}
+
+const signedPct = (bps: number) => (Math.abs(bps) < 5 ? "0.0%" : `${bps > 0 ? "+" : "−"}${(Math.abs(bps) / 100).toFixed(1)}%`);
+
+/** Follow: no follow backend yet, so it's remembered on this device only. */
+function useLocalFollow(address: string) {
+  const key = `alloy:follow:${address.toLowerCase()}`;
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    try {
+      setOn(window.localStorage.getItem(key) === "1");
+    } catch {}
+  }, [key]);
+  const toggle = () =>
+    setOn((x) => {
+      try {
+        if (x) window.localStorage.removeItem(key);
+        else window.localStorage.setItem(key, "1");
+      } catch {}
+      return !x;
+    });
+  return [on, toggle] as const;
+}
 
 export function BasketScreen({
   v,
   perf,
   events,
+  moves,
+  testnet = false,
   initialBuy,
   initialSheet,
 }: {
   v: BasketView;
   perf: Performance;
   events: RebalanceEvent[];
+  /** real recent price move per ticker (fraction) and its window in hours; null when the feeds can't say */
+  moves?: DayMoves | null;
+  testnet?: boolean;
   initialBuy?: string;
   initialSheet?: string;
 }) {
@@ -42,25 +83,34 @@ export function BasketScreen({
   const pos = usePosition(b.address, b.totalSupply);
   const [sheet, setSheet] = useState<SheetId>(null);
   const [buyAmount, setBuyAmount] = useState(initialBuy ?? "25");
-  const [thesisOpen, setThesisOpen] = useState(false);
   const [market, setMarket] = useState<boolean | null>(null);
+  const [following, toggleFollow] = useLocalFollow(b.address);
   const change = pendingChange(events, b);
   const heldUsd6 = sharesToUsd6(pos.shares, v.nav, b.totalSupply);
   const holding = pos.shares > 0n;
-  const mode = STYLES[styleOf(b)];
+  const style = styleOf(b);
+  const mode = STYLES[style];
+  const fresh = isNew(v);
 
   // Height of the app's fixed bottom tab bar (0 when hidden at md+), so the buy bar sits flush on it.
   const [navH, setNavH] = useState<number | null>(null);
+  // Height of the sticky header, so the desktop buy panel sticks just under it.
+  const [headH, setHeadH] = useState(112);
   useEffect(() => {
     const nav = document.querySelector<HTMLElement>("nav.c-nav");
-    const measure = () => setNavH(nav && getComputedStyle(nav).display !== "none" ? nav.getBoundingClientRect().height : 0);
+    const head = document.querySelector<HTMLElement>("header.a-nav");
+    const measure = () => {
+      setNavH(nav && getComputedStyle(nav).display !== "none" ? nav.getBoundingClientRect().height : 0);
+      if (head) setHeadH(Math.round(head.getBoundingClientRect().height));
+    };
     measure();
     window.addEventListener("resize", measure);
-    const ro = nav ? new ResizeObserver(measure) : null;
-    if (nav) ro?.observe(nav);
+    const ro = new ResizeObserver(measure);
+    if (nav) ro.observe(nav);
+    if (head) ro.observe(head);
     return () => {
       window.removeEventListener("resize", measure);
-      ro?.disconnect();
+      ro.disconnect();
     };
   }, []);
 
@@ -70,21 +120,13 @@ export function BasketScreen({
       // Desktop: the right panel IS the buy flow (no modal). Mobile: open the sheet.
       if (window.matchMedia("(min-width: 1024px)").matches) focusPanel();
       else setSheet("buy");
-    }
-    else if (initialSheet === "exit" || initialSheet === "change" || initialSheet === "stocks") setSheet(initialSheet);
+    } else if (initialSheet === "exit" || initialSheet === "change" || initialSheet === "stocks") setSheet(initialSheet);
   }, [initialBuy, initialSheet]);
 
   function focusPanel() {
     const el = document.getElementById("buy-panel");
     el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     (el?.querySelector("[data-buy-primary]") as HTMLButtonElement | null)?.focus({ preventScroll: true });
-  }
-  /** Desktop focuses the inline panel; mobile opens the buy sheet. */
-  function startBuy(amount: string) {
-    if (window.matchMedia("(min-width: 1024px)").matches) {
-      setBuyAmount(amount);
-      focusPanel();
-    } else openSheet("buy", amount);
   }
 
   // Keep buy intent in the URL so a killed tab (mail app switch) recovers it.
@@ -99,283 +141,215 @@ export function BasketScreen({
     window.history.replaceState(null, "", url);
   }
 
-  const ticks = events
-    .filter((e) => e.status === "executed")
-    .map((e) => ({ t: e.at, label: e.reason ?? (e.kind === "drift-trim" ? "Took some profit" : "Recipe change") }));
-
+  const executed = events.filter((e) => e.status === "executed");
+  const ticks = executed.map((e) => ({ t: e.at, label: e.reason ?? (e.kind === "drift-trim" ? "Took some profit" : "Recipe changed") }));
   const position = holding && pos.costUsd6 !== null ? pnl(heldUsd6, pos.costUsd6) : null;
-
-  const r = returnsOf(v, perf);
-  const showFollowers = r.creator !== null && b.followers > 0;
-  const sorted = b.components.map((c, i) => ({ c, i })).sort((x, y) => y.c.targetBps - x.c.targetBps);
+  const nowW = v.now.map((p) => p.bps / 10_000);
+  const mv = moves ? v.tickers.map((t) => (t in moves.pct ? moves.pct[t] : null)) : null;
+  const [lead, accent] = splitName(b.name);
+  const stake = compactUsd6(v.creatorStakeUsd6).replace(/\.\d+$/, "");
+  const grown = 100 * (1 + v.sinceBps / 10_000);
+  const n = v.tickers.length;
+  const chartKind = v.series.length >= 3 ? "value" : v.artSeries.length >= 3 ? "recipe" : null;
 
   return (
     <div>
-      {holding && change && (
-        <StatusSignal id={`change-${b.address}`} signal={{ kind: "change", text: `${b.name} changes soon`, href: `/b/${b.address}?sheet=change` }} />
-      )}
+      {holding && change && <StatusSignal id={`change-${b.address}`} signal={{ kind: "change", text: `${b.name} changes soon`, href: `/b/${b.address}?sheet=change` }} />}
 
-      <div className="relative isolate">
-      <BrandWash />
-      <div className="mx-auto max-w-app px-4 pb-16 pt-4 md:px-8 md:pt-6 lg:pb-12">
-        <Link href="/explore" className="inline-flex min-h-[40px] items-center gap-1.5 text-[14px] text-tx2 no-underline hover:text-tx">
-          <ArrowLeft size={16} strokeWidth={1.75} aria-hidden /> Explore
-        </Link>
+      <div className="mx-auto grid max-w-[1480px] gap-[clamp(32px,4vw,64px)] px-[var(--gut)] pb-32 pt-6 md:pt-10 lg:grid-cols-[minmax(0,1fr)_340px] lg:pb-16 xl:grid-cols-[minmax(0,1fr)_372px]">
+        <div className="min-w-0">
+          <HeroStage tickers={v.tickers} now={nowW} moves={mv} hours={moves?.hours ?? 24} style={style} seed={b.address.toLowerCase()} />
 
-        <div className="mt-2 grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-10">
-          <div className="flex min-w-0 flex-col gap-6">
-            {/* Cover hero */}
-            <div className="relative h-[220px] overflow-hidden rounded-[24px] bg-[var(--tint)] md:h-[300px]">
-              <Image src={v.id.coverSrcLg} alt="" fill priority sizes="(min-width: 1024px) 860px, 100vw" className="v-duo object-cover" />
-              <div className="v-duo-tint absolute inset-0" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 flex flex-col gap-3 p-5 md:p-8">
-                <div className="flex flex-wrap gap-2">
-                  {b.demo && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-[12px] font-medium text-tx3 backdrop-blur">
-                      <FlaskConical size={12} strokeWidth={1.75} aria-hidden /> Demo
-                    </span>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setSheet("strategy")}
-                    className="inline-flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-[12px] font-medium text-tx3 backdrop-blur hover:text-tx"
-                    aria-label={`Creator style: ${mode.label}. What does this mean?`}
-                  >
-                    <mode.icon size={12} strokeWidth={2} aria-hidden /> {mode.label} <Info size={12} strokeWidth={1.75} aria-hidden />
-                  </button>
-                </div>
-                <h1 className="text-[30px] font-semibold leading-[1.05] tracking-tight md:text-[44px]">{b.name}</h1>
-              </div>
-            </div>
-
-            {/* Creator + thesis */}
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-3">
-                <CreatorAvatar handle={b.creator.handle} seed={b.creator.address} size={44} />
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate text-[15px] font-semibold">@{b.creator.handle}</span>
-                  <span className="text-[13px] text-tx2">
-                    Creator has <span className="gold">{compactUsd6(v.creatorStakeUsd6).replace(/\.\d+$/, "")}</span> in it
+          {/* title */}
+          <div className="mt-7 md:mt-10">
+            <Rise className="a-eyebrow">{b.demo ? "Demo basket" : "Basket"}</Rise>
+            <WordReveal as="h1" immediate className="a-h1 mt-3.5 block !text-[40px] md:!text-[clamp(40px,5vw,76px)]">
+              {lead ? `${lead} ` : ""}
+              <em>{accent}</em>
+            </WordReveal>
+            <Rise className="mt-[22px] flex flex-wrap items-center gap-2.5 text-[13px] text-mute md:gap-3.5 md:text-[13.5px]" delay={250}>
+              <CreatorAvatar handle={b.creator.handle} seed={b.creator.address} size={34} />
+              <span>
+                by <b className="font-semibold text-ink">@{b.creator.handle}</b>
+              </span>
+              <i className="hidden h-[3px] w-[3px] rounded-full bg-dim md:block" />
+              <span className="inline-flex h-[30px] items-center gap-[5px] rounded-full bg-fill px-3 text-[12.5px] text-ink">
+                Has <span className="num font-semibold">{stake}</span> in it
+              </span>
+              {b.followers > 0 && (
+                <>
+                  <i className="hidden h-[3px] w-[3px] rounded-full bg-dim md:block" />
+                  <span>
+                    <span className="num">{b.followers.toLocaleString("en-US")}</span> {b.followers === 1 ? "follower" : "followers"}
                   </span>
-                </div>
-                <Logos tickers={v.tickers} />
-              </div>
-              <div className="flex flex-col gap-1">
-                <p className={thesisOpen ? "text-[16px] leading-relaxed text-tx3" : "line-clamp-3 text-[16px] leading-relaxed text-tx3"}>{thesisOf(v)}</p>
-                {!thesisOpen && b.thesis.length > 180 && (
-                  <button type="button" className="c-link self-start !min-h-0" onClick={() => setThesisOpen(true)}>
-                    More
-                  </button>
-                )}
-                {b.story && <p className="text-[13px] text-tx2">{storyDisclosure(b.story.source, b.story.disclosureDate)}</p>}
-              </div>
-            </div>
-
-            {/* Return + chart: performance leads; value per unit is a small detail. */}
-            <Card>
-              <div className="flex flex-col gap-1">
-                <span className="inline-flex items-center gap-2 text-[13px] text-tx2">
-                  <span className="v-live" aria-hidden /> {isNew(v) ? "Return" : `Return since ${shortDate(v.sinceDate)}`}
-                </span>
-                <span className="text-[36px] font-semibold leading-none tracking-tight tabular-nums md:text-[44px]">
-                  {isNew(v) ? <span className="text-tx">New</span> : <Pct bps={v.sinceBps} />}
-                </span>
-                <span className="mt-1 text-[13px] tabular-nums text-tx2">Value per unit {formatUsd6(v.navPerShare)}</span>
-              </div>
-              <div className="mt-5">
-                {v.series.length >= 3 ? (
-                  <ValueChart values={v.series} times={v.times} tone={v.id.tone} ticks={ticks} height={180} />
-                ) : (
-                  <NewChart series={v.artSeries} tone={v.id.tone} />
-                )}
-              </div>
-            </Card>
-
-            {/* Cost + key stats right after the chart (phone and desktop), so nobody scrolls to find the fee. */}
-            <Card className="!p-0">
-              <p className="flex flex-wrap items-center gap-x-2 gap-y-1 px-5 pt-4 text-[14px] font-medium md:px-6">
-                <span>Fee {b.feeBps / 100}% a year</span>
-                <span className="text-tx2" aria-hidden>·</span>
-                <span>Min $5</span>
-                <span className="text-tx2" aria-hidden>·</span>
-                <span>Sell anytime</span>
-              </p>
-              <dl className="grid grid-cols-2 gap-px px-5 pb-4 pt-3 md:grid-cols-4 md:px-6">
-                {(
-                  [
-                    ["In basket", compactUsd6(v.nav)],
-                    ...(b.followers > 0 ? [["Followers", b.followers.toLocaleString("en-US")] as [string, React.ReactNode]] : []),
-                    ["Creator's money", <span key="c" className="gold">{compactUsd6(v.creatorStakeUsd6).replace(/\.\d+$/, "")}</span>],
-                    // Only once there is real history and a drop that shows as at least 0.1%; "−0.0%" reads as broken data.
-                    ...(!isNew(v) && perf.maxDrawdownBps >= 5
-                      ? [["Biggest drop", `−${(perf.maxDrawdownBps / 100).toFixed(1)}%`] as [string, React.ReactNode]]
-                      : []),
-                    ["Changes", b.noticeSeconds >= 86_400 ? "A day's notice" : b.noticeSeconds >= 3600 ? `${b.noticeSeconds / 3600}h notice` : `${b.noticeSeconds / 60} min notice`],
-                  ] as [string, React.ReactNode][]
-                ).map(([k, val]) => (
-                  <div key={k} className="flex flex-col gap-0.5 py-1.5">
-                    <dt className="text-[12px] text-tx2">{k}</dt>
-                    <dd className="text-[15px] font-semibold tabular-nums">{val}</dd>
-                  </div>
-                ))}
-              </dl>
-            </Card>
-
-            {/* Followers vs creator: only once there is history and at least one follower (no empty placeholder). */}
-            {showFollowers && (
-              <Card>
-                <h2 className="text-[18px] font-semibold tracking-tight">Did followers win too?</h2>
-                <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                  {[
-                    ["Followers (avg)", r.followers],
-                    ["Creator", r.creator],
-                  ].map(([k, bps]) => (
-                    <div key={k as string} className="flex items-center justify-between rounded-[14px] bg-s2 px-4 py-3">
-                      <span className="text-[14px] text-tx3">{k as string}</span>
-                      <ReturnValue bps={bps as number | null} className="text-[20px] font-semibold" tick />
-                    </div>
-                  ))}
-                </div>
-                <p className="mt-3 text-[12px] text-tx2">Fees included. Past, not promised.</p>
-              </Card>
-            )}
-
-            {change && (
+                </>
+              )}
               <button
                 type="button"
-                onClick={() => openSheet("change")}
-                className="c-banner c-banner--notice w-full cursor-pointer text-left"
-                aria-label="See the pending recipe change"
+                onClick={toggleFollow}
+                aria-pressed={following}
+                title="Saved on this device"
+                className={cn("a-btn a-btn--sm", following ? "a-btn--cream" : "a-btn--line")}
               >
-                <RefreshCw aria-hidden />
-                <span className="flex-1">Recipe change pending</span>
-                <span className="t-num">
-                  <Countdown to={change.executableAt ?? change.at} dueLabel="due" />
-                </span>
+                {following ? "Following" : "Follow"}
               </button>
+            </Rise>
+            <Rise className="mt-[26px] flex flex-wrap items-center gap-3.5" delay={380}>
+              <button
+                type="button"
+                onClick={() => setSheet("strategy")}
+                className="inline-flex h-[34px] items-center gap-2 rounded-full border border-line2 px-3.5 text-[13px] font-medium transition-colors hover:border-[rgba(243,241,238,0.55)]"
+                aria-label={`Creator style: ${mode.label}. What does this mean?`}
+              >
+                <mode.icon size={14} strokeWidth={1.5} aria-hidden /> {mode.label}
+              </button>
+              <p className="text-[14px] text-mute">{mode.line}</p>
+            </Rise>
+            {(b.thesis?.trim() || b.story) && (
+              <Rise className="mt-5 max-w-[62ch]">
+                {b.thesis?.trim() && <p className="text-[15px] leading-relaxed text-mute">{b.thesis.trim()}</p>}
+                {b.story && <p className="mt-1 text-[12.5px] text-dim">{storyDisclosure(b.story.source, b.story.disclosureDate)}</p>}
+              </Rise>
             )}
-
-            {/* What's inside */}
-            <Card>
-              <div className="flex items-baseline justify-between gap-3">
-                <h2 id="inside" className="text-[18px] font-semibold tracking-tight">
-                  What&apos;s inside
-                </h2>
-                <span className="text-[13px] text-tx2">{v.tickers.length} stocks</span>
-              </div>
-              <div className="mt-4">
-                <AlloyBar parts={v.target} tone={v.id.tone} legend={false} />
-              </div>
-              <div className="mt-2 flex flex-col">
-                {sorted.map(({ c, i }) => {
-                  const drift = v.now[i].bps - c.targetBps;
-                  return (
-                    <div key={c.stock.symbol} className="c-row">
-                      <StockLogo ticker={c.stock.ticker} size="lg" />
-                      <div className="c-row__main">
-                        <span className="c-row__title font-medium">{c.stock.name || c.stock.ticker}</span>
-                        <span className="c-row__meta">
-                          <span className="t-num">{c.stock.ticker}</span> · target {fmtPct(c.targetBps)}%
-                        </span>
-                      </div>
-                      <div className="hidden w-[140px] sm:block">
-                        <div className="h-1.5 overflow-hidden rounded-full bg-s2">
-                          <div className="h-full rounded-full" style={{ width: `${Math.min(100, v.now[i].bps / 100)}%`, background: "var(--bone)" }} />
-                        </div>
-                      </div>
-                      <div className="c-row__end w-[72px]">
-                        <span className="t-body">{fmtPct(v.now[i].bps)}%</span>
-                        <span className={Math.abs(drift) < 5 ? "c2" : drift >= 0 ? "up" : "down"}>
-                          {Math.abs(drift) < 5 ? "on target" : `${drift >= 0 ? "▲" : "▼"} ${Math.abs(drift / 100).toFixed(1)} pts`}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
-
-            {/* Changes */}
-            <Card>
-              <h2 id="changes" className="text-[18px] font-semibold tracking-tight">
-                What changed and why
-              </h2>
-              <div className="mt-2">
-                <ChangeFeed v={v} events={events} onOpenPending={() => openSheet("change")} />
-              </div>
-            </Card>
-
-            <details className="group rounded-[20px] border border-white/[0.07] bg-s1 px-5 py-4 md:px-8">
-              <summary className="flex cursor-pointer list-none items-center justify-between text-[16px] font-semibold">
-                Details <ChevronDown size={16} className="transition group-open:rotate-180" aria-hidden />
-              </summary>
-              <dl className="mt-3 flex flex-col">
-                {[
-                  ["Contract", `${b.address.slice(0, 8)}…${b.address.slice(-6)}`],
-                  ["Network", DEFAULT_CHAIN.name],
-                  ["Fee", `${b.feeBps / 100}%/yr · creator keeps 80%`],
-                  ["Recipe notice", b.noticeSeconds >= 3600 ? `${b.noticeSeconds / 3600}h` : `${b.noticeSeconds / 60} min`],
-                  ["Creator style", mode.label],
-                  ["Value vs fill", "Value is oracle; buys fill at pool prices"],
-                ].map(([k, val]) => (
-                  <div key={k} className="flex min-h-[44px] items-center justify-between gap-3 border-t border-white/[0.07] text-[14px]">
-                    <dt className="c2">{k}</dt>
-                    <dd className="text-right">{val}</dd>
-                  </div>
-                ))}
-              </dl>
-              <p className="mt-3 text-[13px] text-tx2">You own a token that tracks these stocks, not the shares themselves. Not for US persons.</p>
-            </details>
           </div>
 
-          {/* Right (desktop): the buy panel stays in view while the page scrolls (top offset clears the navbar). */}
-          <aside className="hidden lg:sticky lg:top-[116px] lg:block lg:self-start">
-            <BuyPanel
-              v={v}
-              amount={buyAmount}
-              setAmount={setBuyAmount}
-              holding={holding}
-              heldUsd6={heldUsd6}
-              positionBps={position?.bps ?? null}
-              onExit={() => openSheet("exit")}
-              onAddMoney={() => setSheet("money")}
+          {change && (
+            <button
+              type="button"
+              onClick={() => openSheet("change")}
+              className="mt-8 flex w-full items-center gap-3 rounded-[18px] border border-line2 px-5 py-4 text-left transition-colors hover:border-[rgba(243,241,238,0.45)]"
+              aria-label="See the pending recipe change"
+            >
+              <RefreshCw size={16} strokeWidth={1.5} aria-hidden />
+              <span className="flex-1 text-[14px]">A recipe change is coming</span>
+              <span className="num text-[13px] text-mute">
+                <Countdown to={change.executableAt ?? change.at} dueLabel="due" />
+              </span>
+            </button>
+          )}
+
+          {/* returns */}
+          <Rise className="mt-[46px] grid grid-cols-1 items-end gap-6 border-t border-line pt-[30px] md:grid-cols-[auto_1fr] md:gap-x-14">
+            <div>
+              <span className="a-kicker">Return since start</span>
+              {fresh ? (
+                <>
+                  <div className="mt-2.5 font-display text-[64px] font-extralight leading-[0.95] tracking-[-0.045em] text-mute md:text-[clamp(56px,6.4vw,92px)]">New</div>
+                  <div className="mt-2.5 text-[13px] text-mute">Started {longDate(b.createdAt)}. Returns show after a day of history.</div>
+                </>
+              ) : (
+                <>
+                  <div className={cn("mt-2.5 flex font-display text-[64px] font-extralight leading-[0.95] tracking-[-0.045em] md:text-[clamp(56px,6.4vw,92px)]", Math.abs(v.sinceBps) < 5 ? "text-mute" : v.sinceBps > 0 ? "gain" : "loss")}>
+                    <OdometerOnView value={signedPct(v.sinceBps)} />
+                  </div>
+                  <div className="mt-2.5 text-[13px] text-mute">
+                    $100 put in on {longDate(v.sinceDate)} is now <span className="num text-ink">${grown.toFixed(2)}</span>
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-7 md:justify-end md:gap-10">
+              {(
+                [
+                  ["Stocks", String(n)],
+                  ["Changes", String(executed.length)],
+                  ["Fee", `${b.feeBps / 100}% a year`],
+                  ["In basket", compactUsd6(v.nav)],
+                ] as const
+              ).map(([k, val]) => (
+                <div key={k}>
+                  <span className="a-kicker">{k}</span>
+                  <span className="num mt-1.5 block font-display text-[21px] font-light tracking-[-0.02em] md:text-[24px]">{val}</span>
+                </div>
+              ))}
+            </div>
+          </Rise>
+
+          {chartKind && (
+            <section className="mt-20 md:mt-[110px]">
+              <ValueChart values={chartKind === "value" ? v.series : v.artSeries} times={chartKind === "value" ? v.times : []} ticks={ticks} kind={chartKind} />
+            </section>
+          )}
+
+          <section className="mt-20 md:mt-[110px]">
+            <SecHead
+              eyebrow="Recipe"
+              title={
+                <>
+                  {countWord(n)} {n === 1 ? "company" : "companies"}, <em>one</em> idea.
+                </>
+              }
+              side={<p className="a-lede max-w-[28ch]">Every $1 you put in splits like this. The line shows the plan.</p>}
             />
-          </aside>
+            <RecipeRows v={v} moves={mv} hours={moves?.hours ?? 24} />
+          </section>
+
+          <WinsSection v={v} style={style} capBps={b.bands?.capBps} />
+
+          <HistorySection v={v} events={events} onOpenPending={() => openSheet("change")} />
+
+          <FactsSection feeBps={b.feeBps} noticeSeconds={b.noticeSeconds} testnet={testnet} />
+
+          <p className="mt-16 text-[12px] text-dim">
+            Contract <span className="num">{`${b.address.slice(0, 8)}…${b.address.slice(-6)}`}</span> on {DEFAULT_CHAIN.name}. Value uses oracle prices; buys fill at pool prices. You own a token that
+            tracks these stocks, not the shares themselves.
+          </p>
         </div>
+
+        {/* Desktop: the buy panel stays in view while the page scrolls. */}
+        <aside className="hidden lg:sticky lg:block lg:self-start" style={{ top: headH + 20 }}>
+          <BuyPanel
+            v={v}
+            amount={buyAmount}
+            setAmount={setBuyAmount}
+            holding={holding}
+            heldUsd6={heldUsd6}
+            positionBps={position?.bps ?? null}
+            onExit={() => openSheet("exit")}
+            onAddMoney={() => setSheet("money")}
+          />
+          {testnet && <p className="mt-3.5 px-1.5 text-[12px] text-dim">Test mode: prices are real, money is pretend.</p>}
+        </aside>
       </div>
 
-      </div>
-
-      {/* Mobile / tablet action bar */}
-      {/* Phone/tablet: one compact bar sitting flush on the tab bar (measured), opaque so no content peeks between. */}
+      {/* Phone / tablet: one bar flush on the tab bar (measured). */}
       <div
         data-buy-bar
-        className={cn("fixed inset-x-0 z-30 border-t border-white/[0.07] bg-bg px-4 py-1.5 lg:hidden", navH === null && "bottom-[53px] md:bottom-0")}
+        className={cn(
+          "fixed inset-x-0 z-30 border-t border-line bg-black/[0.72] px-4 py-3 backdrop-blur-[18px] lg:hidden",
+          navH === null && "bottom-[53px] md:bottom-0",
+        )}
         style={navH === null ? undefined : { bottom: navH }}
       >
-        <div className="mx-auto flex max-w-[640px] items-center gap-3">
-          <div className="flex min-w-0 flex-1 items-baseline gap-1.5">
+        <div className="mx-auto flex max-w-[640px] items-center justify-between gap-3">
+          <div className="min-w-0">
             {holding ? (
               <>
-                <span className="text-[17px] font-semibold tabular-nums">{formatUsd6(heldUsd6)}</span>
-                <span className="truncate text-[13px] text-tx2">your value</span>
+                <span className="block text-[10px] uppercase tracking-[0.18em] text-dim">Your value</span>
+                <span className="num block font-display text-[22px] font-light tracking-[-0.02em]">{formatUsd6(heldUsd6)}</span>
+              </>
+            ) : fresh ? (
+              <>
+                <span className="block text-[10px] uppercase tracking-[0.18em] text-dim">Return</span>
+                <span className="block font-display text-[22px] font-light tracking-[-0.02em] text-mute">New</span>
               </>
             ) : (
               <>
-                <span className="text-[13px] text-tx2">From</span>
-                <span className="text-[17px] font-semibold tabular-nums">$5</span>
+                <span className="block text-[10px] uppercase tracking-[0.18em] text-dim">Since start</span>
+                <span className={cn("num block font-display text-[22px] font-light tracking-[-0.02em]", Math.abs(v.sinceBps) < 5 ? "text-mute" : v.sinceBps > 0 ? "gain" : "loss")}>{signedPct(v.sinceBps)}</span>
               </>
             )}
           </div>
-          {holding && (
-            <Button variant="secondary" auto className="!h-10 !rounded-full" onClick={() => openSheet("exit")}>
-              Exit
-            </Button>
-          )}
-          <Button variant="buy" auto className="!h-10 !rounded-full !px-8" onClick={() => openSheet("buy", buyAmount)}>
-            Buy
-          </Button>
+          <div className="flex items-center gap-2">
+            {holding && (
+              <button type="button" className="a-btn a-btn--line" onClick={() => openSheet("exit")}>
+                Sell
+              </button>
+            )}
+            <button type="button" className="a-btn a-btn--buy a-btn--lg !h-12" onClick={() => openSheet("buy", buyAmount)}>
+              {holding ? "Buy more" : "Buy from $5"}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -398,17 +372,10 @@ export function BasketScreen({
         marketOpen={market}
       />
       {change && (
-        <ChangeSheet
-          v={v}
-          change={change}
-          heldUsd6={heldUsd6}
-          open={sheet === "change"}
-          onOpenChange={(o) => !o && openSheet(null)}
-          onExit={() => openSheet("exit")}
-        />
+        <ChangeSheet v={v} change={change} heldUsd6={heldUsd6} open={sheet === "change"} onOpenChange={(o) => !o && openSheet(null)} onExit={() => openSheet("exit")} />
       )}
       <AddMoneySheet open={sheet === "money"} onOpenChange={(o) => !o && setSheet("buy")} backLabel="Back to buy" />
-      <StrategySheet mode={styleOf(b)} open={sheet === "strategy"} onOpenChange={(o) => !o && setSheet(null)} />
+      <StrategySheet mode={style} open={sheet === "strategy"} onOpenChange={(o) => !o && setSheet(null)} />
     </div>
   );
 }

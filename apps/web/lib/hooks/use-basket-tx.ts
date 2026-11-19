@@ -105,7 +105,7 @@ function useTxBase<R>() {
     ready: Ready,
     hash: Hash,
     invalidate: readonly (readonly unknown[])[],
-    successMsg = "Transaction confirmed",
+    successMsg: string | null = "Transaction confirmed",
   ): Promise<TransactionReceipt> {
     setTxHash(hash);
     setStep("confirm");
@@ -116,9 +116,10 @@ function useTxBase<R>() {
     // wagmi's own read hooks (useReadContract / useBalance)
     await qc.invalidateQueries({ queryKey: ["readContract"] });
     await qc.invalidateQueries({ queryKey: ["balance"] });
-    toast.success(successMsg, {
-      action: { label: "View", onClick: () => window.open(explorerTxUrl(ready.chainId, hash), "_blank") },
-    });
+    if (successMsg)
+      toast.success(successMsg, {
+        action: { label: "View", onClick: () => window.open(explorerTxUrl(ready.chainId, hash), "_blank") },
+      });
     return receipt;
   }
 
@@ -172,7 +173,8 @@ async function balanceOf(config: ReturnType<typeof useConfig>, chainId: Supporte
 
 export type BuyResult = { shares: bigint; quote: BasketQuote };
 
-export function useBuyBasket(basket: Address) {
+/** `silent`: the caller shows its own success screen, so skip the "Bought" toast. */
+export function useBuyBasket(basket: Address, opts: { silent?: boolean } = {}) {
   const b = useTxBase<BuyResult>();
   const mutation = useMutation({
     mutationFn: async ({ usdcIn, slippageBps }: { usdcIn: bigint; slippageBps: number }) => {
@@ -192,7 +194,7 @@ export function useBuyBasket(basket: Address) {
       const shares = await simulateTx<bigint>(ready.ctx, tx);
       b.setStep("write");
       const hash = await sendTx(ready.ctx, tx);
-      await b.finish(ready, hash, [qk.baskets.detail(basket), qk.portfolio(ready.account, ready.chainId)], "Bought");
+      await b.finish(ready, hash, [qk.baskets.detail(basket), qk.portfolio(ready.account, ready.chainId)], opts.silent ? null : "Bought");
       recordBuy(ready.chainId, ready.account, basket, usdcIn, quote.refundUsd6);
       const r = { shares, quote };
       b.setResult(r);
@@ -205,7 +207,7 @@ export function useBuyBasket(basket: Address) {
 
 export type SellResult = { usdcOut: bigint; quote: BasketQuote };
 
-export function useSellBasket(basket: Address) {
+export function useSellBasket(basket: Address, opts: { silent?: boolean } = {}) {
   const b = useTxBase<SellResult>();
   const mutation = useMutation({
     mutationFn: async ({ shares, slippageBps }: { shares: bigint; slippageBps: number }) => {
@@ -225,7 +227,7 @@ export function useSellBasket(basket: Address) {
       const usdcOut = await simulateTx<bigint>(ready.ctx, tx);
       b.setStep("write");
       const hash = await sendTx(ready.ctx, tx);
-      await b.finish(ready, hash, [qk.baskets.detail(basket), qk.portfolio(ready.account, ready.chainId)], "Sold");
+      await b.finish(ready, hash, [qk.baskets.detail(basket), qk.portfolio(ready.account, ready.chainId)], opts.silent ? null : "Sold");
       recordExit(ready.chainId, ready.account, basket, shares, bal);
       b.setResult({ usdcOut, quote });
       return hash;

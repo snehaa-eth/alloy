@@ -46,7 +46,7 @@ function useSolidNav(landing: boolean) {
 }
 
 /** Full-screen flows hide the nav (create, try). */
-const FULLSCREEN = ["/create"];
+const FULLSCREEN: string[] = []; // /create shows the nav now (creator studio design)
 
 export function AppShell({ children }: { children: ReactNode }) {
   const path = usePathname() ?? "/";

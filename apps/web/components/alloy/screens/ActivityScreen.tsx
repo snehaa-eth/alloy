@@ -1,133 +1,180 @@
 "use client";
 
-import { useState } from "react";
-import { Inbox, ReceiptText, RefreshCw } from "lucide-react";
-import { formatUsd6, sharesToUsd6 } from "@/lib/units";
-import { Certificate } from "../Certificate";
-import { Countdown, LocalTime } from "../Countdown";
-import { AlloyBarPair, Button, ButtonLink, EmptyState, InlineToast, QuietLink, Skeleton, Stamp, Tabs } from "../primitives";
-import { pendingChange, recipeAfter } from "../basket-view";
+/**
+ * Activity, "Everything that moved." (docs/design/artdir/wow/app/activity.html) on real data:
+ * basket launches, rebalances and creator recipe changes from the chain (load.ts), each with a looping
+ * metal micro-tile. Filters: All / Mine (baskets you hold or made) / Rebalances. Refreshes every 30s.
+ * Personal buys and sells need an indexer (not wired yet); signed-in viewers get a link to their wallet history.
+ */
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Fragment, useEffect, useMemo, useState } from "react";
+import { DEFAULT_CHAIN } from "@/lib/chains";
+import { Countdown } from "../Countdown";
 import { useAccount } from "../hooks";
 import { usePositions } from "../positions";
 import type { LoadedBasket } from "../load";
-import { ChangeFeed } from "./BasketScreen";
+import { tintCss } from "../metal/palette";
+import { WordReveal } from "../motion/alloy-motion";
+import { MicroTile } from "../activity/MicroTile";
+import { buildFeed, dayLabel, timeLabel, type FeedRow } from "../activity/feed";
+import { Seg } from "../states/Seg";
 
-type Tab = "needs" | "updates" | "receipts";
+type Filter = "all" | "mine" | "rb";
+
+function useNow() {
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => {
+    setNow(Math.floor(Date.now() / 1000));
+    const t = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 30_000);
+    return () => clearInterval(t);
+  }, []);
+  return now;
+}
 
 export function ActivityScreen({ items }: { items: LoadedBasket[] }) {
   const acct = useAccount();
-  const { map, ready } = usePositions(items.map((i) => ({ address: i.v.basket.address, totalSupply: i.v.basket.totalSupply })));
-  const [tab, setTab] = useState<Tab>("needs");
-  const [kept, setKept] = useState<Record<string, boolean>>({});
+  const router = useRouter();
+  const now = useNow();
+  const { map } = usePositions(items.map((i) => ({ address: i.v.basket.address, totalSupply: i.v.basket.totalSupply })));
+  const [filter, setFilter] = useState<Filter>("all");
 
-  const mine = items.filter((it) => (map[it.v.basket.address]?.shares ?? 0n) > 0n);
-  const needs = mine.map((it) => ({ it, c: pendingChange(it.events, it.v.basket) })).filter((x) => x.c);
-  const updates = mine.map((it) => ({ it, ev: it.events.filter((e) => e.status !== "pending") })).filter((x) => x.ev.length);
-  const receipts = mine.flatMap((it) => it.events.filter((e) => e.txHash).map((e) => ({ it, e })));
+  // live: pull fresh server data every 30s (pages revalidate at the same rate)
+  useEffect(() => {
+    const t = setInterval(() => {
+      if (document.visibilityState === "visible") router.refresh();
+    }, 30_000);
+    return () => clearInterval(t);
+  }, [router]);
+
+  const me = acct.address?.toLowerCase();
+  const rows = useMemo(
+    () => buildFeed(items, (addr, creator) => (map[addr]?.shares ?? 0n) > 0n || (!!me && creator.toLowerCase() === me)),
+    [items, map, me],
+  );
+  const shown = rows.filter((r) => filter === "all" || (filter === "mine" && r.mine) || (filter === "rb" && r.isRebalance));
+  const groups: { day: string; rows: FeedRow[] }[] = [];
+  for (const r of shown) {
+    const d = now === null ? "" : dayLabel(r.at, now);
+    const g = groups[groups.length - 1];
+    if (g && g.day === d) g.rows.push(r);
+    else groups.push({ day: d, rows: [r] });
+  }
+  const explorer = acct.address ? `${DEFAULT_CHAIN.blockExplorers?.default.url ?? "https://sepolia.basescan.org"}/address/${acct.address}` : null;
 
   return (
-    <div className="mx-auto max-w-app px-4 pb-8 pt-5 md:px-8 md:pt-8">
-      <h1 className="t-body t-strong md:text-[20px]">Activity</h1>
-      <div className="mt-3">
-        <Tabs
-          label="Activity"
-          value={tab}
-          onChange={setTab}
-          tabs={[
-            { id: "needs", label: needs.length ? `Needs you · ${needs.length}` : "Needs you" },
-            { id: "updates", label: "Updates" },
-            { id: "receipts", label: "Receipts" },
-          ]}
-        />
+    <div className="ac">
+      <header>
+        <div className="a-eyebrow">Activity</div>
+        <WordReveal as="h1" className="a-h1 mt-3.5 block" immediate>
+          Everything that <em>moved.</em>
+        </WordReveal>
+        <p className="a-lede mt-3.5">Every rebalance in plain words, new baskets, and what creators change and why.</p>
+        <div className="ac-ctl">
+          <Seg
+            label="Filter activity"
+            value={filter}
+            onChange={setFilter}
+            options={[
+              { id: "all", label: "All" },
+              { id: "mine", label: "Mine" },
+              { id: "rb", label: "Rebalances" },
+            ]}
+          />
+          <div className="ac-live">
+            <i />
+            Live
+          </div>
+        </div>
+      </header>
+
+      <div className="ac-tl">
+        {shown.length === 0 ? (
+          <div className="ac-empty">
+            {filter === "mine" ? (
+              acct.signedIn ? (
+                <>
+                  <p>Nothing yet on baskets you hold or made.</p>
+                  <Link href="/explore" className="a-btn a-btn--line a-btn--sm mt-4">
+                    Explore baskets
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <p>Sign in to see what moved in your baskets.</p>
+                  <button type="button" className="a-btn a-btn--cream a-btn--sm mt-4" onClick={() => acct.login()}>
+                    Sign in
+                  </button>
+                </>
+              )
+            ) : (
+              <p>No rebalances yet. When one runs, it shows up here in plain words.</p>
+            )}
+          </div>
+        ) : (
+          groups.map((g) => (
+            <Fragment key={g.day + g.rows[0].id}>
+              <div className="ac-day">{g.day || " "}</div>
+              {g.rows.map((r, i) => (
+                <Row key={r.id} r={r} i={i} now={now} />
+              ))}
+            </Fragment>
+          ))
+        )}
       </div>
 
-      {!acct.ready && !acct.preview ? (
-        <Skeleton className="mt-4 h-[320px] w-full" />
-      ) : !acct.signedIn ? (
-        <EmptyState icon={Inbox} line="Sign in to see changes to your baskets." action={<Button onClick={() => acct.login()}>Sign in</Button>} />
-      ) : !ready ? (
-        <Skeleton className="mt-4 h-[320px] w-full" />
-      ) : tab === "needs" ? (
-        needs.length === 0 ? (
-          <EmptyState icon={Inbox} line="Changes to your baskets show up here." action={<ButtonLink href="/explore">Explore</ButtonLink>} />
-        ) : (
-          <div className="mt-4 flex flex-col gap-4">
-            {needs.map(({ it, c }, i) => {
-              const v = it.v;
-              const held = sharesToUsd6(map[v.basket.address].shares, v.nav, v.basket.totalSupply);
-              const movedBps = c!.changes.reduce((a, x) => a + Math.abs(x.toBps - x.fromBps), 0) / 2;
-              const at = c!.executableAt ?? c!.at;
-              // One full certificate per screen; further notices are rows.
-              if (i > 0)
-                return (
-                  <a key={c!.id} className="c-row" href={`/b/${v.basket.address}?sheet=change`}>
-                    <span className="c-rowicon" style={{ color: "var(--hi)" }}>
-                      <RefreshCw size={18} strokeWidth={1.75} aria-hidden />
-                    </span>
-                    <div className="c-row__main">
-                      <span className="c-row__title">{v.basket.name} changes</span>
-                      <span className="c-row__meta">
-                        <Countdown to={at} />
-                      </span>
-                    </div>
-                  </a>
-                );
-              return (
-                <Certificate
-                  key={c!.id}
-                  serial={v.id.serial}
-                  stamp={
-                    <Stamp icon={RefreshCw} intent="accent">
-                      Change
-                    </Stamp>
-                  }
-                  art={{ series: v.artSeries, weightsBps: v.weightsBps, seed: v.basket.address, tone: v.id.tone }}
-                  title={v.basket.name}
-                  label="Of yours that moves"
-                  figure={`≈ ${formatUsd6((held * BigInt(Math.round(movedBps))) / 10_000n, 0)}`}
-                  bar={<AlloyBarPair before={v.target} after={recipeAfter(v.basket, c!)} tone={v.id.tone} />}
-                  ledger={[
-                    { k: "Runs", v: <LocalTime at={at} /> },
-                    { k: c!.aiGenerated ? "Reason · AI" : "Reason", v: <span className="q truncate">“{c!.reason}”</span> },
-                  ]}
-                  action={
-                    kept[c!.id] ? (
-                      <InlineToast>You&apos;re staying in.</InlineToast>
-                    ) : (
-                      // TODO(lib): persist the follower's choice once the API exposes it.
-                      <Button onClick={() => setKept((k) => ({ ...k, [c!.id]: true }))}>Keep my basket</Button>
-                    )
-                  }
-                  footLink={<QuietLink href={`/b/${v.basket.address}?sheet=exit`}>Exit before it runs</QuietLink>}
-                  footMeta={<Countdown to={at} dueLabel="due · at market open" />}
-                />
-              );
-            })}
-          </div>
-        )
-      ) : tab === "updates" ? (
-        updates.length === 0 ? (
-          <EmptyState icon={Inbox} line="No updates yet." />
-        ) : (
-          <div className="mt-2 flex flex-col gap-6">
-            {updates.map(({ it, ev }) => (
-              <section key={it.v.basket.address} className="flex flex-col">
-                <h2 className="t-label py-2">{it.v.basket.name}</h2>
-                <ChangeFeed v={it.v} events={ev} />
-              </section>
-            ))}
-            <p className="t-mono c2">Autopilot changes need no action. Costs are the basket&apos;s.</p>
-          </div>
-        )
-      ) : receipts.length === 0 ? (
-        <EmptyState icon={ReceiptText} line="Receipts land here after your first buy." action={<ButtonLink href="/explore">Explore</ButtonLink>} />
-      ) : (
-        <div className="mt-2 flex flex-col">
-          {receipts.map(({ it, e }) => (
-            <ChangeFeed key={e.id} v={it.v} events={[e]} />
-          ))}
-        </div>
+      {shown.length > 0 && <p className="ac-end">That&apos;s everything so far.</p>}
+      {acct.signedIn && explorer && !acct.preview && (
+        <p className="ac-end !mt-2">
+          Your own buys and sells are in your{" "}
+          <a href={explorer} target="_blank" rel="noreferrer" className="text-mute underline underline-offset-4 hover:text-ink">
+            wallet history
+          </a>
+          .
+        </p>
       )}
     </div>
+  );
+}
+
+function Row({ r, i, now }: { r: FeedRow; i: number; now: number | null }) {
+  return (
+    <Link href={r.href} className="ac-ev">
+      <MicroTile kind={r.micro.kind} recipe={r.micro.recipe} from={r.micro.from} keepNew={r.micro.keepNew} phase={i * 0.7} />
+      <div className="min-w-0">
+        <div className="ac-k">
+          <b>{r.label}</b>
+          <span>{r.basketName}</span>
+        </div>
+        <h4>
+          {r.lead} <span className="hn">{r.rest}</span>
+        </h4>
+        {r.quote && <p className="ac-q">“{r.quote}”</p>}
+        {r.body && <p>{r.body}</p>}
+        {r.mix && (
+          <div className="ac-mix">
+            {r.mix.map((m) => (
+              <span key={m.t}>
+                <i style={{ background: tintCss(m.t) }} />
+                {m.t} {m.from !== undefined && m.from !== m.to && <s>{m.from}%</s>} {m.to}%
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="ac-r num">
+        {r.right?.big && <b className={r.right.quiet ? "quiet" : undefined}>{r.right.big}</b>}
+        {r.right?.countdownTo ? (
+          <small>
+            {r.right.sub} <Countdown to={r.right.countdownTo} dueLabel="now" />
+          </small>
+        ) : (
+          <small>
+            {r.right?.sub ? `${r.right.sub} · ` : ""}
+            {now === null ? "" : timeLabel(r.at, now)}
+          </small>
+        )}
+      </div>
+    </Link>
   );
 }

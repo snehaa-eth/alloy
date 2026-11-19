@@ -57,6 +57,7 @@ export function MeScreen({ items }: { items: LoadedBasket[] }) {
             <span className="t-body t-strong truncate">@{handle}</span>
             {/* TODO(lib): Founding Creator / Follower numbers from the API. */}
             {mine.length > 0 && <Badge>Founding Creator</Badge>}
+            {mine.length > 0 && <QuietLink href={`/creator/${mine[0].v.basket.creator.handle}`}>Public profile</QuietLink>}
           </div>
 
           <section className="flex flex-col gap-3" aria-labelledby="yb">

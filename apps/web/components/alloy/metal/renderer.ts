@@ -13,10 +13,20 @@ uniform vec4 uView;uniform vec3 uRo,uTa;uniform float uTan;
 uniform vec4 uD[6];uniform vec3 uC[6];
 uniform vec4 uZ[10];uniform vec3 uZC[10];uniform vec3 uZO;uniform float uZN,uZM,uFq,uPh;
 uniform float uK,uK2,uN,uT,uWob,uTint,uShim,uShimPos,uRip,uAlpha,uGlow;uniform vec4 uB,uGl;
+uniform vec4 uTl;uniform float uTlI;
 float smin(float a,float b,float k){float h=max(k-abs(a-b),0.)/k;return min(a,b)-h*h*k*.25;}
+/* round cone (iq): sphere a (r1) to sphere b (r2) with tangent walls. Used to stretch one action drop into a teardrop
+   (pour: tail reaches the surface before the head arrives, so there is never a head-on-a-neck frame; sell: the thread thins and lets go). */
+float rcone(vec3 p,vec3 a,vec3 b,float r1,float r2){vec3 ba=b-a;float l2=dot(ba,ba);float rr=r1-r2;
+ if(l2<=rr*rr+1e-5)return r1>=r2?length(p-a)-r1:length(p-b)-r2;
+ float a2=l2-rr*rr;float il2=1./l2;vec3 pa=p-a;float y=dot(pa,ba);float z=y-l2;vec3 xv=pa*l2-ba*y;float x2=dot(xv,xv);float y2=y*y*l2;float z2=z*z*l2;float k=sign(rr)*rr*rr*x2;
+ if(sign(z)*a2*z2>k)return sqrt(x2+z2)*il2-r2;
+ if(sign(y)*a2*y2<k)return sqrt(x2+y2)*il2-r1;
+ return (sqrt(x2*a2*il2)+y*rr)*il2-r1;}
+float body(vec3 p,vec4 d,float i){float r=max(d.w,.001);return abs(i-uTlI)<.5?rcone(p,d.xyz,uTl.xyz,r,max(uTl.w,.001)):length(p-d.xyz)-r;}
 float dd(vec3 p,vec4 d,float i){vec3 q=p-d.xyz;float r=max(d.w,.001);float s=1./max(r,.25);
  float w=sin(q.x*2.6*s*uFq+uT*.8+i*1.7+uPh)*sin(q.y*2.3*s*uFq+uT*.6+i+uPh*.7)*sin(q.z*2.5*s*uFq+uT*.5+i*2.3);
- return length(q)-r+w*uWob*r*.045;}
+ return body(p,d,i)+w*uWob*r*.045;}
 float map(vec3 p){float d=1e3,e=1e3;for(int i=0;i<6;i++){float x=dd(p,uD[i],float(i));if(float(i)<uN)d=smin(d,x,uK);else e=smin(e,x,uK2);}d=smin(d,e,uK2);
  float l=length(p-uB.xyz);d+=uRip*.035*sin(l*13.-uT*7.)*exp(-l*.6);return d;}
 vec3 nrm(vec3 p){vec2 e=vec2(.0015,-.0015);return normalize(e.xyy*map(p+e.xyy)+e.yyx*map(p+e.yyx)+e.yxy*map(p+e.yxy)+e.xxx*map(p+e.xxx));}
@@ -25,7 +35,7 @@ float seam=0.;
    action drops (slots >= uN) keep their own colour. */
 vec3 tintAt(vec3 p){
  float db=1e3;vec3 cn=vec3(0.);float wn=0.;vec3 ca=vec3(0.);float wa=0.;
- for(int i=0;i<6;i++){float r=uD[i].w;float d=length(p-uD[i].xyz)-r;float w=exp(clamp(-d*7.,-30.,8.))*step(.02,r);if(float(i)<uN){db=min(db,d);cn+=uC[i]*w;wn+=w;}else{ca+=uC[i]*w;wa+=w;}}
+ for(int i=0;i<6;i++){float r=uD[i].w;float d=body(p,uD[i],float(i));float w=exp(clamp(-d*7.,-30.,8.))*step(.02,r);if(float(i)<uN){db=min(db,d);cn+=uC[i]*w;wn+=w;}else{ca+=uC[i]*w;wa+=w;}}
  vec3 base=cn/max(wn,1e-6);seam=0.;
  if(uZN>0.){vec3 dr=normalize(p-uZO);float b1=-1e3,b2=-1e3;vec3 acc=vec3(0.);float ws=0.;
   for(int i=0;i<10;i++){if(float(i)>=uZN)break;float s=dot(dr,uZ[i].xyz)+uZ[i].w;float w=exp(clamp(s*16.,-40.,40.));acc+=uZC[i]*w;ws+=w;if(s>b1){b2=b1;b1=s;}else if(s>b2){b2=s;}}
@@ -90,13 +100,18 @@ export type DrawOpts = {
   light?: [number, number, number, number];
   /** stock tint zones of the form (from posedDrops) */
   zone?: ZoneSet | null;
+  /**
+   * Teardrop: stretch drop `i` (an action slot, >= n) into a round cone ending at sphere {p, r}.
+   * Pour: the tail reaches the surface before the head does. Sell: the thread between bud and form thins and lets go.
+   */
+  tail?: { i: number; p: [number, number, number]; r: number } | null;
   /** zone mix 0..1 (0 = each form drop shows its own colour) */
   zm?: number;
   /** tint strength when zones are on (designer default .5) */
   zt?: number;
 };
 
-const UNIFORMS = ["uView", "uRo", "uTa", "uTan", "uD", "uC", "uZ", "uZC", "uZO", "uZN", "uZM", "uFq", "uPh", "uK", "uK2", "uN", "uT", "uWob", "uTint", "uShim", "uShimPos", "uRip", "uAlpha", "uGlow", "uB", "uGl"] as const;
+const UNIFORMS = ["uView", "uRo", "uTa", "uTan", "uD", "uC", "uZ", "uZC", "uZO", "uZN", "uZM", "uFq", "uPh", "uK", "uK2", "uN", "uT", "uWob", "uTint", "uShim", "uShimPos", "uRip", "uAlpha", "uGlow", "uB", "uGl", "uTl", "uTlI"] as const;
 
 export class MetalRenderer {
   readonly gl: WebGLRenderingContext;
@@ -206,6 +221,11 @@ export class MetalRenderer {
     gl.uniform1f(U.uGlow!, o.glow ?? 0);
     const l = o.light ?? [0, 0, 0, 0];
     gl.uniform4f(U.uGl!, l[0], l[1], l[2], l[3]);
+    const tl = o.tail;
+    const tailOn = !!tl && tl.r > 0.002 && !!drops[tl.i] && drops[tl.i]!.r > 0.005;
+    if (tailOn) R = Math.max(R, Math.hypot(tl!.p[0] - cx, tl!.p[1] - cy, tl!.p[2] - cz) + tl!.r);
+    gl.uniform4f(U.uTl!, tailOn ? tl!.p[0] : 0, tailOn ? tl!.p[1] : 0, tailOn ? tl!.p[2] : 0, tailOn ? tl!.r : 0);
+    gl.uniform1f(U.uTlI!, tailOn ? tl!.i : -1);
     gl.uniform4f(U.uB!, cx, cy, cz, R + 0.35 + (o.glow ? 0.9 : 0));
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }

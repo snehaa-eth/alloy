@@ -4,6 +4,8 @@ import { isAddress, type Address } from "viem";
 import { getBasket, getBasketPriceHistories, getPerformance, getRebalances } from "@/lib/data";
 import { ART_MIN_POINTS, basketView } from "@/components/alloy/basket-view";
 import { BasketScreen } from "@/components/alloy/screens/BasketScreen";
+import { dayMoves } from "@/components/alloy/explore/data";
+import { isTestnet } from "@/components/alloy/landing/data";
 
 type Props = {
   params: Promise<{ address: string }>;
@@ -33,8 +35,23 @@ export default async function BasketPage({ params, searchParams }: Props) {
   const basket = await load(params);
   if (!basket) notFound();
   const sp = await searchParams;
-  const [perf, events] = await Promise.all([getPerformance(basket), getRebalances(basket)]);
+  // Feed histories serve both the young-basket chart fallback and the real 24h moves ("Today").
+  const [perf, events, hist] = await Promise.all([getPerformance(basket), getRebalances(basket), getBasketPriceHistories(basket, 96).catch(() => ({}))]);
   const buy = typeof sp.buy === "string" && /^\d+(\.\d{1,2})?$/.test(sp.buy) ? sp.buy : undefined;
   const sheet = typeof sp.sheet === "string" ? sp.sheet : undefined;
-  return <BasketScreen v={basketView(basket, perf, perf.navSeries.length < ART_MIN_POINTS ? await getBasketPriceHistories(basket, 64).catch(() => ({})) : undefined)} perf={perf} events={events} initialBuy={buy} initialSheet={sheet} />;
+  const moves = dayMoves(
+    basket.components.map((c) => ({ ticker: c.stock.ticker, token: c.stock.token })),
+    hist,
+  );
+  return (
+    <BasketScreen
+      v={basketView(basket, perf, perf.navSeries.length < ART_MIN_POINTS ? hist : undefined)}
+      perf={perf}
+      events={events}
+      moves={moves}
+      testnet={isTestnet()}
+      initialBuy={buy}
+      initialSheet={sheet}
+    />
+  );
 }

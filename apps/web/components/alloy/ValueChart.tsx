@@ -1,12 +1,17 @@
 "use client";
 
+/**
+ * Basket value chart (docs/design/artdir/wow/app/basket.html "Value"): what $100 became, line + soft area
+ * coloured by direction over the selected range (gain / loss / muted), dashed start baseline, rebalance ticks,
+ * crosshair + dot + tooltip on hover / touch, draws in once when scrolled into view.
+ * kind "recipe": a young basket has no value history yet, so it shows how its stocks moved together (real feeds),
+ * clearly labelled, with no dates.
+ */
 import { useId, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { shortDate } from "./basket-view";
-import type { Tone } from "./identity";
-
-type Range = "1W" | "1M" | "ALL";
-const RANGE_DAYS: Record<Range, number> = { "1W": 7, "1M": 30, ALL: Infinity };
+import { Chips } from "./explore/Chips";
+import { Odometer, useInView } from "./motion/alloy-motion";
 
 /** Direction colours: gain when up over the range, loss when down, muted when flat. Never the brand colour. */
 export const DIR_HEX = { up: "#3DBE8B", down: "#F0545C", flat: "#A39892" } as const;
@@ -29,163 +34,149 @@ export function yDomain(all: number[], base: number | undefined): [number, numbe
   return [lo, hi];
 }
 
-/** Same anatomy for every range toggle: Inter, tabular figures, 36px tall pill. */
+/** Same anatomy for every range toggle (kept for older callers). */
 export const RANGE_BTN =
   "inline-flex h-9 min-w-[44px] items-center justify-center rounded-full px-3 font-sans text-[14px] font-semibold tabular-nums transition-colors";
 
+type Range = "1M" | "6M" | "All";
+const RANGE_DAYS: Record<Range, number> = { "1M": 30, "6M": 182, All: Infinity };
+const VW = 1000, VH = 300;
+const money = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 type Props = {
-  /** Value per token, oldest first (display numbers). */
+  /** oldest first */
   values: number[];
+  /** unix seconds, aligned with values (empty for kind "recipe") */
   times: number[];
-  tone: Tone;
-  /** Rebalance markers (unix seconds) with a reason for the tooltip. */
+  /** rebalance markers (unix seconds) with a label */
   ticks?: { t: number; label: string }[];
-  /** Optional creator line (same length as values). */
-  creator?: number[];
-  height?: number;
-  /** Mark the series after market close as flat-dashed. */
-  stale?: boolean;
+  kind?: "value" | "recipe";
 };
 
-/**
- * NAV line + area fill built from the same points, edge to edge, coloured by direction over the
- * selected range (gain / loss / muted). Rebalance ticks, pointer scrub.
- */
-export function ValueChart({ values, times, tone, ticks = [], creator, height = 140, stale }: Props) {
-  void tone;
-  const [range, setRange] = useState<Range>("1M");
-  const [scrub, setScrub] = useState<number | null>(null);
-  const ref = useRef<SVGSVGElement>(null);
+export function ValueChart({ values, times, ticks = [], kind = "value" }: Props) {
+  const dated = kind === "value" && times.length === values.length && times.length > 1;
+  const span = dated ? times[times.length - 1] - times[0] : 0;
+  // only offer ranges the history actually covers
+  const ranges = (Object.keys(RANGE_DAYS) as Range[]).filter((r) => r === "All" || (dated && span > RANGE_DAYS[r] * 86_400 * 1.15));
+  const [range, setRange] = useState<Range>("All");
+  const [hov, setHov] = useState<number | null>(null);
+  const box = useRef<HTMLDivElement>(null);
+  const seen = useInView(box, "0px 0px -25% 0px");
   const gid = useId().replace(/:/g, "");
-  const W = 360;
-  const H = height;
 
   const view = useMemo(() => {
     const end = times[times.length - 1] ?? 0;
-    const from = RANGE_DAYS[range] === Infinity ? -Infinity : end - RANGE_DAYS[range] * 86_400;
-    const idx = times.map((t, i) => (t >= from ? i : -1)).filter((i) => i >= 0);
+    const from = dated && RANGE_DAYS[range] !== Infinity ? end - RANGE_DAYS[range] * 86_400 : -Infinity;
+    const idx = values.map((_, i) => i).filter((i) => !dated || times[i] >= from);
     const v = idx.map((i) => values[i]);
-    const c = creator ? idx.map((i) => creator[i]) : undefined;
-    const t = idx.map((i) => times[i]);
-    const all = [...v, ...(c ?? [])];
-    const [lo, hi] = yDomain(all, v[0]);
-    const pad = (hi - lo) * 0.12 || 1;
-    const y = (n: number) => H - 8 - ((n - (lo - pad)) / (hi - lo + 2 * pad)) * (H - 16);
-    // Spread points by index so the line always spans the full width (no flat-then-stop look).
-    const x = (i: number) => (v.length <= 1 ? 0 : (i / (v.length - 1)) * W);
-    const pts = v.length === 1 ? [[0, y(v[0])], [W, y(v[0])]] : v.map((n, i) => [x(i), y(n)]);
-    const line = pts.map(([px, py], i) => `${i ? "L" : "M"}${px.toFixed(1)},${py.toFixed(1)}`).join("");
-    const lastX = pts[pts.length - 1]?.[0] ?? W;
-    const area = `${line}L${lastX.toFixed(1)},${H}L0,${H}Z`;
-    const cline = c?.map((n, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(n).toFixed(1)}`).join("");
-    const span = (t[t.length - 1] ?? 0) - (t[0] ?? 0);
-    const tx = ticks
-      .filter((k) => k.t >= (t[0] ?? 0) && k.t <= (t[t.length - 1] ?? 0))
-      .map((k) => {
-        // Place by nearest point index so ticks line up with the index-spaced line.
-        let j = 0;
-        for (let i = 0; i < t.length; i++) if (Math.abs(t[i] - k.t) < Math.abs(t[j] - k.t)) j = i;
-        return { ...k, x: span > 0 ? x(j) : 0 };
-      });
-    return { v, t, x, y, line, area, cline, tx };
-  }, [values, times, creator, ticks, range, H]);
+    const t = idx.map((i) => times[i] ?? 0);
+    const [lo0, hi0] = yDomain(v, v[0]);
+    const pad = (hi0 - lo0) * 0.14 || 1;
+    const lo = lo0 - pad, hi = hi0 + pad;
+    const X = (i: number) => (v.length <= 1 ? 0 : (i / (v.length - 1)) * VW);
+    const Y = (n: number) => VH - ((n - lo) / (hi - lo)) * VH;
+    const line = v.map((n, i) => `${i ? "L" : "M"}${X(i).toFixed(1)} ${Y(n).toFixed(1)}`).join("");
+    const area = `${line}L${VW} ${VH}L0 ${VH}Z`;
+    const tx = dated
+      ? ticks
+          .filter((k) => k.t >= (t[0] ?? 0) && k.t <= (t[t.length - 1] ?? 0))
+          .map((k) => {
+            let j = 0;
+            for (let i = 0; i < t.length; i++) if (Math.abs(t[i] - k.t) < Math.abs(t[j] - k.t)) j = i;
+            return { ...k, x: X(j) / VW };
+          })
+      : [];
+    return { v, t, X, Y, line, area, tx };
+  }, [values, times, ticks, range, dated]);
 
-  const first = view.v[0] ?? 0;
-  const last = view.v[view.v.length - 1] ?? 0;
-  const at = scrub ?? view.v.length - 1;
-  const cur = view.v[at] ?? 0;
-  const chg = first ? ((cur - first) / first) * 100 : 0;
-  const dir = dirOf(first ? ((last - first) / first) * 100 : 0);
+  const first = view.v[0] ?? 1;
+  const last = view.v[view.v.length - 1] ?? first;
+  const chg = first ? (last / first - 1) * 100 : 0;
+  const dir = dirOf(chg);
   const hex = DIR_HEX[dir];
-  const chgDir = dirOf(chg);
+  const grown = 100 * (last / (first || 1));
+  const at = hov ?? view.v.length - 1;
 
-  function onMove(clientX: number) {
-    const el = ref.current;
-    if (!el || view.v.length < 2) return;
-    const r = el.getBoundingClientRect();
-    const f = Math.min(1, Math.max(0, (clientX - r.left) / r.width));
-    setScrub(Math.round(f * (view.v.length - 1)));
-  }
+  const move = (clientX: number) => {
+    const r = box.current?.getBoundingClientRect();
+    if (!r || view.v.length < 2) return;
+    setHov(Math.round(Math.min(1, Math.max(0, (clientX - r.left) / r.width)) * (view.v.length - 1)));
+  };
+  const hx = view.X(at) / VW;
+  const hy = view.Y(view.v[at] ?? first) / VH;
+  const sub =
+    kind === "recipe"
+      ? "How this recipe's stocks moved together, before the basket's own history."
+      : range === "All"
+        ? "What $100 became, since start"
+        : `What $100 became, last ${range === "1M" ? "month" : "6 months"}`;
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <span className="text-[14px] font-medium tabular-nums text-tx2" aria-live="polite">
-          {scrub !== null ? `${shortDate(view.t[at])} · $${cur.toFixed(2)} ` : ""}
-          <span className={chgDir === "up" ? "up" : chgDir === "down" ? "down" : "c2"}>
-            {chgDir === "up" ? "▲ +" : chgDir === "down" ? "▼ −" : ""}
-            {Math.abs(chg).toFixed(1)}%
-          </span>
-        </span>
-        <div className="flex gap-1" role="group" aria-label="Range">
-          {(Object.keys(RANGE_DAYS) as Range[]).map((r) => (
-            <button
-              key={r}
-              type="button"
-              aria-pressed={range === r}
-              onClick={() => {
-                setRange(r);
-                setScrub(null);
-              }}
-              className={cn(RANGE_BTN, range === r ? "bg-s2 text-tx" : "text-tx2 hover:text-tx")}
-            >
-              {r === "ALL" ? "All" : r}
-            </button>
-          ))}
-        </div>
-      </div>
-      <svg
-        ref={ref}
-        className="c-chart"
-        viewBox={`0 0 ${W} ${H}`}
-        preserveAspectRatio="none"
-        style={{ height: H }}
-        role="img"
-        aria-label={`Value per token, ${range === "ALL" ? "all time" : range}: ${dir === "flat" ? "flat" : `${dir} ${Math.abs(chg).toFixed(1)}%`}`}
-        onPointerMove={(e) => onMove(e.clientX)}
-        onPointerDown={(e) => onMove(e.clientX)}
-        onPointerLeave={() => setScrub(null)}
-      >
-        <defs>
-          <linearGradient id={`fill-${gid}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={hex} stopOpacity={dir === "flat" ? 0.1 : 0.22} />
-            <stop offset="100%" stopColor={hex} stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        {[0.25, 0.5, 0.75].map((g) => (
-          <line key={g} className="c-chart__grid" x1="0" x2={W} y1={H * g} y2={H * g} strokeWidth="1" opacity="0.6" />
-        ))}
-        {/* Fill and line share the same points. No dash draw-in: with non-scaling strokes it cut the line off mid-width. */}
-        <path d={view.area} fill={`url(#fill-${gid})`} />
-        {view.cline && <path className="c-chart__creator" d={view.cline} />}
-        <path className="c-chart__line" d={view.line} style={{ stroke: hex }} strokeLinejoin="round" strokeDasharray={stale ? "5 4" : undefined} />
-        {view.tx.map((k) => (
-          <line key={k.t} className="c-chart__tick" x1={k.x} x2={k.x} y1="0" y2={H} strokeWidth="1">
-            <title>{k.label}</title>
-          </line>
-        ))}
-        {scrub !== null && (
-          <>
-            <rect x={view.x(at)} y="0" width={W - view.x(at)} height={H} fill="var(--bg)" fillOpacity="0.6" />
-            <line className="c-chart__scrub" x1={view.x(at)} x2={view.x(at)} y1="0" y2={H} strokeWidth="1" />
-            <circle cx={view.x(at)} cy={view.y(cur)} r="4" fill="var(--tx)" stroke={hex} strokeWidth="2" vectorEffect="non-scaling-stroke" />
-          </>
-        )}
-      </svg>
-      <div className="flex items-center justify-between gap-2">
-        <div className="c-legend">
-          <span className="inline-flex items-center gap-1.5">
-            <i className="inline-block h-0.5 w-3 rounded-full" style={{ background: hex }} aria-hidden /> value
-          </span>
-          {creator && <span>- - creator</span>}
-          {view.tx.length > 0 && (
-            <span className="inline-flex items-center gap-1">
-              <i className="inline-block h-3 w-px" style={{ background: "var(--hi)" }} /> rebalance
+    <div>
+      <div className="flex flex-wrap items-end justify-between gap-5">
+        <div>
+          <div className="a-eyebrow">{kind === "recipe" ? "The stocks inside" : "Value"}</div>
+          <div className="mt-1.5 flex items-baseline gap-3.5">
+            <span className="flex font-display text-[36px] font-extralight tracking-[-0.03em] md:text-[44px]">
+              <Odometer value={money(grown)} />
             </span>
-          )}
+            <span className={cn("num text-[14px]", dir === "up" ? "gain" : dir === "down" ? "loss" : "text-mute")}>
+              {dir === "flat" ? "0.0%" : `${chg > 0 ? "+" : "−"}${Math.abs(chg).toFixed(1)}%`}
+            </span>
+          </div>
+          <div className="text-[13px] text-mute">{sub}</div>
         </div>
-        <span className="text-[13px] text-tx2">Past performance isn&apos;t a promise.</span>
+        {ranges.length > 1 && <Chips label="Range" size="sm" value={range} onChange={(r) => (setRange(r), setHov(null))} options={ranges.map((r) => ({ v: r, label: r }))} />}
       </div>
+
+      <div
+        ref={box}
+        className="relative mt-[34px] h-[220px] touch-pan-y md:h-[300px]"
+        style={{ color: hex }}
+        onPointerMove={(e) => move(e.clientX)}
+        onPointerDown={(e) => move(e.clientX)}
+        onPointerLeave={() => setHov(null)}
+        role="img"
+        aria-label={`${kind === "recipe" ? "The stocks inside" : "Value"}: ${dir === "flat" ? "flat" : `${dir} ${Math.abs(chg).toFixed(1)}%`}`}
+      >
+        <div className={cn("a-vchart-draw absolute inset-0", seen && "in")}>
+          <svg viewBox={`0 0 ${VW} ${VH}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full overflow-visible">
+            <defs>
+              <linearGradient id={`cg-${gid}`} x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0" stopColor="currentColor" stopOpacity={dir === "flat" ? 0.08 : 0.16} />
+                <stop offset="1" stopColor="currentColor" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <line x1="0" x2={VW} y1={view.Y(first)} y2={view.Y(first)} stroke="var(--line)" strokeDasharray="3 5" vectorEffect="non-scaling-stroke" />
+            <path d={view.area} fill={`url(#cg-${gid})`} />
+            <path d={view.line} fill="none" stroke="currentColor" strokeWidth="1.6" vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" />
+          </svg>
+        </div>
+        {view.tx.map((k) => (
+          <span key={k.t} title={k.label} className="absolute bottom-0 top-0 w-px bg-line2" style={{ left: `${k.x * 100}%` }} />
+        ))}
+        <span className={cn("pointer-events-none absolute bottom-0 top-0 w-px bg-line2 transition-opacity duration-200", hov === null && "opacity-0")} style={{ left: `${hx * 100}%` }} />
+        <span
+          className={cn("pointer-events-none absolute -ml-[5.5px] -mt-[5.5px] h-[11px] w-[11px] rounded-full border-2 border-current bg-black transition-opacity duration-200", hov === null && "opacity-0")}
+          style={{ left: `${hx * 100}%`, top: `${hy * 100}%` }}
+        />
+        <span
+          className={cn("num pointer-events-none absolute -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-xl border border-line bg-[#0e0e0e] px-3 py-2 text-[12px] text-ink transition-opacity duration-200", hov === null && "opacity-0")}
+          style={{ left: `clamp(70px, ${hx * 100}%, calc(100% - 70px))`, top: `calc(${hy * 100}% - 14px)` }}
+        >
+          <b className="block font-display text-[17px] font-light">{money(100 * ((view.v[at] ?? first) / (first || 1)))}</b>
+          {dated && <span className="text-dim">{shortDate(view.t[at])}</span>}
+        </span>
+        {dated &&
+          [0, 0.5, 1].map((f) => (
+            <span key={f} className="absolute -bottom-[26px] whitespace-nowrap text-[11px] tracking-[0.06em] text-dim" style={{ left: `${f * 100}%`, transform: `translateX(${-f * 100}%)` }}>
+              {shortDate(view.t[Math.round(f * (view.t.length - 1))])}
+            </span>
+          ))}
+      </div>
+      <p className={cn("text-[12px] text-dim", dated ? "mt-10" : "mt-4")}>
+        {view.tx.length > 0 && "Lines mark changes. "}Past returns don&apos;t predict future ones.
+      </p>
     </div>
   );
 }

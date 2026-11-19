@@ -3,14 +3,15 @@
  *
  * Notes for Base Sepolia's public RPC (https://sepolia.base.org):
  *  - eth_getLogs is limited to a 200-block range, so basket discovery uses factory getters
- *    (basketCount/allBaskets), not BasketCreated logs. Event history (rebalances, followers) is only
- *    scanned when a log-capable RPC is configured (RPC_URL_84532 / NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL).
+ *    (basketCount/allBaskets), not BasketCreated logs. Event history (rebalances, followers) goes
+ *    through lib/logscan.ts (Blockscout for old history + 200-block RPC windows, cached incrementally).
  *  - Contract USD values are 8dp; the app uses usd6 (divide by 100).
  */
 import { erc20Abi, getAddress, parseAbiItem, type Address, type PublicClient } from "viem";
 import { aggregatorAbi, basketAbi, basketFactoryAbi, faucetAbi } from "./abis";
 import { DEFAULT_CHAIN_ID, rpcUrlFor, type SupportedChainId } from "./chains";
 import { getDeployment, isDeployed, stockByToken } from "./contracts";
+import { scanLogs } from "./logscan";
 import { getReadClient } from "./rpc";
 import { STRATEGY_MODES } from "./strategy";
 import type {
@@ -209,6 +210,20 @@ export async function readCreation(
   const key = `${chainId}:${address.toLowerCase()}`;
   const hit = creationCache.get(key) ?? KNOWN_CREATION[key];
   if (hit) return hit;
+  // Fast path: the basket's first log is the dead-share mint in its creation tx. The scan is shared with
+  // readFollowers/readRebalances, so this usually costs one getBlock.
+  try {
+    const logs = await scanLogs(client, { chainId, address, events: [EV.transfer], fromBlock: scanStart(chainId) });
+    if (logs.length) {
+      const block = logs[0].blockNumber;
+      const t = logs[0].timestamp ?? Number((await client.getBlock({ blockNumber: block })).timestamp);
+      const v = { block, t };
+      creationCache.set(key, v);
+      return v;
+    }
+  } catch {
+    // fall back to bisecting eth_getCode
+  }
   try {
     let lo = getDeployment(chainId).deployedAtBlock; // no code at lo-? assume code absent before factory
     let hi = await client.getBlockNumber();
@@ -442,10 +457,24 @@ export function navSeriesFromHistories(basket: Basket, histories: PricePoint[][]
   return pts;
 }
 
-/** True when a non-public RPC is configured (public sepolia.base.org caps getLogs at 200 blocks). */
+/**
+ * True when event history can be read. lib/logscan.ts splits ranges into RPC-sized windows (and uses
+ * Blockscout for old history), so this works on the public RPC too; it is kept for callers/tests.
+ */
 export function canScanLogs(chainId: SupportedChainId = DEFAULT_CHAIN_ID): boolean {
-  const server = typeof window === "undefined" ? process.env[`RPC_URL_${chainId}`] : undefined;
-  return !!(server || rpcUrlFor(chainId));
+  return isDeployed(chainId) || !!rpcUrlFor(chainId);
+}
+
+/** Max time a page waits on an event-history scan before using its fallback. */
+const LOG_SCAN_BUDGET_MS = 12_000;
+
+/**
+ * First block scanned for a basket's events: the factory deploy block (no basket predates it). Using a
+ * fixed start keeps one shared log cache per basket and skips the getCode bisection; Blockscout serves the
+ * old range in one call, so the extra blocks cost nothing.
+ */
+function scanStart(chainId: SupportedChainId): bigint {
+  return getDeployment(chainId).deployedAtBlock;
 }
 
 const EV = {
@@ -473,13 +502,18 @@ export async function readRebalances(basket: Basket, opts: { reasons?: Record<st
   if (canScanLogs(chainId)) {
     try {
       const client = getReadClient(chainId);
-      const fromBlock = (await withTimeout(readCreation(basket.address, chainId, client), 6_000, null))?.block ?? getDeployment(chainId).deployedAtBlock;
-      const logs = await client.getLogs({
-        address: basket.address,
-        events: [EV.proposed, EV.cancelled, EV.executed, EV.rebalanced],
-        fromBlock,
-        toBlock: "latest",
-      });
+      const fromBlock = scanStart(chainId);
+      const logs = await withTimeout(
+        scanLogs(client, {
+          chainId,
+          address: basket.address,
+          events: [EV.proposed, EV.cancelled, EV.executed, EV.rebalanced],
+          fromBlock,
+        }),
+        LOG_SCAN_BUDGET_MS,
+        null,
+      );
+      if (!logs) throw new Error("log scan timed out");
       const out: RebalanceEvent[] = [];
       let lastProposal: RebalanceEvent | null = null;
       for (const l of logs) {
@@ -522,8 +556,12 @@ export async function readRebalances(basket: Basket, opts: { reasons?: Record<st
       // Timestamps for drift trims.
       const trims = out.filter((e) => e.kind === "drift-trim");
       if (trims.length) {
-        const blocks = logs.filter((l) => l.eventName === "Rebalanced").map((l) => l.blockNumber!);
-        const ts = await Promise.all(blocks.map((b) => client.getBlock({ blockNumber: b }).then((x) => Number(x.timestamp))));
+        const trimLogs = logs.filter((l) => l.eventName === "Rebalanced");
+        const ts = await Promise.all(
+          trimLogs.map((l) =>
+            l.timestamp != null ? l.timestamp : blockTime(chainId, client, l.blockNumber),
+          ),
+        );
         trims.forEach((e, i) => (e.at = ts[i] ?? 0));
       }
       if (basket.pendingRecipe == null) out.forEach((e) => e.status === "pending" && (e.status = "cancelled"));
@@ -561,32 +599,75 @@ export async function readRebalances(basket: Basket, opts: { reasons?: Record<st
   return out.sort((a, b) => b.at - a.at);
 }
 
-/** Unique non-zero holders excluding creator/dead (needs a log-capable RPC; else null). */
+const blockTimes = new Map<string, number>();
+async function blockTime(chainId: SupportedChainId, client: PublicClient, blockNumber: bigint): Promise<number> {
+  const k = `${chainId}:${blockNumber}`;
+  const hit = blockTimes.get(k);
+  if (hit != null) return hit;
+  const t = Number((await client.getBlock({ blockNumber })).timestamp);
+  blockTimes.set(k, t);
+  return t;
+}
+
+/** Protocol treasury (fee-share recipient), from the factory; null if unreadable. */
+async function readTreasury(chainId: SupportedChainId, client: PublicClient): Promise<string | null> {
+  const known = (getDeployment(chainId) as { treasury?: string }).treasury;
+  if (known) return known;
+  return memo(`treasury:${chainId}`, 10 * 60_000, () =>
+    client.readContract({ address: getDeployment(chainId).factory, abi: basketFactoryAbi, functionName: "treasury" }),
+  ).catch(() => null);
+}
+
+/**
+ * Unique current holders (balance > 0) excluding zero/dead/creator/router/treasury; null on failure.
+ * Balances are rebuilt from the basket's Transfer history (lib/logscan.ts).
+ */
 export async function readFollowers(basket: Basket): Promise<number | null> {
   const chainId = (basket.chainId ?? DEFAULT_CHAIN_ID) as SupportedChainId;
   if (!canScanLogs(chainId)) return null;
   try {
-    const client = getReadClient(chainId);
-    const fromBlock = (await readCreation(basket.address, chainId, client))?.block ?? getDeployment(chainId).deployedAtBlock;
-    const logs = await client.getLogs({ address: basket.address, event: EV.transfer, fromBlock, toBlock: "latest" });
-    const holders = new Set<string>();
-    for (const l of logs) if (l.args.to) holders.add(l.args.to.toLowerCase());
-    holders.delete("0x0000000000000000000000000000000000000000");
-    holders.delete("0x000000000000000000000000000000000000dead");
-    holders.delete(basket.creator.address.toLowerCase());
-    holders.delete(getDeployment(chainId).router.toLowerCase());
-    // Fee shares are minted to the treasury on every buy; it isn't a follower.
-    const treasury = (getDeployment(chainId) as { treasury?: string }).treasury;
-    if (treasury) holders.delete(treasury.toLowerCase());
-    if (holders.size === 0) return 0;
-    const bals = await client.multicall({
-      allowFailure: false,
-      contracts: [...holders].map((h) => ({ address: basket.address, abi: erc20Abi, functionName: "balanceOf" as const, args: [h as Address] as const })),
-    });
-    return bals.filter((b) => (b as bigint) > 0n).length;
+    // Time-boxed so a slow fallback scan can't stall SSR; the scan keeps filling the cache meanwhile.
+    return await withTimeout(
+      memo(`followers:${chainId}:${basket.address.toLowerCase()}`, 20_000, () => readFollowersUncached(basket, chainId)),
+      LOG_SCAN_BUDGET_MS,
+      null,
+    );
   } catch {
     return null;
   }
+}
+
+async function readFollowersUncached(basket: Basket, chainId: SupportedChainId): Promise<number> {
+  const client = getReadClient(chainId);
+  const [logs, treasury] = await Promise.all([
+    scanLogs(client, { chainId, address: basket.address, events: [EV.transfer], fromBlock: scanStart(chainId) }),
+    readTreasury(chainId, client),
+  ]);
+  // Share balances only change through Transfer (mints/burns included), so the full Transfer history
+  // gives exact current balances without a balanceOf round-trip.
+  const bal = new Map<string, bigint>();
+  for (const l of logs) {
+    const { from, to, amount } = l.args as { from: string; to: string; amount: bigint };
+    const f = from.toLowerCase();
+    const t = to.toLowerCase();
+    bal.set(f, (bal.get(f) ?? 0n) - amount);
+    bal.set(t, (bal.get(t) ?? 0n) + amount);
+  }
+  const excluded = new Set(
+    [
+      "0x0000000000000000000000000000000000000000",
+      "0x000000000000000000000000000000000000dead",
+      basket.creator.address,
+      getDeployment(chainId).router,
+      // Fee shares are minted to the treasury on every buy; it isn't a follower.
+      treasury,
+    ]
+      .filter((a): a is string => !!a)
+      .map((a) => a.toLowerCase()),
+  );
+  let n = 0;
+  for (const [holder, b] of bal) if (b > 0n && !excluded.has(holder)) n++;
+  return n;
 }
 
 // ---------------------------------------------------------------------------

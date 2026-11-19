@@ -14,7 +14,7 @@ import { useMetalFrame, useMetalRegion } from "../metal/MetalCanvas";
 import { bump, clamp, damp, easeInOut, easeOut, lerp, norm, project, ss, sub, type Cam, type V3 } from "../metal/math";
 import { tintFor } from "../metal/palette";
 import { posedDrops, shapeFromRecipe, type Drop, type Posed } from "../metal/shape";
-import { neckK, pourAt } from "../metal/actions";
+import { pourFrame, surfaceTop } from "../metal/actions";
 import { placeTag, resolveTags, type TagEl } from "../metal/tags";
 import { splitWords, wordsAt } from "../motion/alloy-motion";
 import type { LBasket, StoryMoves } from "./data";
@@ -76,7 +76,7 @@ export function Story({ b, moves }: { b: LBasket; moves: StoryMoves | null }) {
     cam: null as Cam | null,
     posed: null as Posed | null,
     fuse: 0,
-    o: { k: 0.3, shim: 0, shimPos: 0, rip: 0, alpha: 1, wob: 1, zm: 0, zt: 0.13, k2: 0.32 },
+    o: { k: 0.3, shim: 0, shimPos: 0, rip: 0, alpha: 1, wob: 1, zm: 0, zt: 0.13, k2: 0.32, tail: null as { i: number; p: [number, number, number]; r: number } | null },
     words: [] as HTMLElement[][],
   });
 
@@ -156,13 +156,16 @@ export function Story({ b, moves }: { b: LBasket; moves: StoryMoves | null }) {
     // pour drop ($25) and the cursor droplet in the hero
     const P = s.pour;
     let k2 = 0.32;
+    let tail: { i: number; p: [number, number, number]; r: number } | null = null;
     if (buy > 0 && buy < 0.62) {
-      // smooth buy pour (designer A.pourAt): fall, neck by the real gap (A.neckK), damped settle
-      const top = Math.max(...posed.drops.filter((x) => x.r > 0.01).map((x) => x.p[1] + x.r));
-      const pr = pourAt(clamp(buy / 0.6), { y0: phone ? 3.6 : 3.0, ya: top + 0.2, yc: top - 0.35, r: 0.24 });
-      P.p = [0.05, pr.y, 0.25];
-      P.r = pr.r * ss(0, 0.04, buy);
-      k2 = Math.max(pr.k2, neckK(P, posed.drops));
+      // knob-free teardrop pour (metal/actions pourFrame, same as the buy sheet): the tail reaches the REAL surface
+      // (smooth-min aware) first, the bridge widens past the drop's size, the head is absorbed
+      const top = surfaceTop(s.cur, 0.05, 0.25, lerp(0.3, 0.8, fuse));
+      const pr = pourFrame(clamp(buy / 0.6), { x: 0.05, z: 0.25, y0: phone ? 3.6 : 3.0, top, yc: top - 0.35, r: 0.24 });
+      P.p = pr.drop.p;
+      P.r = pr.drop.r * ss(0, 0.04, buy);
+      k2 = pr.k2;
+      if (pr.tail && P.r > 0.005) tail = { i: s.cur.length, p: pr.tail.p, r: pr.tail.r * ss(0, 0.04, buy) };
     } else if (p < 0.06) {
       const hk = 1 - ss(0, 0.05, p);
       P.p = phone ? [Math.sin(T * 0.4) * 1.1, -1.4 + Math.cos(T * 0.31) * 1.4, 0.5] : [mouse[0] * 4.1, mouse[1] * 2.6, 0.55];
@@ -188,6 +191,7 @@ export function Story({ b, moves }: { b: LBasket; moves: StoryMoves | null }) {
       zm: ss(0.35, 0.95, fuse),
       zt: lerp(0.13, 0.5, ss(0.3, 1, fuse)),
       k2,
+      tail,
     };
     const camFuse = fuse;
     const mx = mouse[0] * (1 - fuse * 0.6), my = mouse[1] * (1 - fuse * 0.6);

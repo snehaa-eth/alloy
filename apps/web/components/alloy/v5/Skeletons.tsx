@@ -28,34 +28,62 @@ export function CardSkeleton() {
   );
 }
 
-/** Mirrors ExploreView: heading, filter row, card grid, slim "Build your own" row. */
-export function ExploreSkeleton() {
+/** Same box as explore/ExploreCard: 290px sculpture (240 phone), name, creator, 2-line thesis, stat foot. */
+export function ExCardSkeleton() {
   return (
-    <div className="mx-auto max-w-app px-4 pb-12 pt-8 md:px-8 md:pt-12" role="status" aria-label="Loading baskets">
-      <Skeleton className="h-[34px] w-64 md:h-[48px] md:w-80" />
-      <Skeleton className="mt-2 h-5 w-52" />
-      <Skeleton className="mt-6 h-11 w-full !rounded-full md:mt-8" />
-      <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 3 }, (_, k) => (
-          <CardSkeleton key={k} />
-        ))}
-        <Skeleton className="col-span-full h-[74px] !rounded-[20px]" />
+    <div className="a-ex-card" aria-hidden>
+      <div className="relative flex h-[240px] items-center justify-center md:h-[290px]">
+        <Skeleton className="absolute left-4 top-4 h-[26px] w-[118px] !rounded-full" />
+        <Skeleton className="h-[150px] w-[150px] !rounded-full opacity-60" />
+      </div>
+      <div className="px-[18px] pt-[18px] md:px-[22px] md:pt-5">
+        <Skeleton className="h-[26px] w-2/3" />
+        <Skeleton className="mt-2 h-3.5 w-28" />
+        <Skeleton className="mt-3 h-[42px] w-full" />
+      </div>
+      <div className="mt-5 flex items-end gap-7 border-t border-line px-[18px] pb-5 pt-4 md:px-[22px]">
+        <Skeleton className="h-[46px] w-16" />
+        <Skeleton className="h-[46px] w-16" />
+        <Skeleton className="ml-auto h-9 w-[112px] !rounded-full" />
       </div>
     </div>
   );
 }
 
+/** Mirrors ExploreView: header, filter bar, count, card grid. */
+export function ExploreSkeleton() {
+  return (
+    <div className="px-[clamp(16px,6vw,96px)] pb-24" role="status" aria-label="Loading baskets">
+      <div className="pt-10 md:pt-[clamp(56px,9vh,96px)]">
+        <Skeleton className="h-3 w-20" />
+        <Skeleton className="mt-[18px] h-[86px] w-[300px] md:h-[150px] md:w-[620px]" />
+        <Skeleton className="mt-4 h-5 w-[320px] max-w-full" />
+      </div>
+      <div className="mt-[30px] flex flex-col gap-2.5 md:mt-14 md:flex-row md:justify-between">
+        <Skeleton className="h-[44px] w-[340px] max-w-full !rounded-full" />
+        <Skeleton className="h-[44px] w-[260px] max-w-full !rounded-full" />
+      </div>
+      <Skeleton className="mt-4 h-4 w-20" />
+      <div className="mt-[22px] grid grid-cols-1 gap-3.5 md:grid-cols-2 md:gap-[18px] min-[1101px]:grid-cols-3">
+        {Array.from({ length: 3 }, (_, k) => (
+          <ExCardSkeleton key={k} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Mirrors BasketScreen: sculpture stage, title block, sticky buy panel. */
 export function BasketSkeleton() {
   return (
-    <div className="mx-auto max-w-app px-4 pt-14 md:px-8" role="status" aria-label="Loading basket">
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-10">
-        <div className="flex flex-col gap-6">
-          <Skeleton className="h-[220px] !rounded-[24px] md:h-[300px]" />
-          <Skeleton className="h-11 w-64" />
-          <Skeleton className="h-[300px] !rounded-[20px]" />
-        </div>
-        <Skeleton className="hidden h-[420px] !rounded-[20px] lg:block" />
+    <div className="mx-auto grid max-w-[1480px] gap-[clamp(32px,4vw,64px)] px-[var(--gut)] pt-6 md:pt-10 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_372px]" role="status" aria-label="Loading basket">
+      <div className="min-w-0">
+        <Skeleton className="h-[400px] !rounded-[22px] md:h-[clamp(420px,58vh,560px)] md:!rounded-[28px]" />
+        <Skeleton className="mt-10 h-3 w-16" />
+        <Skeleton className="mt-3.5 h-[48px] w-[70%] md:h-[72px]" />
+        <Skeleton className="mt-6 h-9 w-[80%]" />
       </div>
+      <Skeleton className="hidden h-[500px] !rounded-[26px] lg:block" />
     </div>
   );
 }

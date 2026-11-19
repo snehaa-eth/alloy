@@ -1,204 +1,288 @@
 "use client";
 
-import { Ticker } from "../motion/Ticker";
-import { useState } from "react";
-import { CalendarDays, Compass, FlaskConical, LogIn } from "lucide-react";
-import { formatUsd6, pnl, sharesToUsd6 } from "@/lib/units";
-import { BasketRow } from "../BasketCards";
-import { Certificate } from "../Certificate";
-import { Countdown } from "../Countdown";
+/**
+ * Portfolio, "your shelf" (docs/design/artdir/wow/app/portfolio.html) on real data:
+ * on-chain positions (usePositions), values at live NAV, today's move from the basket's value series,
+ * all-time from the per-device cost basis (shown only when it covers every holding), real test-USDC balance + faucet.
+ */
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { Download } from "lucide-react";
+import { formatB20, formatUsd6, pnl, sharesToUsd6, usd6ToChartNumber, valueUsd6 } from "@/lib/units";
+import { useOwed } from "@/lib/hooks/use-reads";
 import { StatusSignal } from "../status";
-import { Button, ButtonLink, EmptyState, QuietLink, Signed, Skeleton, Stamp } from "../primitives";
-import { pendingChange, shortDate } from "../basket-view";
+import { pendingChange } from "../basket-view";
 import { useAccount } from "../hooks";
 import { usePositions } from "../positions";
 import type { LoadedBasket } from "../load";
-import { AddMoneySheet, ClaimSheet, type HeldItem } from "../flows/NoticeSheets";
-import { useOwed, useUsdcBalance } from "@/lib/hooks/use-reads";
-import { formatB20, valueUsd6 } from "@/lib/units";
-import { Download } from "lucide-react";
+import { ClaimSheet, type HeldItem } from "../flows/NoticeSheets";
+import { MetalBasket } from "../metal/MetalBasket";
+import { Odometer, OdometerOnView, Rise, WordReveal } from "../motion/alloy-motion";
+import { EmptyShelf, Shelf, type ShelfItem } from "../portfolio/Shelf";
+import { MoneyCard } from "../portfolio/MoneyCard";
+import { DropLoader } from "../states/States";
+import { pctText, recipeOfView, signCls } from "../states/recipe";
 
-const WEEK = 7 * 86_400;
+const DAY = 86_400;
+
+/** Move over the last ~24h from the value series, bps (null without a point that old). */
+function dayMoveBps(it: LoadedBasket): number | null {
+  const s = it.perf.navSeries;
+  if (s.length < 2) return null;
+  const end = s[s.length - 1];
+  const start = [...s].reverse().find((p) => p.t <= end.t - DAY * 0.8);
+  if (!start || start.navPerShareUsd6 <= 0n) return null;
+  return Number(((end.navPerShareUsd6 - start.navPerShareUsd6) * 10_000n) / start.navPerShareUsd6);
+}
+
+const signedUsd = (u: bigint) => `${u < 0n ? "−" : "+"}${formatUsd6(u < 0n ? -u : u)}`;
 
 export function PortfolioScreen({ items }: { items: LoadedBasket[] }) {
   const acct = useAccount();
   const { map, ready } = usePositions(items.map((i) => ({ address: i.v.basket.address, totalSupply: i.v.basket.totalSupply })));
-  const [money, setMoney] = useState(false);
-  const usdc = useUsdcBalance();
+  const [hl, setHl] = useState<string | null>(null);
+  const [ctaHover, setCtaHover] = useState(false);
 
-  const held = items
-    .map((it) => {
-      const h = map[it.v.basket.address];
-      if (!h || h.shares === 0n) return null;
-      const value = sharesToUsd6(h.shares, it.v.nav, it.v.basket.totalSupply);
-      // week move from the value series (display only)
-      const s = it.perf.navSeries;
-      const end = s[s.length - 1];
-      const start = [...s].reverse().find((p) => p.t <= end.t - WEEK) ?? s[0];
-      const weekBps = start.navPerShareUsd6 > 0n ? Number(((end.navPerShareUsd6 - start.navPerShareUsd6) * 10_000n) / start.navPerShareUsd6) : 0;
-      const weekUsd6 = (value * BigInt(weekBps)) / 10_000n;
-      return { it, h, value, weekUsd6, p: h.costUsd6 !== null ? pnl(value, h.costUsd6) : null };
-    })
-    .filter((x): x is NonNullable<typeof x> => x !== null);
+  const held = useMemo(
+    () =>
+      items
+        .map((it) => {
+          const h = map[it.v.basket.address];
+          if (!h || h.shares === 0n) return null;
+          const value = sharesToUsd6(h.shares, it.v.nav, it.v.basket.totalSupply);
+          const dayBps = dayMoveBps(it);
+          const dayUsd6 = dayBps === null ? 0n : (value * BigInt(dayBps)) / BigInt(10_000 + dayBps);
+          return { it, value, dayBps, dayUsd6, cost: h.costUsd6, p: h.costUsd6 !== null && h.costUsd6 > 0n ? pnl(value, h.costUsd6) : null };
+        })
+        .filter((x): x is NonNullable<typeof x> => x !== null)
+        .sort((a, b) => (b.value > a.value ? 1 : b.value < a.value ? -1 : 0)),
+    [items, map],
+  );
 
   const total = held.reduce((a, x) => a + x.value, 0n);
-  const known = held.filter((x) => x.h.costUsd6 !== null);
-  // Cost basis is recorded per device (lib/cost-basis); only show a return when it covers every holding.
-  const all = known.length === held.length && held.length ? pnl(total, known.reduce((a, x) => a + (x.h.costUsd6 ?? 0n), 0n)) : null;
-  const weekUsd6 = held.reduce((a, x) => a + x.weekUsd6, 0n);
-  const now = items[0]?.perf.navSeries.at(-1)?.t ?? 0;
-  const trims = held.flatMap((x) => x.it.events.filter((e) => e.kind === "drift-trim" && e.status === "executed" && e.at >= now - WEEK));
-  const changes = held.map((x) => ({ x, c: pendingChange(x.it.events, x.it.v.basket) })).filter((y) => y.c);
-  const firstChange = changes[0];
+  const anyDay = held.some((x) => x.dayBps !== null);
+  const dayUsd6 = held.reduce((a, x) => a + x.dayUsd6, 0n);
+  const dayBps = total - dayUsd6 > 0n ? Number((dayUsd6 * 10_000n) / (total - dayUsd6)) : 0;
+  // Cost basis is recorded per device (lib/cost-basis); only show "put in" / all-time when it covers every holding.
+  const costKnown = held.length > 0 && held.every((x) => x.cost !== null && x.cost > 0n);
+  const putIn = costKnown ? held.reduce((a, x) => a + (x.cost ?? 0n), 0n) : null;
+  const allUsd6 = putIn !== null ? total - putIn : null;
+  const change = held.map((x) => ({ x, c: pendingChange(x.it.events, x.it.v.basket) })).find((y) => y.c);
+
+  const shelf: ShelfItem[] = held.map((x) => ({
+    key: x.it.v.basket.address,
+    recipe: recipeOfView(x.it.v),
+    value: usd6ToChartNumber(x.value),
+    name: x.it.v.basket.name,
+    valueText: formatUsd6(x.value),
+    dayBps: x.dayBps,
+  }));
+
+  const pick = (key: string) => {
+    document.getElementById(`pf-row-${key}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    setHl(key);
+    window.setTimeout(() => setHl(null), 1600);
+  };
+
+  const loading = (!acct.ready && !acct.preview) || (acct.signedIn && !ready);
 
   return (
-    <div className="mx-auto max-w-app px-4 pb-8 pt-5 md:px-8 md:pt-8">
-      {firstChange && (
-        <StatusSignal
-          id="portfolio-change"
-          signal={{ kind: "change", text: `${firstChange.x.it.v.basket.name} changes soon`, href: `/b/${firstChange.x.it.v.basket.address}?sheet=change` }}
-        />
+    <div className="pf">
+      {change?.c && (
+        <StatusSignal id="portfolio-change" signal={{ kind: "change", text: `${change.x.it.v.basket.name} changes soon`, href: `/b/${change.x.it.v.basket.address}?sheet=change` }} />
       )}
-      <h1 className="t-body t-strong md:text-[20px]">Portfolio</h1>
 
-      {!acct.ready && !acct.preview ? (
-        <div className="mt-6 flex flex-col gap-3">
-          <Skeleton className="h-8 w-40" />
-          <Skeleton className="h-[220px] w-full" />
+      {loading ? (
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <DropLoader label="Loading your shelf" />
         </div>
       ) : !acct.signedIn ? (
-        <EmptyState
-          icon={LogIn}
-          line="Your baskets, their value and every change land here."
-          action={
-            <div className="flex flex-col gap-2">
-              <Button onClick={() => acct.login()}>Sign in</Button>
-              <ButtonLink href="/explore" variant="secondary">
-                Explore baskets first
-              </ButtonLink>
+        <>
+          <header className="pf-head">
+            <div>
+              <div className="a-eyebrow">Your shelf</div>
+              <WordReveal as="h1" className="pf-signin-h a-h2 mt-3.5 block" immediate>
+                Sign in to see <em>your shelf.</em>
+              </WordReveal>
             </div>
-          }
-        />
-      ) : !ready ? (
-        <div className="mt-6 flex flex-col gap-3">
-          <Skeleton className="h-8 w-40" />
-          <Skeleton className="h-16 w-full" />
-        </div>
-      ) : held.length === 0 ? (
-        <EmptyState icon={Compass} line="Start with $25 of test money." action={<ButtonLink href="/explore">Explore</ButtonLink>} />
-      ) : (
-        <div className="mt-5 grid gap-8 md:grid-cols-[1fr_400px] md:gap-12">
-          <div className="flex flex-col gap-6 md:order-2">
-            <div className="flex flex-col gap-1">
-              <span className="t-label">{all ? "Test · since you joined" : "Test · value now"}</span>
-              <span className="t-hero">
-                <Ticker value={formatUsd6(total)} />
-              </span>
-              {all ? (
-                <span className="t-small">
-                  <Signed bps={all.bps} /> <span className="c2">{formatUsd6(all.usd6)}</span>
-                </span>
-              ) : (
-                // Cost basis lives on the device that bought; without it, show this week's % move instead of nothing.
-                total > weekUsd6 && (
-                  <span className="t-small">
-                    <Signed bps={Number((weekUsd6 * 10_000n) / (total - weekUsd6))} /> <span className="c2">this week</span>
-                  </span>
-                )
-              )}
+          </header>
+          <EmptyShelf dip={ctaHover} silver />
+          <div className="pf-empty">
+            <p>Whatever you put in shows up here as metal. Your baskets, their value, and test money to try it with.</p>
+            <div className="pf-empty__cta">
+              <button type="button" className="a-btn a-btn--cream a-btn--lg" onClick={() => acct.login()} onPointerEnter={() => setCtaHover(true)} onPointerLeave={() => setCtaHover(false)}>
+                Sign in
+              </button>
+              <Link href="/explore" className="a-btn a-btn--line a-btn--lg">
+                Explore baskets
+              </Link>
             </div>
-            <Certificate
-              serial={held[0].it.v.id.serial}
-              stamp={<Stamp icon={CalendarDays}>Statement</Stamp>}
-              title="Your baskets"
-              label="This week"
-              figure={`${weekUsd6 < 0n ? "−" : "+"}${formatUsd6(weekUsd6 < 0n ? -weekUsd6 : weekUsd6)}`}
-              unit={`on ${formatUsd6(total, 0)}`}
-              ledger={[
-                { k: "Profit taken", v: `${trims.length}${trims.length ? ` · ${trims.map((t) => `${((t.costBps ?? 0) / 100).toFixed(2)}%`).join(", ")}` : ""}` },
-                {
-                  k: "Change",
-                  v: firstChange?.c ? (
-                    <Countdown to={firstChange.c.executableAt ?? firstChange.c.at} dueLabel="due" />
-                  ) : (
-                    "None"
-                  ),
-                },
-              ]}
-              action={<ButtonLink href="/activity" variant="secondary">See the week</ButtonLink>}
-              footMeta={`${shortDate(now - WEEK)} – ${shortDate(now)}`}
-            />
           </div>
-          <section className="flex flex-col md:order-1" aria-label="Holdings">
-            <h2 className="t-label pb-2">Baskets</h2>
-            {held.map((x) => (
-              <BasketRow key={x.it.v.basket.address} v={x.it.v} href={`/b/${x.it.v.basket.address}`} value={formatUsd6(x.value)} changeBps={x.p?.bps} />
-            ))}
-            <h2 className="t-label pb-2 pt-6">Cash</h2>
-            <div className="c-row">
-              <span className="c-logo c-logo--lg" style={{ background: "var(--l-usdc)" }} aria-hidden>
-                $
-              </span>
-              <div className="c-row__main">
-                <span className="c-row__title">Test dollars</span>
-                <span className="c-row__meta inline-flex items-center gap-1">
-                  <FlaskConical size={12} aria-hidden /> not real money
-                </span>
-              </div>
-              <div className="c-row__end">
-                <span className="t-body">{usdc.data !== undefined && usdc.data !== null ? formatUsd6(usdc.data) : "—"}</span>
-                <QuietLink onClick={() => setMoney(true)} className="!min-h-0">
-                  Add
-                </QuietLink>
+        </>
+      ) : (
+        <>
+          <header className="pf-head">
+            <div>
+              <div className="a-eyebrow">Your shelf</div>
+              <h1 className="pf-tot">
+                <OdometerOnView value={formatUsd6(total)} />
+              </h1>
+              <div className="pf-today">
+                {held.length === 0 ? (
+                  <span className="lbl">Nothing here yet</span>
+                ) : anyDay ? (
+                  <>
+                    <span className={`chip num ${signCls(dayBps)}`}>
+                      <i />
+                      <Odometer value={signedUsd(dayUsd6)} />
+                    </span>
+                    <span className={`num ${signCls(dayBps)}`}>{pctText(dayBps, 2)}</span>
+                    <span className="lbl">Today</span>
+                  </>
+                ) : (
+                  <span className="lbl">Value now</span>
+                )}
               </div>
             </div>
-            {held.map((x) => (
-              <OwedRows key={x.it.v.basket.address} it={x.it} />
-            ))}
-            <p className="t-mono c2 mt-6">You own a token that tracks these stocks, not the shares themselves. Past returns aren&apos;t a promise.</p>
-          </section>
-        </div>
+            {held.length > 0 && (
+              <div className="pf-stats">
+                {putIn !== null && allUsd6 !== null && (
+                  <>
+                    <div>
+                      <small>Put in</small>
+                      <b className="num">{formatUsd6(putIn)}</b>
+                    </div>
+                    <div>
+                      <small>All time</small>
+                      <b className={`num ${signCls(Number(allUsd6))}`}>{signedUsd(allUsd6)}</b>
+                    </div>
+                  </>
+                )}
+                <div>
+                  <small>Baskets</small>
+                  <b className="num">{held.length}</b>
+                </div>
+              </div>
+            )}
+          </header>
+
+          {held.length > 0 ? <Shelf items={shelf} onPick={pick} /> : <EmptyShelf dip={ctaHover} />}
+
+          {held.length === 0 && (
+            <div className="pf-empty">
+              <WordReveal as="h2" className="a-h2 block" immediate>
+                One drop, <em>waiting.</em>
+              </WordReveal>
+              <p>Pick a basket you believe in. Whatever you put in shows up here as metal.</p>
+              <div className="pf-empty__cta">
+                <Link href="/explore" className="a-btn a-btn--buy a-btn--lg" onPointerEnter={() => setCtaHover(true)} onPointerLeave={() => setCtaHover(false)}>
+                  Pour your first $5
+                </Link>
+                <Link href="/explore" className="a-btn a-btn--line a-btn--lg">
+                  Explore baskets
+                </Link>
+              </div>
+            </div>
+          )}
+
+          <div className={`pf-below ${held.length === 0 ? "pf-below--solo" : ""}`}>
+            {held.length > 0 && (
+              <Rise as="section" className="pf-hold st-panel" aria-label="Your baskets">
+                <div className="pf-hold-h" aria-hidden>
+                  <span />
+                  <span>Basket</span>
+                  <span>Your value</span>
+                  <span>Today</span>
+                  <span>All time</span>
+                  <span />
+                </div>
+                {held.map((x, i) => {
+                  const b = x.it.v.basket;
+                  const share = total > 0n ? Number((x.value * 1000n) / total) / 10 : 0;
+                  return (
+                    <HoldingRow key={b.address} i={i} x={x} share={share} hl={hl === b.address} />
+                  );
+                })}
+              </Rise>
+            )}
+            <Rise delay={120}>
+              <MoneyCard id="money" address={acct.address ?? undefined} />
+            </Rise>
+          </div>
+
+          {held.map((x) => (
+            <OwedRows key={x.it.v.basket.address} it={x.it} />
+          ))}
+          <p className="pf-legal">You own a token that tracks these stocks, not the shares themselves. You can lose money. Past returns don&apos;t predict future ones.</p>
+        </>
       )}
-      <AddMoneySheet open={money} onOpenChange={setMoney} />
     </div>
   );
 }
 
-/** Held for you: stocks an in-kind withdraw couldn't deliver. One tap per token. */
+type HeldRow = { it: LoadedBasket; value: bigint; dayBps: number | null; p: { usd6: bigint; bps: number } | null };
+
+function HoldingRow({ x, i, share, hl }: { x: HeldRow; i: number; share: number; hl: boolean }) {
+  const [hov, setHov] = useState(false);
+  const v = x.it.v;
+  const b = v.basket;
+  const recipe = useMemo(() => recipeOfView(v), [v]);
+  return (
+    <div id={`pf-row-${b.address}`} className={`pf-row ${hl ? "hl" : ""}`} onPointerEnter={() => setHov(true)} onPointerLeave={() => setHov(false)}>
+      <Link href={`/b/${b.address}`} className="pf-row__mini" aria-hidden tabIndex={-1}>
+        <MetalBasket recipe={recipe} state={hov ? "breathe" : "idle"} zoom={3.3} phase={i} className="h-full w-full" />
+      </Link>
+      <Link href={`/b/${b.address}`} className="pf-row__nm">
+        <b>{b.name}</b>
+        <span>
+          by @{b.creator.handle} · {b.components.length} stocks
+        </span>
+      </Link>
+      <div className="pf-row__val num">
+        <b>{formatUsd6(x.value)}</b>
+        <small>{share.toFixed(0)}% of your shelf</small>
+      </div>
+      <div className={`pf-row__pc pf-row__td num ${signCls(x.dayBps)}`}>{x.dayBps === null ? <span className="text-dim">—</span> : pctText(x.dayBps, 2)}</div>
+      <div className={`pf-row__pc pf-row__at num ${signCls(x.p?.bps)}`} title={x.p ? undefined : "Recorded on the device you bought from"}>
+        {x.p ? pctText(x.p.bps) : <span className="text-dim">—</span>}
+      </div>
+      <div className="pf-row__act">
+        <Link className="a-btn a-btn--buy a-btn--sm" href={`/b/${b.address}?buy=25`}>
+          Buy more
+        </Link>
+        <Link className="a-btn a-btn--line a-btn--sm" href={`/b/${b.address}?sheet=exit`}>
+          Sell
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+/** Held for you: stocks an in-kind withdraw couldn't deliver. One tap per token (real useOwed + ClaimSheet). */
 function OwedRows({ it }: { it: LoadedBasket }) {
   const owed = useOwed(it.v.basket.address);
   const [open, setOpen] = useState<HeldItem | null>(null);
-  const items: HeldItem[] = (owed.data ?? [])
+  const list: HeldItem[] = (owed.data ?? [])
     .filter((o) => o.amount8 > 0n)
     .map((o) => {
       const c = it.v.basket.components.find((x) => x.stock.token.toLowerCase() === o.token.toLowerCase());
-      return {
-        basket: it.v.basket.address,
-        token: o.token,
-        ticker: o.symbol,
-        amount: formatB20(o.amount8, 4),
-        valueUsd6: c ? valueUsd6(o.amount8, c.stock.price8) : 0n,
-        basketSerial: it.v.id.serial,
-      };
+      return { basket: it.v.basket.address, token: o.token, ticker: o.symbol, amount: formatB20(o.amount8, 4), valueUsd6: c ? valueUsd6(o.amount8, c.stock.price8) : 0n, basketSerial: it.v.id.serial };
     });
-  if (!items.length) return null;
+  if (!list.length) return null;
   return (
-    <>
-      <StatusSignal id={`held-${it.v.basket.address}`} signal={{ kind: "held", text: `${items[0].ticker} held for you`, href: "/portfolio" }} />
-      <h2 className="t-label pb-2 pt-6">Held for you</h2>
-      {items.map((h) => (
-        <button key={h.token} type="button" className="c-row w-full bg-transparent text-left" onClick={() => setOpen(h)}>
-          <span className="c-rowicon gold">
-            <Download size={18} strokeWidth={1.75} aria-hidden />
+    <section className="pf-owed st-panel" aria-label={`Held for you from ${it.v.basket.name}`}>
+      <StatusSignal id={`held-${it.v.basket.address}`} signal={{ kind: "held", text: `${list[0].ticker} held for you`, href: "/portfolio" }} />
+      <div className="a-eyebrow px-6 pt-4">Held for you · {it.v.basket.name}</div>
+      {list.map((h) => (
+        <button key={h.token} type="button" className="pf-owed__row" onClick={() => setOpen(h)}>
+          <Download size={16} strokeWidth={1.5} aria-hidden className="text-mute" />
+          <span className="flex-1 text-left">
+            {h.ticker} <span className="text-mute">· {h.amount}</span>
           </span>
-          <div className="c-row__main">
-            <span className="c-row__title">{h.ticker}</span>
-            <span className="c-row__meta">{h.amount} · no expiry</span>
-          </div>
-          <span className="t-mono">Claim</span>
+          <span className="a-btn a-btn--line a-btn--sm">Claim</span>
         </button>
       ))}
       {open && <ClaimSheet item={open} open onOpenChange={(o) => !o && setOpen(null)} />}
-    </>
+    </section>
   );
 }

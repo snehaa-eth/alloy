@@ -8,6 +8,9 @@
  * - The GL context is created lazily, on the first region: pages without metal pay nothing.
  * - No WebGL → `supported === false`, regions render their static CSS fallback.
  * - prefers-reduced-motion: no continuous loop; frames render on scroll / resize / invalidate, time frozen.
+ * - Modal layer (useMetalModal): while a sheet is open the canvas rises above it (z 60); regions inside the sheet
+ *   (`modal: true`) draw normally, every other region is clipped to the area the sheet leaves visible and dimmed
+ *   like the scrim (designer buy.html: #gl over the sheet, backdrop sculpture at alpha .3).
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import type { Cam } from "./math";
@@ -35,11 +38,15 @@ export type Region = {
   render: (f: FrameInfo) => RenderSpec | null;
   /** optional clip rect [l, t, r, b] in CSS px */
   clip?: () => [number, number, number, number] | null;
+  /** lives inside the open modal sheet (drawn normally while the modal layer is up) */
+  modal?: boolean;
 };
 type Tick = (f: Omit<FrameInfo, "rect">) => void;
 
 type Ctx = {
   register: (r: Region) => () => void;
+  /** raise the canvas over a modal sheet element (null = back under the page) */
+  setModal: (el: HTMLElement | null) => () => void;
   addTick: (t: Tick) => () => void;
   invalidate: () => void;
   supported: boolean | null;
@@ -54,6 +61,7 @@ export function MetalCanvasProvider({ children }: { children: ReactNode }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const regions = useRef<Set<Region>>(new Set());
   const ticks = useRef<Set<Tick>>(new Set());
+  const modal = useRef<HTMLElement | null>(null);
   const [supported, setSupported] = useState<boolean | null>(null);
   const engine = useRef<{
     r: MetalRenderer | null;
@@ -86,6 +94,9 @@ export function MetalCanvasProvider({ children }: { children: ReactNode }) {
       // Never draw under a solid (blurred) nav: clip every region to below it.
       const nav = document.querySelector<HTMLElement>('header.a-nav[data-solid="true"]');
       const navB = nav ? Math.max(0, nav.getBoundingClientRect().bottom) : 0;
+      const m = modal.current && modal.current.isConnected ? modal.current : null;
+      const mr = m ? m.getBoundingClientRect() : null;
+      cv.style.zIndex = m ? "60" : "";
       regions.current.forEach((reg) => {
         if (!reg.el.isConnected) return;
         const rc = reg.el.getBoundingClientRect();
@@ -93,9 +104,15 @@ export function MetalCanvasProvider({ children }: { children: ReactNode }) {
         const spec = reg.render({ ...base, rect: rc });
         if (!spec) return;
         const view = [Math.round(rc.left * s), Math.round((H - rc.bottom) * s), Math.round(rc.width * s), Math.round(rc.height * s)];
-        let cl = [Math.max(rc.left, 0), Math.max(rc.top, navB), Math.min(rc.right, W), Math.min(rc.bottom, H)];
+        let cl = [Math.max(rc.left, 0), Math.max(rc.top, reg.modal && m ? 0 : navB), Math.min(rc.right, W), Math.min(rc.bottom, H)];
         const clip = reg.clip?.();
         if (clip) cl = [Math.max(cl[0], clip[0]), Math.max(cl[1], clip[1]), Math.min(cl[2], clip[2]), Math.min(cl[3], clip[3])];
+        if (mr && !reg.modal) {
+          // behind the sheet: only the part the sheet leaves visible (left of a side sheet, above a bottom sheet), dimmed
+          const side = mr.left > W * 0.3;
+          cl = side ? [cl[0], cl[1], Math.min(cl[2], mr.left - 1), cl[3]] : [cl[0], cl[1], cl[2], Math.min(cl[3], mr.top - 1)];
+          spec.o = { ...spec.o, alpha: (spec.o.alpha ?? 1) * 0.3 };
+        }
         if (cl[2] <= cl[0] || cl[3] <= cl[1]) return;
         const sc = [Math.round(cl[0] * s), Math.round((H - cl[3]) * s), Math.round((cl[2] - cl[0]) * s), Math.round((cl[3] - cl[1]) * s)];
         r.draw(view, sc, spec.cam, spec.drops, spec.o);
@@ -153,6 +170,19 @@ export function MetalCanvasProvider({ children }: { children: ReactNode }) {
       };
     },
     [ensure, kick],
+  );
+  const setModal = useCallback(
+    (el: HTMLElement | null) => {
+      modal.current = el;
+      kick();
+      return () => {
+        if (modal.current === el) modal.current = null;
+        const cv = canvasRef.current;
+        if (cv && !modal.current) cv.style.zIndex = "";
+        kick();
+      };
+    },
+    [kick],
   );
   const addTick = useCallback(
     (t: Tick) => {
@@ -227,7 +257,7 @@ export function MetalCanvasProvider({ children }: { children: ReactNode }) {
     };
   }, [kick, resize]);
 
-  const value = useMemo<Ctx>(() => ({ register, addTick, invalidate: kick, supported }), [register, addTick, kick, supported]);
+  const value = useMemo<Ctx>(() => ({ register, setModal, addTick, invalidate: kick, supported }), [register, setModal, addTick, kick, supported]);
   return (
     <MetalCtx.Provider value={value}>
       <canvas ref={canvasRef} className="a-gl" aria-hidden />
@@ -236,20 +266,61 @@ export function MetalCanvasProvider({ children }: { children: ReactNode }) {
   );
 }
 
+type Layer = { modal: boolean; clip?: () => [number, number, number, number] | null };
+const LayerCtx = createContext<Layer>({ modal: false });
+
+/**
+ * Every metal region inside draws on the modal layer (over the sheet) and is clipped to `clip` (e.g. the sheet's
+ * scroll area), so MetalBasket and custom regions work inside sheets without extra props.
+ */
+export function MetalLayer({ modal = false, clip, children }: { modal?: boolean; clip?: Layer["clip"]; children: ReactNode }) {
+  const v = useMemo(() => ({ modal, clip }), [modal, clip]);
+  return <LayerCtx.Provider value={v}>{children}</LayerCtx.Provider>;
+}
+
 /** Register a region for the lifetime of the component. `render` may change every render (kept in a ref). */
-export function useMetalRegion(ref: RefObject<HTMLElement | null>, render: Region["render"], clip?: Region["clip"]) {
+export function useMetalRegion(ref: RefObject<HTMLElement | null>, render: Region["render"], clip?: Region["clip"], opts?: { modal?: boolean }) {
   const ctx = useMetal();
+  const layer = useContext(LayerCtx);
   const fn = useRef(render);
   fn.current = render;
-  const clipRef = useRef(clip);
-  clipRef.current = clip;
+  const clipRef = useRef<Region["clip"]>(undefined);
+  clipRef.current = () => {
+    const a = clip?.() ?? null, b = layer.clip?.() ?? null;
+    if (!a || !b) return a ?? b;
+    return [Math.max(a[0], b[0]), Math.max(a[1], b[1]), Math.min(a[2], b[2]), Math.min(a[3], b[3])];
+  };
   const register = ctx?.register;
+  const modal = opts?.modal ?? layer.modal;
   useEffect(() => {
     const el = ref.current;
     if (!el || !register) return;
-    return register({ el, render: (f) => fn.current(f), clip: () => clipRef.current?.() ?? null });
-  }, [ref, register]);
+    return register({ el, render: (f) => fn.current(f), clip: () => clipRef.current?.() ?? null, modal });
+  }, [ref, register, modal]);
   return ctx?.supported ?? null;
+}
+
+/**
+ * While `active`, lift the shared canvas over the modal element `ref` (a sheet). Regions registered with
+ * `{ modal: true }` draw inside it; everything else is clipped beside it and dimmed.
+ */
+export function useMetalModal(ref: RefObject<HTMLElement | null>, active: boolean) {
+  const setModal = useMetal()?.setModal;
+  useEffect(() => {
+    if (!active || !setModal) return;
+    let off: (() => void) | null = null;
+    let raf = 0;
+    // the sheet mounts in a portal: wait a frame for the element
+    const attach = () => {
+      if (ref.current) off = setModal(ref.current);
+      else raf = requestAnimationFrame(attach);
+    };
+    attach();
+    return () => {
+      cancelAnimationFrame(raf);
+      off?.();
+    };
+  }, [ref, active, setModal]);
 }
 
 /** Run a callback on every metal frame (DOM work synced with the GL frame: tags, captions, totals). */
