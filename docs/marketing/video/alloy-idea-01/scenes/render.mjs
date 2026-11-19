@@ -22,8 +22,10 @@ const CHROME = process.env.CHROME || '/Applications/Google Chrome.app/Contents/M
 fs.mkdirSync(OUT, {recursive: true});
 
 const browser = await chromium.launch({executablePath: CHROME, headless: true, args: ['--force-color-profile=srgb', '--hide-scrollbars']});
-const page = await browser.newPage({viewport: {width: 1080, height: 1920}, deviceScaleFactor: 1});
-await page.goto('file://' + path.join(here, 'index.html'));
+const SQ = args.sq === '1';
+const VH = SQ ? 1080 : 1920;
+const page = await browser.newPage({viewport: {width: 1080, height: VH}, deviceScaleFactor: 1});
+await page.goto('file://' + path.join(here, 'index.html') + (SQ ? '?sq=1' : ''));
 await page.evaluate(() => document.fonts.ready);
 await page.waitForFunction(() => typeof window.renderAt === 'function');
 const {DURATION, FPS, CUES} = await page.evaluate(() => ({DURATION: window.DURATION, FPS: window.FPS, CUES: window.CUES || []}));
@@ -36,13 +38,13 @@ async function shot(t) {
   const w = await page.evaluate(async () => { await Promise.all([...document.images].map((i) => i.decode().catch(() => {}))); return [window.__frame, window.__words]; });
   WORDS[w[0]] = w[1];
   await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => r())));
-  return page.screenshot({type: 'png', clip: {x: 0, y: 0, width: 1080, height: 1920}});
+  return page.screenshot({type: 'png', clip: {x: 0, y: 0, width: 1080, height: VH}});
 }
 
 if (args.stills) {
   for (const s of args.stills.split(',')) {
     const t = parseFloat(s);
-    fs.writeFileSync(path.join(OUT, `still_${t.toFixed(2)}.png`), await shot(t));
+    fs.writeFileSync(path.join(OUT, `${SQ ? 'sq_' : ''}still_${t.toFixed(2)}.png`), await shot(t));
   }
   await browser.close();
   process.exit(0);
@@ -51,7 +53,7 @@ if (args.stills) {
 const from = parseFloat(args.from || 0);
 const to = parseFloat(args.to || DURATION);
 const n0 = Math.round(from * FPS), n1 = Math.round(to * FPS);
-const video = path.join(OUT, 'video-only.mp4');
+const video = path.join(OUT, SQ ? 'video-only-1x1.mp4' : 'video-only.mp4');
 const ff = spawn(FFMPEG, ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'png', '-i', '-',
   '-c:v', 'libx264', '-profile:v', 'high', '-pix_fmt', 'yuv420p', '-crf', '18', '-preset', 'slow',
   '-color_primaries', 'bt709', '-color_trc', 'bt709', '-colorspace', 'bt709', '-r', String(FPS), video], {stdio: ['pipe', 'inherit', 'inherit']});
@@ -62,7 +64,7 @@ for (let n = n0; n < n1; n++) {
   if (n % 60 === 0) process.stdout.write(`frame ${n}/${n1} ${((Date.now() - t0) / 1000).toFixed(0)}s\n`);
 }
 ff.stdin.end();
-fs.writeFileSync(path.join(OUT, 'words.json'), JSON.stringify(WORDS));
+fs.writeFileSync(path.join(OUT, SQ ? 'words-1x1.json' : 'words.json'), JSON.stringify(WORDS));
 await new Promise((r) => ff.on('close', r));
 await browser.close();
 console.log('wrote', video);

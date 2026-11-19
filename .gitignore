@@ -1,3 +1,5 @@
 docs/marketing/video/**/out/
 docs/marketing/video/**/node_modules
 docs/marketing/video/**/scenes/node_modules
+.DS_Store
+**/.DS_Store

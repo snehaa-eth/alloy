@@ -1,0 +1,11 @@
+{
+ "name": "voltaic",
+ "file": "Voltaic.mp3",
+ "drop": 16.042,
+ "bpm": 120,
+ "credit": "Music: \"Voltaic\" by Kevin MacLeod (incompetech.com), CC BY 4.0",
+ "notes": "drop = bar 9 downbeat where the full kit kicks in (high band +7 dB, mid +3 dB vs. intro); 16 bars of groove before the 48 s breakdown",
+ "lufs": -18.5,
+ "fade_in": 0.8,
+ "fade_out": 1.6
+}
