@@ -47,6 +47,8 @@ const EnvSchema = z.object({
   PRIVY_APP_SECRET: z.string().min(1),
   INVITE_CODES: z.string().default("").transform(csv),
   CRON_SECRET: optionalString.pipe(z.string().min(32).optional()),
+  /** Header `x-admin-key` for /admin/* (allow list, waitlist export). Unset = admin endpoints answer 503. */
+  ADMIN_KEY: optionalString.pipe(z.string().min(24).optional()),
   /**
    * Base Sepolia relayer key for POST /faucet/drip (pays gas for Faucet.dripTo). Testnet only,
    * holds only test ETH. Unset = the faucet endpoint returns 501.

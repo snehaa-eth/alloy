@@ -38,8 +38,11 @@ function limiter(windowMs: number, limit: number, extra: Partial<Options> = {}) 
 
 export function createLimiters(cfg: RateLimitConfig) {
   return {
-    global: limiter(cfg.windowMs, cfg.globalMax),
+    // /access/check is called server-side by the web app (one IP for everyone), so it is limited per user instead.
+    global: limiter(cfg.windowMs, cfg.globalMax, { skip: (req) => /^(\/api\/v1)?\/access\/check\/?$/.test(req.path) }),
     write: limiter(cfg.windowMs, cfg.writeMax),
     waitlist: limiter(cfg.windowMs, cfg.waitlistMax),
+    /** Per signed-in user (runs after auth). */
+    access: limiter(cfg.windowMs, cfg.writeMax, { keyGenerator: (req) => req.user?.userId ?? "anon" }),
   };
 }

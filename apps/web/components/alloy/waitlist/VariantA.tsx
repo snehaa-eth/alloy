@@ -4,13 +4,16 @@
  * Variant A, "cinematic centre": centred headline over a huge melting sculpture, a glass sign-up bar riding its base,
  * live price strip, list counter, bento of metal vignettes, slim early-tester row, giant footer.
  */
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Rise, WordReveal } from "../motion/alloy-motion";
+import { InviteLink, InviteSignIn, useInvitedParam } from "./InviteSignIn";
 import { MeltSculpture } from "./MeltSculpture";
 import { BuiltRow, EarlyPill, FactChips, GiantFooter, JoinBar, ListCounter, PriceStrip, SUBLINE, VIGNETTES, WHY, WhyHeading } from "./parts";
 
 export function VariantA() {
   const cap = useRef<HTMLDivElement>(null);
+  const [invited, setInvited] = useInvitedParam();
+  const [fromLink, setFromLink] = useState(false);
   const onPhase = (f: number) => {
     const el = cap.current;
     if (!el) return;
@@ -45,7 +48,20 @@ export function VariantA() {
           </div>
         </div>
         <Rise delay={260} className="relative z-[2] -mt-[64px] w-full max-w-[860px] md:-mt-[88px]">
-          <JoinBar />
+          {invited ? (
+            <InviteSignIn autoStart={fromLink} onBack={() => setInvited(false)} />
+          ) : (
+            <JoinBar
+              noteExtra={
+                <InviteLink
+                  onClick={() => {
+                    setFromLink(true);
+                    setInvited(true);
+                  }}
+                />
+              }
+            />
+          )}
         </Rise>
         <Rise delay={340} className="mt-5 flex flex-col items-center gap-4">
           <FactChips className="justify-center" />

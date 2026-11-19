@@ -1,4 +1,4 @@
-import { timingSafeEqual } from "node:crypto";
+import { createHash, timingSafeEqual } from "node:crypto";
 import type { NextFunction, Request, RequestHandler, Response } from "express";
 import { PrivyClient } from "@privy-io/node";
 import { getAddress, isAddress, isAddressEqual, type Address } from "viem";
@@ -11,6 +11,8 @@ export interface AuthUser {
   userId: string;
   /** EVM wallets linked to the Privy user (embedded, external and smart wallets), checksummed. */
   wallets: Address[];
+  /** Verified, lowercased emails on the Privy user: email login (OTP) and Google account email. */
+  emails: string[];
 }
 
 declare global {
@@ -36,7 +38,7 @@ const USER_CACHE_TTL_MS = 60_000;
  */
 export function createPrivyVerifier(env: Env): AuthVerifier {
   let client: PrivyClient | null = null;
-  const cache = new Map<string, { wallets: Address[]; expires: number }>();
+  const cache = new Map<string, { wallets: Address[]; emails: string[]; expires: number }>();
 
   return {
     async verify(accessToken) {
@@ -44,19 +46,23 @@ export function createPrivyVerifier(env: Env): AuthVerifier {
       const claims = await client.utils().auth().verifyAccessToken(accessToken);
 
       const hit = cache.get(claims.user_id);
-      if (hit && hit.expires > Date.now()) return { userId: claims.user_id, wallets: hit.wallets };
+      if (hit && hit.expires > Date.now()) return { userId: claims.user_id, wallets: hit.wallets, emails: hit.emails };
 
       const user = await client.users()._get(claims.user_id);
       const wallets: Address[] = [];
+      const emails = new Set<string>();
       for (const acct of user.linked_accounts) {
-        const a = acct as { type?: string; chain_type?: string; address?: string };
+        const a = acct as { type?: string; chain_type?: string; address?: string; email?: string };
+        // Both are verified by Privy: email accounts via a one-time code, Google via the OAuth account.
+        if (a.type === "email" && a.address) emails.add(a.address.trim().toLowerCase());
+        if (a.type === "google_oauth" && a.email) emails.add(a.email.trim().toLowerCase());
         const isEvmWallet = (a.type === "wallet" && a.chain_type === "ethereum") || a.type === "smart_wallet";
         if (isEvmWallet && a.address && isAddress(a.address, { strict: false })) {
           wallets.push(getAddress(a.address));
         }
       }
-      cache.set(claims.user_id, { wallets, expires: Date.now() + USER_CACHE_TTL_MS });
-      return { userId: claims.user_id, wallets };
+      cache.set(claims.user_id, { wallets, emails: [...emails], expires: Date.now() + USER_CACHE_TTL_MS });
+      return { userId: claims.user_id, wallets, emails: [...emails] };
     },
   };
 }
@@ -109,6 +115,17 @@ export function requireCreator(
   return async (req, res, next) => {
     const { chainId, vault } = target(req, res);
     res.locals.creator = await assertCreator(reader, req.user, chainId, vault);
+    next();
+  };
+}
+
+/** Admin endpoints: `x-admin-key: <ADMIN_KEY>` (constant-time compare). 503 when ADMIN_KEY is unset. */
+export function requireAdminKey(env: Env): RequestHandler {
+  return (req, _res, next) => {
+    if (!env.ADMIN_KEY) return next(new HttpError(503, "disabled", "Admin endpoint not configured"));
+    const a = createHash("sha256").update(req.get("x-admin-key") ?? "").digest();
+    const b = createHash("sha256").update(env.ADMIN_KEY).digest();
+    if (!timingSafeEqual(a, b)) return next(HttpError.unauthorized());
     next();
   };
 }

@@ -154,10 +154,22 @@ function JoinButton({ busy, className }: { busy: boolean; className?: string }) 
   );
 }
 
-function Note({ err, className }: { err: { msg: string } | null; className?: string }) {
+function Note({ err, className, extra }: { err: { msg: string } | null; className?: string; extra?: ReactNode }) {
   return (
     <p className={cn("min-h-[18px] text-[12px]", err ? "text-loss" : "font-mono tracking-[0.01em] text-dim", className)} role={err ? "alert" : undefined} data-testid="join-note">
-      {err ? err.msg : "One email when your spot opens. No spam, ever."}
+      {err ? (
+        err.msg
+      ) : (
+        <>
+          One email when your spot opens. No spam, ever.
+          {extra && (
+            <>
+              <span className="mx-2 text-line2" aria-hidden>·</span>
+              {extra}
+            </>
+          )}
+        </>
+      )}
     </p>
   );
 }
@@ -212,7 +224,7 @@ export function JoinCard({ className }: { className?: string }) {
 }
 
 /** Single-row glass bar (email | X | Join), stacks on phone. */
-export function JoinBar({ className }: { className?: string }) {
+export function JoinBar({ className, noteExtra }: { className?: string; noteExtra?: ReactNode }) {
   const j = useJoin();
   return (
     <div className={cn("w-full", className)} data-testid="join-card">
@@ -227,7 +239,7 @@ export function JoinBar({ className }: { className?: string }) {
             <Inputs j={j} />
             <JoinButton busy={j.busy} className="shrink-0" />
           </div>
-          <Note err={j.err} className="mt-3.5 text-center" />
+          <Note err={j.err} className="mt-3.5 text-center" extra={noteExtra} />
         </form>
       )}
     </div>

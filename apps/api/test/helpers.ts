@@ -29,8 +29,8 @@ export function testEnv(overrides: Record<string, string> = {}): Env {
 /** Tokens: "creator" -> wallet CREATOR, "stranger" -> STRANGER, anything else -> invalid. */
 export const stubAuth: AuthVerifier = {
   async verify(token) {
-    if (token === "creator") return { userId: "did:privy:creator", wallets: [CREATOR] };
-    if (token === "stranger") return { userId: "did:privy:stranger", wallets: [STRANGER] };
+    if (token === "creator") return { userId: "did:privy:creator", wallets: [CREATOR], emails: [] };
+    if (token === "stranger") return { userId: "did:privy:stranger", wallets: [STRANGER], emails: [] };
     throw new Error("invalid token");
   },
 };

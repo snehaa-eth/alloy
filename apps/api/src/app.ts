@@ -8,6 +8,7 @@ import { createChainClients, createViemCreatorReader } from "./lib/chain";
 import { strictCors } from "./middleware/cors";
 import { errorHandler, notFound } from "./middleware/errorHandler";
 import { DEFAULT_RATE_LIMITS, createLimiters } from "./middleware/rateLimit";
+import { accessRouter } from "./modules/access/access.routes";
 import { basketsRouter } from "./modules/baskets/baskets.routes";
 import { healthRouter } from "./modules/health/health.routes";
 import { proposalsRouter } from "./modules/proposals/proposals.routes";
@@ -63,6 +64,7 @@ export function createApp(overrides: Partial<AppDeps> = {}): Express {
   api.use(quoteRouter(deps));
   api.use(faucetRouter(deps));
   api.use(waitlistRouter(deps, limiters));
+  api.use(accessRouter(deps, limiters));
 
   app.use("/api/v1", api); // legacy prefix the web app already uses
   app.use("/", api);

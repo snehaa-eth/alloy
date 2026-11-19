@@ -13,6 +13,8 @@ const WaitlistSchema = new Schema(
     source: { type: String, trim: true, maxlength: 40 },
     /** document.referrer at sign-up (truncated). */
     referrer: { type: String, trim: true, maxlength: 500 },
+    /** When the launch announcement (scripts/announce.ts) was sent to this address. */
+    announcedAt: { type: Date },
   },
   { timestamps: true },
 );
