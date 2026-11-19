@@ -5,6 +5,10 @@ import type { Env } from "../../config/env";
 import { getDeployment } from "../../config/sdk";
 import { faucetAbi } from "../../lib/chain";
 
+/** Test ETH sent for gas when a wallet is nearly empty: 0.001 ETH covers dozens of Base Sepolia txs. */
+const GAS_TOPUP_WEI = 1_000_000_000_000_000n;
+const GAS_TOPUP_THRESHOLD_WEI = 200_000_000_000_000n;
+
 /** Sponsors Faucet.dripTo on Base Sepolia so a judge's fresh wallet needs no test ETH. */
 export interface FaucetRelayer {
   /** Seconds until `recipient` can drip again (0 = now), per the contract's own cooldown. */
@@ -40,7 +44,16 @@ export function createFaucetRelayer(env: Env): FaucetRelayer | null {
         functionName: "dripTo",
         args: [recipient],
       });
-      return wallet.writeContract(request);
+      const hash = await wallet.writeContract(request);
+      // Testnet convenience: a fresh embedded wallet has 0 ETH and couldn't pay gas for its first buy.
+      // Top it up with a small amount of test ETH. This only runs when it's nearly empty, and the route's
+      // per-address daily limit applies.
+      const balance = await pub.getBalance({ address: recipient });
+      if (balance < GAS_TOPUP_THRESHOLD_WEI) {
+        await pub.waitForTransactionReceipt({ hash });
+        await wallet.sendTransaction({ to: recipient, value: GAS_TOPUP_WEI });
+      }
+      return hash;
     },
   };
 }
