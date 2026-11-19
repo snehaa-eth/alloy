@@ -25,6 +25,7 @@ import type {
   StrategyMode,
 } from "./types";
 import { navPerShareUsd6, navUsd6 } from "./units";
+import { displayBasketName, displayCopy } from "./display";
 
 const ZERO_HASH = "0x0000000000000000000000000000000000000000000000000000000000000000" as const;
 
@@ -360,9 +361,9 @@ function basketFromState(
   const hasPending = pExec > 0n && pHash !== ZERO_HASH;
   return {
     address,
-    name: meta.title || name,
+    name: displayBasketName(meta.title || name),
     symbol,
-    thesis: meta.thesis ?? "",
+    thesis: displayCopy(meta.thesis ?? ""),
     category: builtin?.category && !apiMeta?.tags?.length ? builtin.category : categoryFromTags(tags),
     creator: creatorOf(creator),
     mode,
@@ -459,7 +460,7 @@ const EV = {
  */
 export async function readRebalances(basket: Basket, opts: { reasons?: Record<string, string> } = {}): Promise<RebalanceEvent[]> {
   const chainId = (basket.chainId ?? DEFAULT_CHAIN_ID) as SupportedChainId;
-  const reasons = opts.reasons ?? {};
+  const reasons = Object.fromEntries(Object.entries(opts.reasons ?? {}).map(([k, r]) => [k, displayCopy(r)]));
   const symbols = basket.components.map((c) => c.stock.ticker);
   const current = basket.components.map((c) => c.targetBps);
   const diff = (from: number[], to: number[]) =>

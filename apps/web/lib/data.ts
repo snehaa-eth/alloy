@@ -15,6 +15,7 @@ import type { Address, Basket, NavPoint, Performance, PricePoint, RebalanceEvent
 import { MOCK_BASKETS, mockPerformance, mockRebalances } from "./mock/baskets";
 import { MOCK_STOCKS } from "./mock/stocks";
 import { navPerShareUsd6, navUsd6 } from "./units";
+import { displayBasketName, displayCopy } from "./display";
 import { DEFAULT_CHAIN_ID } from "./chains";
 import { isDeployed, stockByToken } from "./contracts";
 import { fetchAllBasketMeta, fetchBasketMeta, fetchReasons } from "./api/endpoints";
@@ -42,7 +43,7 @@ function logFallback(what: string, e: unknown) {
   console.error(`[alloy data] ${what} failed, serving mock data:`, e instanceof Error ? e.message : e);
 }
 
-const asMock = (b: Basket): Basket => ({ ...b, source: "mock" });
+const asMock = (b: Basket): Basket => ({ ...b, name: displayBasketName(b.name), thesis: displayCopy(b.thesis), source: "mock" });
 
 export async function getStocks(): Promise<Stock[]> {
   if (!isLive()) return MOCK_STOCKS;

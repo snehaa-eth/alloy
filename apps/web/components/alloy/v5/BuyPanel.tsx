@@ -11,7 +11,7 @@ import { DEFAULT_SLIPPAGE_BPS } from "@/lib/strategy";
 import { describeTxError } from "@/lib/tx";
 import { Button, ErrorState, QuietLink } from "../primitives";
 import { useAccount, useAttestation, useQuoteView } from "../hooks";
-import { AmountField, AttestBlock, BuyQuote, TxProgress } from "../flows/shared";
+import { AmountField, AttestBlock, BuyQuote, TxProgress, splitParts } from "../flows/shared";
 import { DIR_HEX, dirOf, yDomain } from "../ValueChart";
 import { FoundingCertificate } from "../flows/BuySheet";
 import type { Tone } from "../identity";
@@ -147,7 +147,7 @@ export function BuyPanel({
 
             <AmountField value={amount} onChange={setAmount} disabled={stage === "running"} presets={PRESETS} />
 
-            <BuyQuote name={b.name} usdc={usdc} quote={quote} feeBps={b.feeBps} marketOpen={market} />
+            <BuyQuote parts={splitParts(v)} usdc={usdc} quote={quote} feeBps={b.feeBps} marketOpen={market} />
 
             <div className="flex flex-col gap-2">
               {stage === "running" ? (

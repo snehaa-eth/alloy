@@ -10,7 +10,7 @@ import { BasketCard, BrandWash, hasHistory } from "../v5/parts";
 
 /** UX_MAP §3.3 Explore: search + theme chips + sort. */
 type Tab = "all" | "ai" | "story";
-type Sort = "followed" | "new";
+type Sort = "popular" | "new";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "all", label: "All" },
@@ -20,12 +20,15 @@ const TABS: { id: Tab; label: string }[] = [
 
 export function ExploreView({ items }: { items: { v: BasketView; perf?: Performance }[] }) {
   const [tab, setTab] = useState<Tab>("all");
-  const [sort, setSort] = useState<Sort>("followed");
+  const [sort, setSort] = useState<Sort>("popular");
   const [q, setQ] = useState("");
 
   const list = useMemo(() => {
     let l = [...items];
-    if (sort === "followed") l.sort((a, b) => b.v.basket.followers - a.v.basket.followers || (b.v.nav > a.v.nav ? 1 : b.v.nav < a.v.nav ? -1 : 0));
+    // Popular = most followers; while nobody follows anything yet, the biggest baskets (by value) lead.
+    const byValue = (a: (typeof l)[number], b: (typeof l)[number]) => (b.v.nav > a.v.nav ? 1 : b.v.nav < a.v.nav ? -1 : 0);
+    const anyFollowers = l.some(({ v }) => v.basket.followers > 0);
+    if (sort === "popular") l.sort((a, b) => (anyFollowers ? b.v.basket.followers - a.v.basket.followers : 0) || byValue(a, b));
     if (sort === "new") l.sort((a, b) => b.v.basket.createdAt - a.v.basket.createdAt);
     if (tab === "story") l = l.filter(({ v }) => v.basket.category === "story" || v.basket.story);
     if (tab === "ai") l = l.filter(({ v }) => v.basket.category === "ai" || /\bai\b/i.test(v.basket.name));
@@ -84,18 +87,18 @@ export function ExploreView({ items }: { items: { v: BasketView; perf?: Performa
           })}
           <button
             type="button"
-            onClick={() => setSort(sort === "followed" ? "new" : "followed")}
+            onClick={() => setSort(sort === "popular" ? "new" : "popular")}
             className="h-10 flex-none rounded-full border border-white/10 px-4 text-[14px] font-medium text-tx2 md:hidden"
-            aria-label={`Sort: ${sort === "followed" ? "Popular" : "New"}. Tap to change.`}
+            aria-label={`Sort: ${sort === "popular" ? "Popular" : "New"}. Tap to change.`}
           >
-            ↕ {sort === "followed" ? "Popular" : "New"}
+            ↕ {sort === "popular" ? "Popular" : "New"}
           </button>
         </div>
         <div className="flex items-center gap-3">
         <div role="radiogroup" aria-label="Sort" className="hidden h-11 flex-none items-center rounded-full border border-white/10 p-1 md:flex">
           {(
             [
-              ["followed", "Popular"],
+              ["popular", "Popular"],
               ["new", "New"],
             ] as [Sort, string][]
           ).map(([id, label]) => (

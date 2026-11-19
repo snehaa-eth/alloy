@@ -12,7 +12,7 @@ import { Sheet } from "../Sheet";
 import { AlloyBar, Banner, Button, ErrorState, InlineToast, QuietLink, Stamp } from "../primitives";
 import { longDate, type BasketView } from "../basket-view";
 import { useAccount, useAttestation, useQuoteView } from "../hooks";
-import { AmountField, AttestBlock, BuyQuote, TxProgress } from "./shared";
+import { AmountField, AttestBlock, BuyQuote, TxProgress, splitParts } from "./shared";
 
 type Stage = "compose" | "attest" | "running" | "done" | "error";
 
@@ -116,7 +116,7 @@ export function BuySheet({
         <>
           <AmountField value={amount} onChange={setAmount} disabled={stage === "running"} />
 
-          <BuyQuote name={b.name} usdc={usdc} quote={quote} feeBps={b.feeBps} marketOpen={marketOpen} />
+          <BuyQuote parts={splitParts(v)} usdc={usdc} quote={quote} feeBps={b.feeBps} marketOpen={marketOpen} />
 
           {changeAt && (
             <Banner intent="notice" icon={RefreshCw} action={onSeeChange ? <QuietLink onClick={onSeeChange}>See</QuietLink> : undefined}>

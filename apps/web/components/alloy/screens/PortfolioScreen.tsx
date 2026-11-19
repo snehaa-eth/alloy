@@ -94,10 +94,17 @@ export function PortfolioScreen({ items }: { items: LoadedBasket[] }) {
               <span className="t-hero">
                 <Ticker value={formatUsd6(total)} />
               </span>
-              {all && (
+              {all ? (
                 <span className="t-small">
                   <Signed bps={all.bps} /> <span className="c2">{formatUsd6(all.usd6)}</span>
                 </span>
+              ) : (
+                // Cost basis lives on the device that bought; without it, show this week's % move instead of nothing.
+                total > weekUsd6 && (
+                  <span className="t-small">
+                    <Signed bps={Number((weekUsd6 * 10_000n) / (total - weekUsd6))} /> <span className="c2">this week</span>
+                  </span>
+                )
               )}
             </div>
             <Certificate

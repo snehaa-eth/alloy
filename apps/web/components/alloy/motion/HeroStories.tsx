@@ -1,29 +1,27 @@
 "use client";
 
 /**
- * Hero: the rolling theme word and the featured basket card change TOGETHER, and only between themes that have a
- * live public basket. Pauses on hover/focus; reduced motion / low power = static first theme.
+ * Hero: the theme word rotates (AI / BIG TECH); the featured basket card is pinned and never moves, so "Buy" is a
+ * steady target. Word pauses on hover/focus; reduced motion / low power = static first word.
  *
  * Layout: desktop = text column (intro on top, `after` below) + card on the right spanning both rows.
  * Phone = intro → card → `after`, so the basket card is in the first screen and the secondary facts sit below it.
  */
 import { useReducedMotion } from "framer-motion";
 import { useEffect, useState, type ReactNode } from "react";
-import { cn } from "@/lib/utils";
 import { useLowPower } from "./MotionRoot";
 import { WordRotator } from "./WordRotator";
-import { HeroParallax } from "./HeroParallax";
-
-export type HeroStory = { word: string; card: ReactNode };
 
 export function HeroStories({
-  stories,
+  words,
+  card,
   top,
   bottom,
   after,
   interval = 3600,
 }: {
-  stories: HeroStory[];
+  words: string[];
+  card: ReactNode;
   top: ReactNode;
   bottom: ReactNode;
   after?: ReactNode;
@@ -33,16 +31,16 @@ export function HeroStories({
   const low = useLowPower();
   const [i, setI] = useState(0);
   const [hold, setHold] = useState(false);
-  const still = reduced || low || stories.length < 2;
+  const still = reduced || low || words.length < 2;
 
   useEffect(() => {
     if (still || hold) return;
-    const t = setInterval(() => document.visibilityState === "visible" && setI((x) => (x + 1) % stories.length), interval);
+    const t = setInterval(() => document.visibilityState === "visible" && setI((x) => (x + 1) % words.length), interval);
     return () => clearInterval(t);
-  }, [still, hold, interval, stories.length]);
+  }, [still, hold, interval, words.length]);
 
   const idx = still ? 0 : i;
-  const word = stories[idx]?.word ?? "AI";
+  const word = words[idx] ?? "AI";
   return (
     <div
       className="mx-auto grid max-w-app gap-8 px-4 pb-10 pt-6 md:px-8 md:pt-16 lg:grid-cols-[1.1fr_1fr] lg:grid-rows-[auto_auto] lg:gap-x-16 lg:gap-y-8 lg:pb-14"
@@ -64,7 +62,7 @@ export function HeroStories({
             <br />
             {/* The theme word has its own line: its slot is the widest word's width, so "story." never moves. */}
             <span className="v-word" style={{ ["--i" as string]: 3 }}>
-              <WordRotator words={stories.map((s) => s.word)} index={idx} />
+              <WordRotator words={words} index={idx} />
             </span>
             <br />
             <span className="v-word" style={{ ["--i" as string]: 4 }}>story.</span>
@@ -73,20 +71,7 @@ export function HeroStories({
         {bottom}
       </div>
       <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-center">
-        <HeroParallax>
-          <div className="grid">
-            {stories.map((s, k) => (
-              <div
-                key={s.word}
-                className={cn("flex transition-opacity duration-500 [grid-area:1/1]", k === idx ? "opacity-100" : "pointer-events-none opacity-0")}
-                aria-hidden={k !== idx}
-                inert={k !== idx ? true : undefined}
-              >
-                {s.card}
-              </div>
-            ))}
-          </div>
-        </HeroParallax>
+        <div className="flex">{card}</div>
       </div>
       {after && <div className="flex flex-col gap-5 lg:col-start-1 lg:row-start-2 lg:self-start">{after}</div>}
     </div>

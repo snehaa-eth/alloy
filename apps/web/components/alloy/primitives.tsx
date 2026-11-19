@@ -145,12 +145,15 @@ export function StockLogo({ ticker, size = "md" }: { ticker: string; size?: "md"
   );
 }
 
-export function LogoStack({ tickers, max = 5 }: { tickers: string[]; max?: number }) {
+/** Logos side by side (no overlap, so none hides another), max 4 + "+N". */
+export function LogoStack({ tickers, max = 4 }: { tickers: string[]; max?: number }) {
+  const extra = tickers.length - max;
   return (
-    <span className="c-stack" aria-label={tickers.join(", ")}>
+    <span className="inline-flex items-center gap-1" aria-label={tickers.join(", ")}>
       {tickers.slice(0, max).map((t) => (
         <StockLogo key={t} ticker={t} />
       ))}
+      {extra > 0 && <span className="ml-1 text-[13px] tabular-nums text-tx2">+{extra}</span>}
     </span>
   );
 }

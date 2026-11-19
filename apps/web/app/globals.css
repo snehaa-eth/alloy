@@ -614,18 +614,22 @@ html:root {
   --privy-color-background-clicked: #332526;
   --privy-color-border-default: #332526;
   --privy-color-border-hover: #6f6264;
-  --privy-color-border-focus: #c77b4a;
+  --privy-color-border-focus: #cdc4bd;
   --privy-color-border-interactive: #6f6264;
-  --privy-color-border-interactive-hover: #c77b4a;
+  --privy-color-border-interactive-hover: #a39892;
   --privy-color-foreground: #f2ede8;
   --privy-color-foreground-2: #cdc4bd;
   --privy-color-foreground-3: #a39892;
   --privy-color-foreground-4: #332526;
   --privy-color-foreground-accent: #0c0a0a;
-  --privy-color-accent: #c77b4a;
-  --privy-color-accent-light: #d9976b;
-  --privy-color-accent-dark: #a9633a;
+  /* Cream accent with dark text: copper is reserved for Buy, so nothing in sign-in is copper. */
+  --privy-color-accent: #f2ede8;
+  --privy-color-accent-light: #fbf8f5;
+  --privy-color-accent-dark: #d9d2cb;
   --privy-color-icon-muted: #a39892;
   --privy-color-success: #3dbe8b;
   --privy-color-error: #f0545c;
 }
+
+/* Basket page (phone): the slim Buy bar and the tab bar read as one dock (no hairline between them). */
+body:has([data-buy-bar]) nav.c-nav { border-top-color: transparent; }

@@ -12,7 +12,6 @@ import { AlloyBar, AlloyLegend, StockLogo } from "../primitives";
 import { Ticker } from "../motion/Ticker";
 import { hash32 } from "../guilloche-gen";
 import { compactUsd6, shortDate, type BasketView } from "../basket-view";
-import { formatUsd6 } from "@/lib/units";
 
 // ---------------------------------------------------------------------------
 // Brand mark: three stacked bars (the alloy bar, tiny) + wordmark
@@ -76,6 +75,12 @@ export function hasHistory(v: BasketView): boolean {
   return v.series.length >= 3;
 }
 
+/** Under a day of value history: show "New" instead of a since-start return (a 0.0% today reads as dead). */
+export function isNew(v: BasketView): boolean {
+  if (!hasHistory(v)) return true;
+  return v.times[v.times.length - 1] - v.times[0] < 86_400;
+}
+
 export function Pct({ bps, className, tick }: { bps: number; className?: string; tick?: boolean }) {
   // Anything that rounds to 0.0% is flat: muted, no sign (a green "+0.0%" reads as a gain).
   const flat = Math.abs(bps) < 5;
@@ -120,16 +125,15 @@ export function thesisOf(v: BasketView): string {
 // Logos
 // ---------------------------------------------------------------------------
 
-export function Logos({ tickers, max = 5, size = "md" }: { tickers: string[]; max?: number; size?: "md" | "lg" }) {
+/** Stock logos side by side (no overlap, so no logo hides another), max 4 + "+N". */
+export function Logos({ tickers, max = 4, size = "md" }: { tickers: string[]; max?: number; size?: "md" | "lg" }) {
   const extra = tickers.length - max;
   return (
-    <span className="flex items-center" aria-label={tickers.join(", ")}>
-      <span className="c-stack">
-        {tickers.slice(0, max).map((t) => (
-          <StockLogo key={t} ticker={t} size={size} />
-        ))}
-      </span>
-      {extra > 0 && <span className="ml-2 text-[13px] text-tx2">+{extra}</span>}
+    <span className="flex items-center gap-1" aria-label={tickers.join(", ")}>
+      {tickers.slice(0, max).map((t) => (
+        <StockLogo key={t} ticker={t} size={size} />
+      ))}
+      {extra > 0 && <span className="ml-1 text-[13px] tabular-nums text-tx2">+{extra}</span>}
     </span>
   );
 }
@@ -182,7 +186,7 @@ export function BasketCard({ v, perf, priority }: { v: BasketView; perf?: Perfor
           <p className="line-clamp-2 min-h-[40px] text-[14px] leading-[20px] text-tx2">{thesisOf(v)}</p>
         </div>
 
-        {/* Real data only. Followers vs creator once both exist; otherwise the basket's return (or "New") + price per unit.
+        {/* Real data only. Followers vs creator once both exist; otherwise the basket's return (or "New") + the minimum.
             Fee and minimum are the same on every card, so Explore states them once instead. */}
         <div className="grid grid-cols-2 gap-2">
           {(r.creator !== null && b.followers > 0
@@ -192,10 +196,10 @@ export function BasketCard({ v, perf, priority }: { v: BasketView; perf?: Perfor
               ]
             : [
                 [
-                  hasHistory(v) ? `Since ${shortDate(v.sinceDate)}` : "Return",
-                  hasHistory(v) ? <Pct key="r" bps={v.sinceBps} className="text-[15px] font-semibold" /> : <NewTag key="r" />,
+                  isNew(v) ? "Return" : `Since ${shortDate(v.sinceDate)}`,
+                  isNew(v) ? <NewTag key="r" /> : <Pct key="r" bps={v.sinceBps} className="text-[15px] font-semibold" />,
                 ],
-                ["Price per unit", <span key="p" className="tabular-nums">{formatUsd6(v.navPerShare)}</span>],
+                ["Invest", <span key="p" className="tabular-nums">From $5</span>],
               ]
           ).map(([k, val]) => (
             <div key={k as string} className="flex flex-col gap-0.5 rounded-[14px] bg-s2 px-3 py-2.5">

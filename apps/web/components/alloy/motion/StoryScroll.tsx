@@ -2,14 +2,15 @@
 
 /**
  * Landing "How it works" scroll storytelling (MOTION.md §5.2):
- * Pick a basket → Start with $5 → Prices move → It runs on autopilot (creator styles).
- * Desktop: a 500vh track (one full viewport of scroll per step); the stepper (left) and the live card (right) stay
- * pinned while scroll position picks the step, so the card morphs in place (no scroll-jacking). Clicking a step
- * scrolls to it. Phones: no pinning; four stacked cards, each with readable covers and every recipe row. Reduced motion: same layout, transitions off (CSS).
+ * Pick a basket → Start small → Prices move → It runs on autopilot (creator styles).
+ * One worked example everywhere (desktop = phone): $25 in; NVDA-style top stock goes 40% → 50%, so $25 → $30; the
+ * plan keeps it at 50% (sells only past 60%).
+ * Desktop: the stepper (left) and the live card (right) stay pinned while scroll picks the step; each step gets an
+ * equal share of the scroll, counted from the moment the whole block is on screen (no scroll-jacking). Clicking a
+ * step scrolls to it. Phones: no pinning; four stacked cards. Reduced motion: same layout, transitions off (CSS).
  */
 import Image from "next/image";
-import { useMotionValueEvent, useScroll } from "framer-motion";
-import { useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { AlloyBar, StockLogo, fmtPct, type RecipePart } from "../primitives";
 import type { Tone } from "../identity";
@@ -19,19 +20,19 @@ type Cover = { src: string; tone: Tone; name?: string };
 
 const STEPS = [
   { t: "Pick a basket", d: "One theme, like AI or big tech. Each basket is a recipe of US stocks." },
-  { t: "Start with $5", d: "Put in dollars. You own a slice of every stock in it." },
+  { t: "Start small", d: "From $5. Here: $25." },
   { t: "Prices move", d: "Winners grow, and so does your basket." },
   { t: "It runs on autopilot", d: "Each basket follows its creator's plan. You don't lift a finger." },
 ];
 
 const START = 25; // illustrated deposit, in dollars
-const GROW = 1000; // the top stock gains +10 pts of weight (only its price moves) and, under "Let winners run", stays there
+const GROW = 1000; // the top stock's weight goes up 10 points (e.g. 40% → 50%; only its price moves) and, under "Let winners run", stays there
 const TAKEOVER = 6000; // dotted line: the featured basket only sells if one stock passes 60%
 const PLAN = STYLE_ORDER[0]; // the featured basket's plan: Let winners run
 
-function weightsAt(parts: RecipePart[], step: number, drift: number): RecipePart[] {
+function weightsAt(parts: RecipePart[], step: number): RecipePart[] {
   if (step < 2 || parts.length < 2) return parts;
-  const add = Math.round(GROW * (step >= 3 ? 1 : drift));
+  const add = GROW;
   const top = parts[0];
   const rest = parts.slice(1);
   const restTotal = rest.reduce((a, p) => a + p.bps, 0) || 1;
@@ -57,17 +58,15 @@ export function StoryVisual({
   tone,
   covers,
   step,
-  drift,
   compact,
 }: {
   parts: RecipePart[];
   tone: Tone;
   covers: Cover[];
   step: number;
-  drift: number;
   compact?: boolean;
 }) {
-  const now = weightsAt(parts, step, drift);
+  const now = weightsAt(parts, step);
   const top = parts[0];
   const topNow = now[0];
   const value = step >= 2 ? valueAt(parts, now) : START;
@@ -98,7 +97,7 @@ export function StoryVisual({
               <div
                 className={cn(
                   "relative overflow-hidden rounded-[14px] bg-[var(--tint)]",
-                  compact ? "aspect-[4/3]" : "h-[100px]",
+                  compact ? "aspect-[4/3]" : "h-[150px]",
                   k === 0 && "shadow-[inset_0_0_0_2px_var(--hi)]",
                 )}
               >
@@ -136,6 +135,7 @@ export function StoryVisual({
       <div className={cn("flex flex-col", compact ? "gap-4" : cn("flex-1 justify-center", step >= 3 ? "gap-5" : "gap-6"))}>
         <AlloyBar parts={now} tone={tone} legend={false} />
 
+        {step >= 1 && (
         <ul className={cn("flex flex-col", compact || step >= 3 ? "gap-3" : "gap-[18px]")}>
           {now.map((p, k) => {
             const isTop = k === 0;
@@ -158,12 +158,13 @@ export function StoryVisual({
                     }}
                   />
                 </div>
-                {/* Step 1: weights. Later: each stock's dollars (only the winner's grow). */}
-                <span className="t-num w-16 text-right text-tx3">{step <= 0 ? `${fmtPct(p.bps)}%` : usd((value * p.bps) / 10_000)}</span>
+                {/* Steps 2–3: each stock's dollars (only the winner's grow). Step 4: weights, read against the 60% line. */}
+                <span className="t-num w-16 text-right text-tx3">{step >= 3 ? `${fmtPct(p.bps)}%` : usd((value * p.bps) / 10_000)}</span>
               </li>
             );
           })}
         </ul>
+        )}
 
         {step >= 3 && (
           <div className="flex items-start gap-3 rounded-[14px] bg-s2 px-3 py-2.5 text-[13px] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--hi)_45%,transparent)]">
@@ -187,18 +188,49 @@ export function StoryVisual({
 export function StoryScroll({ parts, tone, covers, heading, mobileHeading }: { parts: RecipePart[]; tone: Tone; covers: Cover[]; heading: ReactNode; mobileHeading: ReactNode }) {
   const sorted = [...parts].sort((a, b) => b.bps - a.bps);
   const track = useRef<HTMLDivElement | null>(null);
-  const [p, setP] = useState(0);
-  const { scrollYProgress } = useScroll({ target: track, offset: ["start start", "end end"] });
-  useMotionValueEvent(scrollYProgress, "change", (v) => setP(Math.min(0.999, Math.max(0, v))));
-  const step = Math.floor(p * 4);
-  const drift = step >= 3 ? 1 : step === 2 ? Math.min(1, (p * 4 - 2) * 1.6) : 0;
+  const pin = useRef<HTMLDivElement | null>(null);
+  const [step, setStep] = useState(0);
+
+  // Scroll range over which the steps play: from "whole pinned block on screen" to "pin releases". Split in 4 equal parts.
+  const range = useCallback(() => {
+    const el = track.current;
+    const pn = pin.current;
+    if (!el || !pn) return null;
+    const trackTop = el.getBoundingClientRect().top + window.scrollY;
+    const stickyTop = parseFloat(getComputedStyle(pn).top) || 0;
+    const stuck = trackTop - stickyTop; // scrollY where the block pins
+    const visible = trackTop - Math.max(0, window.innerHeight - pn.offsetHeight); // scrollY where it's fully on screen
+    const start = Math.min(stuck, visible);
+    const end = trackTop + el.offsetHeight - pn.offsetHeight - stickyTop; // scrollY where the pin releases
+    return { start, end: Math.max(start + 1, end) };
+  }, []);
+
+  useEffect(() => {
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const r = range();
+      if (!r) return;
+      const p = Math.min(0.999, Math.max(0, (window.scrollY - r.start) / (r.end - r.start)));
+      setStep(Math.floor(p * 4));
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [range]);
 
   function jump(k: number) {
-    const el = track.current;
-    if (!el) return;
-    const top = el.getBoundingClientRect().top + window.scrollY;
-    const range = el.offsetHeight - window.innerHeight;
-    window.scrollTo({ top: top + range * ((k + 0.55) / 4), behavior: "smooth" });
+    const r = range();
+    if (!r) return;
+    window.scrollTo({ top: r.start + (r.end - r.start) * ((k + 0.5) / 4), behavior: "smooth" });
   }
 
   return (
@@ -209,14 +241,15 @@ export function StoryScroll({ parts, tone, covers, heading, mobileHeading }: { p
         {STEPS.map((s, k) => (
           <li key={s.t} className="flex flex-col gap-3">
             <StepText n={k + 1} t={s.t} d={s.d} on />
-            <StoryVisual parts={sorted} tone={tone} covers={covers} step={k} drift={1} compact />
+            <StoryVisual parts={sorted} tone={tone} covers={covers} step={k} compact />
           </li>
         ))}
       </ol>
 
-      {/* Desktop: heading + stepper + card pinned together (top = navbar + 24px, centred in the rest); scroll picks the step */}
-      <div ref={track} className="relative hidden h-[500vh] lg:block">
-        <div className="v-story-pin sticky top-[max(88px,calc(32px+50vh-280px))] flex flex-col gap-6">
+      {/* Desktop: heading + stepper + card pinned together (top = navbar + 24px, centred in the rest); scroll picks the step.
+          Track = pinned block (~560px) + 4 × 60vh of scroll, one equal share per step. */}
+      <div ref={track} className="relative hidden h-[calc(240vh+560px)] lg:block">
+        <div ref={pin} className="v-story-pin sticky top-[max(88px,calc(32px+50vh-280px))] flex flex-col gap-6">
           {heading}
           <div className="grid grid-cols-[minmax(0,5fr)_minmax(0,6fr)] items-center gap-16">
           <ol className="flex flex-col gap-1.5" aria-label="How it works">
@@ -228,7 +261,7 @@ export function StoryScroll({ parts, tone, covers, heading, mobileHeading }: { p
               </li>
             ))}
           </ol>
-          <StoryVisual parts={sorted} tone={tone} covers={covers} step={step} drift={drift} />
+          <StoryVisual parts={sorted} tone={tone} covers={covers} step={step} />
           </div>
         </div>
       </div>

@@ -4,9 +4,10 @@
  */
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Clock, Coins, DoorOpen, HandCoins, KeyRound, MessageSquareText, Percent, Plus, ShieldCheck } from "lucide-react";
+import { ArrowDownToLine, ArrowRight, ArrowUpFromLine, Clock, Coins, DoorOpen, HandCoins, KeyRound, MessageSquareText, Plus, ShieldCheck } from "lucide-react";
+import { DEFAULT_CHAIN } from "@/lib/chains";
 import { formatUsd6 } from "@/lib/units";
-import { AlloyBar, fmtPct } from "../primitives";
+import { AlloyBar, fmtPct, type RecipePart } from "../primitives";
 import { StoryScroll } from "../motion/StoryScroll";
 import { HeroStories } from "../motion/HeroStories";
 import { compactUsd6 } from "../basket-view";
@@ -28,10 +29,9 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
   // Few public baskets: include the featured one so the row never looks half empty.
   const trending = (others.length < 3 && featured ? [featured, ...others] : others).slice(0, 4);
   const cols = Math.min(4, trending.length + (trending.length < 4 ? 1 : 0));
-  const feePct = featured ? featured.v.basket.feeBps / 100 : 1;
-  // Hero themes: only themes (never a single company) with a live public basket; the card swaps in sync with the
-  // theme word. The word has its own headline line, so add a theme only when it fits there ("BIG TECH" is the widest).
-  const heroStories = (
+  // Hero words: themes (never a single company) with a live public basket. The word rotates; the card stays pinned to
+  // the featured basket so "Buy" never moves. The word has its own headline line ("BIG TECH" is the widest that fits).
+  const heroWords = (
     [
       ["AI", featured],
       ["Big Tech", visible.find((i) => /big tech/i.test(i.v.basket.name))],
@@ -39,7 +39,7 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
   )
     .filter((x): x is [string, LoadedBasket] => !!x[1] && x[1].v.tickers.length >= 3)
     .filter((x, k, a) => a.findIndex((y) => y[1] === x[1]) === k)
-    .map(([word, item]) => ({ word, item }));
+    .map(([word]) => word);
 
   return (
     <div className="overflow-x-clip">
@@ -50,7 +50,8 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
           <div className="absolute -right-40 top-20 h-[520px] w-[620px] rounded-full opacity-[0.22] blur-[140px]" style={{ background: "var(--brand)" }} />
         </div>
         <HeroStories
-          stories={heroStories.map(({ word, item }) => ({ word, card: <FeaturedStory item={item} fan={visible.filter((x) => x !== item).slice(0, 2)} /> }))}
+          words={heroWords.length ? heroWords : ["AI"]}
+          card={featured ? <FeaturedStory item={featured} fan={visible.filter((x) => x !== featured).slice(0, 2)} /> : null}
           top={
             <span className="hidden w-fit items-center gap-2 rounded-full border sm:inline-flex border-white/10 bg-white/[0.04] px-3 py-1.5 text-[13px] text-tx3">
               <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--hi)" }} aria-hidden /> Invest in stories, not symbols.
@@ -70,22 +71,6 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
               <p className="-mt-2 text-[13px] text-tx2 md:-mt-3">Not available in the US. You can lose money.</p>
             </>
           }
-          after={
-            <>
-              <dl className="grid max-w-[480px] grid-cols-3 gap-4 border-t border-white/[0.08] pt-5 lg:pt-6">
-                {[
-                  ["$5", "minimum"],
-                  [`${feePct}%`, "a year, nothing else"],
-                  ["Anytime", "sell or withdraw"],
-                ].map(([k, v]) => (
-                  <div key={k} className="flex flex-col gap-1">
-                    <dt className="text-[20px] font-semibold">{k}</dt>
-                    <dd className="text-[13px] text-tx2">{v}</dd>
-                  </div>
-                ))}
-              </dl>
-            </>
-          }
         />
       </section>
 
@@ -96,7 +81,6 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
             {(
               [
                 [DoorOpen, "Exit anytime"],
-                [Percent, `Fee ${feePct}% a year, nothing else`],
                 [MessageSquareText, "Every trade explained"],
                 [KeyRound, "Your basket, your keys"],
               ] as [typeof DoorOpen, string][]
@@ -132,7 +116,7 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
           <SectionHead
             id="live"
             title="Live baskets"
-            sub="Most followed."
+            sub="Popular right now."
             action={
               <Link href="/explore" className="inline-flex items-center gap-1.5 text-[15px] font-medium text-tx no-underline hover:text-tx3">
                 See all baskets <ArrowRight size={16} strokeWidth={2} aria-hidden />
@@ -141,7 +125,7 @@ export function Landing({ items }: { items: LoadedBasket[] }) {
           />
           {/* Each cell is a grid so its card stretches to the row height: every card in the row is the same height. */}
           <div
-            className={`-mx-4 mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0 ${cols >= 4 ? "xl:grid-cols-4" : cols === 3 ? "lg:grid-cols-3" : ""}`}
+            className={`-mx-4 mt-10 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 sm:scroll-px-0 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0 ${cols >= 4 ? "xl:grid-cols-4" : cols === 3 ? "lg:grid-cols-3" : ""}`}
           >
             {trending.map((i) => (
               <div key={i.v.basket.address} className="grid w-[82%] flex-none snap-start sm:w-auto">
@@ -222,7 +206,6 @@ function FeaturedStory({ item, fan }: { item: LoadedBasket; fan: LoadedBasket[] 
           ["Stocks", String(v.tickers.length)],
           ["Fee", `${b.feeBps / 100}%/yr`],
           ["Minimum", "$5"],
-          ["Sell", "Anytime"],
         ]
       : [
           ["Followers' return", <ReturnValue key="f" bps={r.followers} />],
@@ -231,32 +214,31 @@ function FeaturedStory({ item, fan }: { item: LoadedBasket; fan: LoadedBasket[] 
           ["Minimum", "$5"],
         ];
   return (
-    <article className="v-par-fast relative isolate flex w-full flex-1 flex-col">
+    <article className="relative isolate flex w-full flex-1 flex-col">
       {/* Oxblood (brand) radial glow behind the featured basket */}
-      <div aria-hidden className="v-par-glow absolute -inset-4 -z-20 rounded-full opacity-50 blur-3xl md:-inset-10 md:opacity-70" style={{ background: "radial-gradient(closest-side, color-mix(in srgb, var(--brand) 70%, transparent), transparent 75%)" }} />
+      <div aria-hidden className="absolute -inset-4 -z-20 rounded-full opacity-50 blur-3xl md:-inset-10 md:opacity-70" style={{ background: "radial-gradient(closest-side, color-mix(in srgb, var(--brand) 70%, transparent), transparent 75%)" }} />
       {/* Fanned basket covers behind the featured story (UX_MAP landing: real covers, fanned) */}
       {fan.map((f, k) => (
         <div
           key={f.v.basket.address}
           aria-hidden
-          className="v-par-slow absolute top-6 -z-10 hidden h-[260px] w-[200px] overflow-hidden rounded-[22px] border border-white/10 opacity-55 lg:block"
+          className="absolute top-6 -z-10 hidden h-[260px] w-[200px] overflow-hidden rounded-[22px] border border-white/10 opacity-55 lg:block"
           style={{
             [k === 0 ? "left" : "right"]: -56,
             transform: `rotate(${k === 0 ? -8 : 8}deg)`,
             background: "var(--tint)",
           }}
         >
-          <Image src={f.v.id.coverSrc} alt="" fill sizes="200px" className="v-duo object-cover" />
+          <Image src={f.v.id.coverSrc} alt="" fill sizes="200px" loading="eager" className="v-duo object-cover" />
           <div className="v-duo-tint absolute inset-0" />
         </div>
       ))}
-      {/* Fixed anatomy: every rotating card is the same height (room for up to 4 tickers), so nothing jumps. */}
-      <div className="flex flex-1 flex-col overflow-hidden rounded-[24px] border border-white/[0.1] bg-s1 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.85)]">
+            <div className="flex flex-1 flex-col overflow-hidden rounded-[24px] border border-white/[0.1] bg-s1 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.85)]">
         <div className="relative h-[150px] md:h-[170px] bg-[var(--tint)]">
-          <Image src={v.id.coverSrcLg} alt="" fill priority sizes="(min-width: 1024px) 560px, 100vw" className="v-duo object-cover" />
+          <Image src={v.id.coverSrcLg} alt="" fill preload loading="eager" fetchPriority="high" sizes="(min-width: 1024px) 560px, 100vw" className="v-duo object-cover" />
           <div className="v-duo-tint absolute inset-0" />
           <div className="absolute inset-0 bg-gradient-to-t from-s1 via-s1/20 to-transparent" />
-          <span className="absolute left-4 top-4 rounded-full px-3 py-1 text-[12px] font-medium text-tx" style={{ background: "var(--brand)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15)" }}>Featured basket</span>
+          <span className="absolute left-4 top-4 rounded-full border border-[#F2EDE8]/60 bg-black/35 px-3 py-1 text-[12px] font-medium text-tx backdrop-blur-sm">Featured basket</span>
         </div>
         <div className="-mt-8 flex flex-1 flex-col gap-5 px-5 pb-5 md:px-6 md:pb-6">
           <div className="relative flex items-end gap-3">
@@ -272,7 +254,7 @@ function FeaturedStory({ item, fan }: { item: LoadedBasket; fan: LoadedBasket[] 
             <h2 className="text-[24px] font-semibold leading-tight tracking-tight">{b.name}</h2>
             <p className="line-clamp-2 text-[15px] text-tx3">{thesisOf(v)}</p>
           </div>
-          <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <dl className={`grid gap-2 ${stats.length === 3 ? "grid-cols-3" : "grid-cols-2 sm:grid-cols-4"}`}>
             {stats.map(([k, val]) => (
               <div key={k} className="flex flex-col gap-1 rounded-[14px] bg-s2 px-3 py-3">
                 <dt className="text-[12px] leading-tight text-tx2">{k}</dt>
@@ -303,7 +285,7 @@ function FeaturedStory({ item, fan }: { item: LoadedBasket; fan: LoadedBasket[] 
             </Link>
           </div>
           <p className="flex items-center justify-center gap-2 text-[12px] text-tx2">
-            <span className="v-live" aria-hidden /> Live price {formatUsd6(v.navPerShare)} per unit
+            <span className="v-live" aria-hidden /> Live US stock prices
           </p>
         </div>
       </div>
@@ -313,20 +295,29 @@ function FeaturedStory({ item, fan }: { item: LoadedBasket; fan: LoadedBasket[] 
 
 /** "How your money is held", in plain words. Never claims backing by any exchange or network. */
 function HowHeld() {
-  const rows: [typeof ShieldCheck, string][] = [
+  const testnet = "testnet" in DEFAULT_CHAIN && DEFAULT_CHAIN.testnet === true;
+  const rows: [typeof ShieldCheck, React.ReactNode][] = [
     [Coins, "Your dollars buy tokenized exposure to US stocks, held in an on-chain basket."],
-    [KeyRound, "Your basket units sit in your own account. Only you can move them."],
+    [KeyRound, "Your basket sits in your own account. Only you can move it."],
     [DoorOpen, "Sell anytime, or withdraw the stock tokens themselves."],
+    [
+      ArrowDownToLine,
+      <>
+        <span className="font-medium text-tx">Money in:</span> buy USDC on any exchange and send it to your Alloy wallet on Base.
+        {testnet && <span className="text-tx2"> Here, use Add test money.</span>}
+      </>,
+    ],
+    [ArrowUpFromLine, <><span className="font-medium text-tx">Money out:</span> sell for USDC and send it back to your exchange.</>],
     [ShieldCheck, "Not available to US persons. You can lose money."],
   ];
   return (
     <div className="flex flex-col gap-4 rounded-[20px] border border-white/[0.08] bg-bg/80 p-6">
       <span className="text-[17px] font-semibold">How your money is held</span>
       <ul className="flex flex-col gap-3.5">
-        {rows.map(([I, t]) => (
-          <li key={t} className="flex gap-3 text-[14px] leading-snug text-tx3">
+        {rows.map(([I, t], k) => (
+          <li key={k} className="flex gap-3 text-[14px] leading-snug text-tx3">
             <I size={16} strokeWidth={1.75} className="mt-0.5 flex-none text-tx2" aria-hidden />
-            {t}
+            <span>{t}</span>
           </li>
         ))}
       </ul>
@@ -335,8 +326,15 @@ function HowHeld() {
   );
 }
 
+/** Illustrative "your own idea" recipe: deliberately not the featured basket's mix, which the page already shows. */
+const MOCK_RECIPE: RecipePart[] = [
+  { ticker: "AAPL", bps: 5000 },
+  { ticker: "TSLA", bps: 3000 },
+  { ticker: "AMZN", bps: 2000 },
+];
+
 function RecipeMock({ item }: { item: LoadedBasket }) {
-  const parts = [...item.v.target].sort((a, b) => b.bps - a.bps);
+  const parts = MOCK_RECIPE;
   return (
     <div aria-hidden className="flex flex-col gap-4 rounded-[20px] border border-white/[0.08] bg-black/40 p-5 backdrop-blur">
       <div className="flex items-center justify-between">

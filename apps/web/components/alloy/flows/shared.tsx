@@ -6,7 +6,7 @@ import type { TxStep } from "@/lib/tx";
 import { MIN_BUY_USDC } from "@/lib/strategy";
 import { formatShares, formatUsd6 } from "@/lib/units";
 import { cn } from "@/lib/utils";
-import { Button, StepList } from "../primitives";
+import { Button, StepList, StockLogo } from "../primitives";
 import type { QuoteView } from "../hooks";
 
 /**
@@ -69,24 +69,60 @@ export function QuoteRows({ rows, className }: { rows: { k: ReactNode; v: ReactN
   );
 }
 
+/** One stock in the "You get" split: current weight drives the dollar amount. */
+export type SplitPart = { ticker: string; name: string; bps: number };
+
 /**
- * Buy quote block shared by the phone sheet and the desktop panel. Layout never changes with the
- * amount: all three rows are always present ("—" while quoting or below the minimum), and the
- * market-closed note is one small line that depends only on the market, never on the quote state.
- * Unit model: you own basket units, priced per unit.
+ * Buy quote block shared by the phone sheet and the desktop panel. "You get" is the dollar split of
+ * the amount by each stock's current weight (one compact row per stock, with its logo). Layout never
+ * changes with the amount: every row is always present ("—" while quoting or below the minimum),
+ * and the market-closed note depends only on the market, never on the quote state.
+ * The basket-unit count is a small details line, not the headline.
  */
-export function BuyQuote({ name, usdc, quote, feeBps, marketOpen }: { name: string; usdc: bigint; quote: QuoteView; feeBps: number; marketOpen: boolean | null }) {
+export function BuyQuote({
+  parts,
+  usdc,
+  quote,
+  feeBps,
+  marketOpen,
+}: {
+  parts: SplitPart[];
+  usdc: bigint;
+  quote: QuoteView;
+  feeBps: number;
+  marketOpen: boolean | null;
+}) {
   const tooSmall = usdc > 0n && usdc < MIN_BUY_USDC;
-  const none = usdc === 0n || tooSmall;
+  const none = usdc === 0n || tooSmall || quote.loading;
   const impact = quote.impactBps !== null && quote.impactBps > 50 ? quote.impactBps : null;
+  const sorted = [...parts].sort((x, y) => y.bps - x.bps);
+  // Whole cents per stock; the rounding remainder goes to the biggest so the rows add up to the amount.
+  const totalBps = sorted.reduce((a, p) => a + p.bps, 0) || 1;
+  const cents = usdc / 10_000n;
+  const each = sorted.map((p) => (cents * BigInt(p.bps)) / BigInt(totalBps));
+  if (each.length) each[0] += cents - each.reduce((a, c) => a + c, 0n);
   return (
     <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
+        <div className="flex items-baseline justify-between gap-3 text-[14px]">
+          <span className="text-tx2">You get</span>
+          {tooSmall && <span className="text-tx">Enter $5 or more</span>}
+        </div>
+        <ul className="flex flex-col gap-1.5" aria-label="You get">
+          {sorted.map((p, i) => (
+            <li key={p.ticker} className="flex h-7 items-center gap-2.5 text-[14px]">
+              <StockLogo ticker={p.ticker} />
+              <span className="min-w-0 flex-1 truncate text-tx">{p.name || p.ticker}</span>
+              <span className="font-medium tabular-nums text-tx">
+                {none ? <span className="c2">—</span> : formatUsd6(each[i] * 10_000n)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
       <QuoteRows
+        className="border-t border-white/[0.07] pt-3"
         rows={[
-          {
-            k: "You get",
-            v: tooSmall ? <span className="text-tx">Enter $5 or more</span> : none ? "—" : `≈ ${formatShares(quote.out, 2)} units of ${name}`,
-          },
           {
             k: "Trading cost (one-time)",
             v:
@@ -94,7 +130,7 @@ export function BuyQuote({ name, usdc, quote, feeBps, marketOpen }: { name: stri
                 <span className="c2">—</span>
               ) : (
                 <span style={impact ? { color: "var(--warn)" } : undefined}>
-                  ≈ {formatUsd6(quote.costUsd6)}
+                  {formatUsd6(quote.costUsd6)}
                   {impact ? ` · ${(impact / 100).toFixed(1)}%` : ""}
                 </span>
               ),
@@ -102,6 +138,10 @@ export function BuyQuote({ name, usdc, quote, feeBps, marketOpen }: { name: stri
           { k: "Fee", v: `${feeBps / 100}% a year` },
         ]}
       />
+      <p className="flex items-center justify-between gap-3 text-[12px] text-tx2">
+        <span>Details</span>
+        <span className="tabular-nums">{none ? "—" : `≈ ${formatShares(quote.out, 2)} basket units`}</span>
+      </p>
       {marketOpen === false && (
         <p className="flex items-center gap-1.5 text-[12px] text-tx2">
           <Clock size={12} strokeWidth={1.75} aria-hidden /> US market is closed. Your price may differ a little.
@@ -109,6 +149,11 @@ export function BuyQuote({ name, usdc, quote, feeBps, marketOpen }: { name: stri
       )}
     </div>
   );
+}
+
+/** Split parts for a basket view: current weights (falls back to target inside basketView). */
+export function splitParts(v: { basket: { components: { stock: { ticker: string; name: string } }[] }; now: { bps: number }[] }): SplitPart[] {
+  return v.basket.components.map((c, i) => ({ ticker: c.stock.ticker, name: c.stock.name, bps: v.now[i]?.bps ?? 0 }));
 }
 
 /** Presets $10 · $25 · $100 (no Max) + 44px keypad. Never animates money while deciding. */

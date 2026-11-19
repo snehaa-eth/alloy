@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowLeft, ChevronDown, FlaskConical, Info, RefreshCw, Scale, Sparkles, XCircle } from "lucide-react";
-import { BrandWash, CreatorAvatar, Logos, ReturnValue, daysSince, returnsOf, thesisOf } from "../v5/parts";
+import { BrandWash, CreatorAvatar, Logos, Pct, ReturnValue, isNew, returnsOf, thesisOf } from "../v5/parts";
 import { BuyPanel, Card, NewChart } from "../v5/BuyPanel";
 import type { Performance, RebalanceEvent } from "@/lib/types";
 import { STYLES, styleOf } from "../styles";
@@ -15,7 +15,7 @@ import { storyDisclosure } from "@/components/compliance/copy";
 import { Countdown } from "../Countdown";
 import { ValueChart } from "../ValueChart";
 import { StatusSignal } from "../status";
-import { AlloyBar, Button, Signed, StockLogo, fmtPct } from "../primitives";
+import { AlloyBar, Button, StockLogo, fmtPct } from "../primitives";
 import { cn } from "@/lib/utils";
 import { compactUsd6, pendingChange, shortDate, tickerOf, type BasketView } from "../basket-view";
 import { usePosition } from "../hooks";
@@ -106,6 +106,7 @@ export function BasketScreen({
   const position = holding && pos.costUsd6 !== null ? pnl(heldUsd6, pos.costUsd6) : null;
 
   const r = returnsOf(v, perf);
+  const showFollowers = r.creator !== null && b.followers > 0;
   const sorted = b.components.map((c, i) => ({ c, i })).sort((x, y) => y.c.targetBps - x.c.targetBps);
 
   return (
@@ -116,7 +117,7 @@ export function BasketScreen({
 
       <div className="relative isolate">
       <BrandWash />
-      <div className="mx-auto max-w-app px-4 pb-36 pt-4 md:px-8 md:pt-6 lg:pb-12">
+      <div className="mx-auto max-w-app px-4 pb-16 pt-4 md:px-8 md:pt-6 lg:pb-12">
         <Link href="/explore" className="inline-flex min-h-[40px] items-center gap-1.5 text-[14px] text-tx2 no-underline hover:text-tx">
           <ArrowLeft size={16} strokeWidth={1.75} aria-hidden /> Explore
         </Link>
@@ -158,7 +159,7 @@ export function BasketScreen({
                     Creator has <span className="gold">{compactUsd6(v.creatorStakeUsd6).replace(/\.\d+$/, "")}</span> in it
                   </span>
                 </div>
-                <Logos tickers={v.tickers} max={5} />
+                <Logos tickers={v.tickers} />
               </div>
               <div className="flex flex-col gap-1">
                 <p className={thesisOpen ? "text-[16px] leading-relaxed text-tx3" : "line-clamp-3 text-[16px] leading-relaxed text-tx3"}>{thesisOf(v)}</p>
@@ -171,21 +172,16 @@ export function BasketScreen({
               </div>
             </div>
 
-            {/* Value + chart */}
+            {/* Return + chart: performance leads; value per unit is a small detail. */}
             <Card>
-              <div className="flex flex-wrap items-end justify-between gap-3">
-                <div className="flex flex-col gap-1">
-                  <span className="inline-flex items-center gap-2 text-[13px] text-tx2">
-                    <span className="v-live" aria-hidden /> Price per unit · live
-                    <span title="You own units of this basket. Each unit holds a slice of every stock in it." aria-label="You own units of this basket. Each unit holds a slice of every stock in it." className="inline-flex cursor-help">
-                      <Info size={13} strokeWidth={1.75} aria-hidden />
-                    </span>
-                  </span>
-                  <span className="text-[36px] font-semibold leading-none tracking-tight tabular-nums md:text-[44px]">{formatUsd6(v.navPerShare)}</span>
-                </div>
-                <span className="text-[14px] tabular-nums">
-                  {Math.abs(v.sinceBps) < 5 ? <span className="c2">0.0%</span> : <Signed bps={v.sinceBps} />} <span className="c2">since {shortDate(v.sinceDate)}</span>
+              <div className="flex flex-col gap-1">
+                <span className="inline-flex items-center gap-2 text-[13px] text-tx2">
+                  <span className="v-live" aria-hidden /> {isNew(v) ? "Return" : `Return since ${shortDate(v.sinceDate)}`}
                 </span>
+                <span className="text-[36px] font-semibold leading-none tracking-tight tabular-nums md:text-[44px]">
+                  {isNew(v) ? <span className="text-tx">New</span> : <Pct bps={v.sinceBps} />}
+                </span>
+                <span className="mt-1 text-[13px] tabular-nums text-tx2">Value per unit {formatUsd6(v.navPerShare)}</span>
               </div>
               <div className="mt-5">
                 {v.series.length >= 3 ? (
@@ -196,51 +192,54 @@ export function BasketScreen({
               </div>
             </Card>
 
-            {/* Did followers win? + Skin in the game (UX_MAP §3.3, COPY basket page) */}
-            <div className="grid gap-6 md:grid-cols-2">
+            {/* Cost + key stats right after the chart (phone and desktop), so nobody scrolls to find the fee. */}
+            <Card className="!p-0">
+              <p className="flex flex-wrap items-center gap-x-2 gap-y-1 px-5 pt-4 text-[14px] font-medium md:px-6">
+                <span>Fee {b.feeBps / 100}% a year</span>
+                <span className="text-tx2" aria-hidden>·</span>
+                <span>Min $5</span>
+                <span className="text-tx2" aria-hidden>·</span>
+                <span>Sell anytime</span>
+              </p>
+              <dl className="grid grid-cols-2 gap-px px-5 pb-4 pt-3 md:grid-cols-4 md:px-6">
+                {(
+                  [
+                    ["In basket", compactUsd6(v.nav)],
+                    ...(b.followers > 0 ? [["Followers", b.followers.toLocaleString("en-US")] as [string, React.ReactNode]] : []),
+                    ["Creator's money", <span key="c" className="gold">{compactUsd6(v.creatorStakeUsd6).replace(/\.\d+$/, "")}</span>],
+                    // Only once there is real history and a drop that shows as at least 0.1%; "−0.0%" reads as broken data.
+                    ...(!isNew(v) && perf.maxDrawdownBps >= 5
+                      ? [["Biggest drop", `−${(perf.maxDrawdownBps / 100).toFixed(1)}%`] as [string, React.ReactNode]]
+                      : []),
+                    ["Changes", b.noticeSeconds >= 86_400 ? "A day's notice" : b.noticeSeconds >= 3600 ? `${b.noticeSeconds / 3600}h notice` : `${b.noticeSeconds / 60} min notice`],
+                  ] as [string, React.ReactNode][]
+                ).map(([k, val]) => (
+                  <div key={k} className="flex flex-col gap-0.5 py-1.5">
+                    <dt className="text-[12px] text-tx2">{k}</dt>
+                    <dd className="text-[15px] font-semibold tabular-nums">{val}</dd>
+                  </div>
+                ))}
+              </dl>
+            </Card>
+
+            {/* Followers vs creator: only once there is history and at least one follower (no empty placeholder). */}
+            {showFollowers && (
               <Card>
-                <div className="flex items-baseline justify-between gap-3">
-                  <h2 className="text-[18px] font-semibold tracking-tight">Did followers win too?</h2>
+                <h2 className="text-[18px] font-semibold tracking-tight">Did followers win too?</h2>
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                  {[
+                    ["Followers (avg)", r.followers],
+                    ["Creator", r.creator],
+                  ].map(([k, bps]) => (
+                    <div key={k as string} className="flex items-center justify-between rounded-[14px] bg-s2 px-4 py-3">
+                      <span className="text-[14px] text-tx3">{k as string}</span>
+                      <ReturnValue bps={bps as number | null} className="text-[20px] font-semibold" tick />
+                    </div>
+                  ))}
                 </div>
-                {b.followers === 0 || r.creator === null ? (
-                  <div className="mt-4 flex flex-col gap-3">
-                    <p className="text-[15px] text-tx3">
-                      Once this basket has a few days of history, you&apos;ll see followers&apos; return next to the creator&apos;s, here.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="mt-4 flex flex-col gap-2">
-                    {[
-                      ["Followers (avg)", r.followers],
-                      ["Creator", r.creator],
-                    ].map(([k, bps]) => (
-                      <div key={k as string} className="flex items-center justify-between rounded-[14px] bg-s2 px-4 py-3">
-                        <span className="text-[14px] text-tx3">{k as string}</span>
-                        <ReturnValue bps={bps as number | null} className="text-[20px] font-semibold" tick />
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <p className="mt-3 text-[12px] text-tx2" suppressHydrationWarning>
-                  {r.creator === null ? daysSince(b.createdAt) < 1 ? "New · first day of history" : `New · ${daysSince(b.createdAt)} days of history` : "Fees included. Past, not promised."}
-                </p>
+                <p className="mt-3 text-[12px] text-tx2">Fees included. Past, not promised.</p>
               </Card>
-              <Card>
-                <h2 className="text-[18px] font-semibold tracking-tight">Skin in the game</h2>
-                <div className="mt-4 flex items-center gap-3">
-                  <CreatorAvatar handle={b.creator.handle} seed={b.creator.address} size={40} />
-                  <div className="flex flex-col">
-                    <span className="text-[28px] font-semibold leading-none tracking-tight tabular-nums gold">{compactUsd6(v.creatorStakeUsd6)}</span>
-                    <span className="mt-1 text-[13px] text-tx2">
-                      @{b.creator.handle} · {v.creatorStakeBps < 100 ? "under 1%" : `${Math.round(v.creatorStakeBps / 100)}%`} of basket
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-4 h-2 overflow-hidden rounded-full bg-s2">
-                  <div className="h-full rounded-full" style={{ width: `${Math.min(100, v.creatorStakeBps / 100)}%`, background: "var(--bone)" }} />
-                </div>
-              </Card>
-            </div>
+            )}
 
             {change && (
               <button
@@ -330,43 +329,18 @@ export function BasketScreen({
             </details>
           </div>
 
-          {/* Right: sticky buy panel + key stats */}
-          <aside className="flex flex-col gap-4 lg:sticky lg:top-24 lg:self-start">
-            <div className="hidden lg:block">
-              <BuyPanel
-                v={v}
-                amount={buyAmount}
-                setAmount={setBuyAmount}
-                holding={holding}
-                heldUsd6={heldUsd6}
-                positionBps={position?.bps ?? null}
-                onExit={() => openSheet("exit")}
-                onAddMoney={() => setSheet("money")}
-              />
-            </div>
-            <div className="rounded-[20px] border border-white/[0.07] bg-s1 p-5">
-              <h2 className="text-[15px] font-semibold">Key stats</h2>
-              <dl className="mt-2 flex flex-col">
-                {(
-                  [
-                    ["In basket", compactUsd6(v.nav)],
-                    ...(b.followers > 0 ? [["Followers", b.followers.toLocaleString("en-US")] as [string, React.ReactNode]] : []),
-                    ["Creator's own money", <span key="c" className="gold">{compactUsd6(v.creatorStakeUsd6)}</span>],
-                    ["Fee", `${b.feeBps / 100}% a year`],
-                    // Only once there is real history and a drop that shows as at least 0.1%; "−0.0%" reads as broken data.
-                    ...(v.series.length >= 3 && perf.maxDrawdownBps >= 5
-                      ? [["Biggest drop", `−${(perf.maxDrawdownBps / 100).toFixed(1)}%`] as [string, React.ReactNode]]
-                      : []),
-                    ["Recipe changes", b.noticeSeconds >= 86_400 ? "Announced a day early" : b.noticeSeconds >= 3600 ? `Announced ${b.noticeSeconds / 3600}h early` : `Announced ${b.noticeSeconds / 60} min early`],
-                  ] as [string, React.ReactNode][]
-                ).map(([k, val]) => (
-                  <div key={k} className="flex min-h-[42px] items-center justify-between gap-3 border-t border-white/[0.06] text-[14px] first:border-t-0">
-                    <dt className="text-tx2">{k}</dt>
-                    <dd className="font-medium tabular-nums">{val}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
+          {/* Right (desktop): the buy panel stays in view while the page scrolls (top offset clears the navbar). */}
+          <aside className="hidden lg:sticky lg:top-[116px] lg:block lg:self-start">
+            <BuyPanel
+              v={v}
+              amount={buyAmount}
+              setAmount={setBuyAmount}
+              holding={holding}
+              heldUsd6={heldUsd6}
+              positionBps={position?.bps ?? null}
+              onExit={() => openSheet("exit")}
+              onAddMoney={() => setSheet("money")}
+            />
           </aside>
         </div>
       </div>
@@ -377,7 +351,7 @@ export function BasketScreen({
       {/* Phone/tablet: one compact bar sitting flush on the tab bar (measured), opaque so no content peeks between. */}
       <div
         data-buy-bar
-        className={cn("fixed inset-x-0 z-30 border-t border-white/[0.07] bg-bg px-4 py-2 lg:hidden", navH === null && "bottom-[53px] md:bottom-0")}
+        className={cn("fixed inset-x-0 z-30 border-t border-white/[0.07] bg-bg px-4 py-1.5 lg:hidden", navH === null && "bottom-[53px] md:bottom-0")}
         style={navH === null ? undefined : { bottom: navH }}
       >
         <div className="mx-auto flex max-w-[640px] items-center gap-3">
@@ -395,11 +369,11 @@ export function BasketScreen({
             )}
           </div>
           {holding && (
-            <Button variant="secondary" auto className="!h-11 !rounded-full" onClick={() => openSheet("exit")}>
+            <Button variant="secondary" auto className="!h-10 !rounded-full" onClick={() => openSheet("exit")}>
               Exit
             </Button>
           )}
-          <Button variant="buy" auto className="!h-11 !rounded-full !px-8" onClick={() => openSheet("buy", buyAmount)}>
+          <Button variant="buy" auto className="!h-10 !rounded-full !px-8" onClick={() => openSheet("buy", buyAmount)}>
             Buy
           </Button>
         </div>

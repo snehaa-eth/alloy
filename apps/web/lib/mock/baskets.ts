@@ -148,7 +148,7 @@ export function mockRebalances(basket: Basket): RebalanceEvent[] {
       at: MOCK_NOW - 6 * DAY,
       changes: [{ symbol: a.stock.symbol, fromBps: a.targetBps + 620, toBps: a.targetBps + 500 }],
       costBps: 18,
-      reason: "Drift outside band; trimmed back to the band edge.",
+      reason: "Moved back toward the plan.",
     },
     {
       id: `${basket.address}-1`,

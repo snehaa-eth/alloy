@@ -22,7 +22,7 @@ import { formatFixed, formatUsd6 } from "@/lib/units";
 import { cn } from "@/lib/utils";
 import { CreatorAvatar } from "./v5/parts";
 
-const TIP = "Test network: prices are real, money is test USDC.";
+const TIP = "Test mode: prices are real, money is pretend.";
 
 function BaseMark({ size = 14 }: { size?: number }) {
   return (
@@ -35,14 +35,16 @@ function BaseMark({ size = 14 }: { size?: number }) {
 
 const explorer = (addr: string) => `${DEFAULT_CHAIN.blockExplorers?.default.url ?? "https://sepolia.basescan.org"}/address/${addr}`;
 
-function Panel({ children, label }: { children: ReactNode; label: string }) {
+function Panel({ children, label, align = "end" }: { children: ReactNode; label: string; align?: "start" | "center" | "end" }) {
   return (
     <Popover.Portal>
+      {/* collisionPadding keeps a 16px gutter on phones instead of pinning the menu to the screen edge */}
       <Popover.Content
-        align="end"
+        align={align}
         sideOffset={10}
+        collisionPadding={16}
         aria-label={label}
-        className="z-[60] w-[300px] rounded-[16px] border border-white/[0.08] bg-s1 p-2 text-tx shadow-[0_24px_60px_-12px_rgba(0,0,0,0.85)] outline-none animate-fade-in"
+        className="z-[60] w-[min(300px,calc(100vw-32px))] rounded-[16px] border border-white/[0.08] bg-s1 p-2 text-tx shadow-[0_24px_60px_-12px_rgba(0,0,0,0.85)] outline-none animate-fade-in"
       >
         {children}
       </Popover.Content>
@@ -122,7 +124,7 @@ export function NetworkChip() {
     <Popover.Root>
       <Popover.Trigger
         title={wrong ? `Switch to ${DEFAULT_CHAIN.name}` : TIP}
-        aria-label={wrong ? `Wrong network. Switch to ${DEFAULT_CHAIN.name}` : testnet ? `Test mode on ${c.name}` : c.name}
+        aria-label={wrong ? `Wrong network. Switch to ${DEFAULT_CHAIN.name}` : testnet ? "Test mode" : c.name}
         className={cn(
           "inline-flex h-9 flex-none items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 text-[13px] font-medium transition-colors sm:px-3",
           wrong
@@ -140,39 +142,45 @@ export function NetworkChip() {
         <span>{wrong ? (w.switching ? "Switching…" : "Wrong network") : testnet ? "Test mode" : c.name}</span>
         <ChevronDown size={13} strokeWidth={1.75} className="hidden sm:block" aria-hidden />
       </Popover.Trigger>
-      <Panel label="Network">
-        <p className="px-3 pb-1 pt-2 text-[12px] font-medium text-tx2">Network</p>
+      <Panel label="Test mode" align="center">
         {wrong && (
-          <div className="px-1 pb-2">
+          <div className="px-1 pb-1 pt-1">
             <Item icon={RefreshCw} onClick={fix} primary>
               Switch to {DEFAULT_CHAIN.name}
             </Item>
           </div>
         )}
-        <div className="flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-[14px]">
-          <BaseMark size={16} />
-          <span className="flex-1">
-            {DEFAULT_CHAIN.name} <span className="text-tx2">· testnet</span>
-          </span>
-          {!wrong && <Check size={16} strokeWidth={2} style={{ color: "var(--hi)" }} aria-label="Active" />}
-        </div>
-        <div className="flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-[14px] text-tx2 opacity-60" aria-disabled>
-          <BaseMark size={16} />
-          <span className="flex-1">Base · mainnet</span>
-          <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px]">Coming soon</span>
-        </div>
-        <p className="mx-3 my-2 border-t border-white/[0.07] pt-2.5 text-[13px] text-tx2">Prices are real. Money is test USDC.</p>
-        {/* Signed out: the one next step is signing in (copper). Signed in: a plain row. */}
+        <p className="px-3 pb-2 pt-2.5 text-[14px] text-tx">Prices are real. Money is pretend.</p>
+        {/* Signed out: the one next step is signing in. Signed in: a plain row. */}
         <div className={w.authenticated ? undefined : "px-1 pb-1"}>
           <Item icon={Droplets} onClick={faucet.run} disabled={faucet.pending} primary={!w.authenticated}>
             {faucet.pending ? "Adding test money…" : w.authenticated ? "Get test money" : "Sign in to get test money"}
           </Item>
         </div>
-        {w.address && (
-          <Item icon={ScanSearch} href={explorer(w.address)} external>
-            View on BaseScan
-          </Item>
-        )}
+        {/* Crypto plumbing stays out of sight unless asked for. */}
+        <details className="group mx-1 mt-1 border-t border-white/[0.07] pt-1">
+          <summary className="flex cursor-pointer list-none items-center gap-2 rounded-[10px] px-2 py-2 text-[13px] text-tx2 hover:text-tx [&::-webkit-details-marker]:hidden">
+            Network details
+            <ChevronDown size={13} strokeWidth={1.75} className="transition-transform group-open:rotate-180" aria-hidden />
+          </summary>
+          <div className="flex items-center gap-3 rounded-[10px] px-2 py-2 text-[13px]">
+            <BaseMark size={14} />
+            <span className="flex-1">
+              {DEFAULT_CHAIN.name} <span className="text-tx2">· test network</span>
+            </span>
+            {!wrong && <Check size={14} strokeWidth={2} className="text-tx2" aria-label="Active" />}
+          </div>
+          <div className="flex items-center gap-3 rounded-[10px] px-2 py-2 text-[13px] text-tx2 opacity-60" aria-disabled>
+            <BaseMark size={14} />
+            <span className="flex-1">Base · real money</span>
+            <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px]">Coming soon</span>
+          </div>
+          {w.address && (
+            <Item icon={ScanSearch} href={explorer(w.address)} external>
+              View on BaseScan
+            </Item>
+          )}
+        </details>
       </Panel>
     </Popover.Root>
   );

@@ -28,7 +28,7 @@ export function Providers({ children }: { children: ReactNode }) {
       config={{
         appearance: {
           theme: "#0C0A0A",
-          accentColor: "#B8693F",
+          accentColor: "#F2EDE8", // cream: copper is reserved for Buy, so nothing in sign-in is copper
           logo: PRIVY_LOGO,
           landingHeader: "Sign in to Alloy",
           walletChainType: "ethereum-only",
