@@ -8,3 +8,6 @@ __pycache__/
 *.pyc
 .ponder/
 .playwright-mcp/
+docs/design/review/shots/
+docs/design/app-shots-v5/*-burgundy.png
+docs/design/app-shots-v5/*-v2palette.png
