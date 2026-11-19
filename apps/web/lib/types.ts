@@ -17,6 +17,13 @@ export type Stock = {
   token: Address;
   /** Chainlink price, 8 decimals (underlying x multiplier, per raw token). */
   price8: bigint;
+  /** Price feed (Chainlink AggregatorV3 shape). */
+  feed?: Address;
+  /** Unix seconds of the latest feed update. */
+  priceUpdatedAt?: number;
+  /** Logo (Coinbase tokenized-stocks icon_url). */
+  iconUrl?: string | null;
+  decimals?: number;
 };
 
 export type BasketComponent = {
@@ -51,6 +58,26 @@ export type Basket = {
   createdAt: number;
   /** Story baskets: where the idea comes from (shown with "not affiliated"). */
   story?: { source: string; disclosureDate: string };
+
+  // ---- Live (on-chain) fields. Optional so mock data still type-checks. ----
+  /** "chain" = read from Base Sepolia now; "mock" = illustrative fallback data. */
+  source?: "chain" | "mock";
+  chainId?: number;
+  /** basket.nav(), converted to usd6. */
+  navUsd6?: bigint;
+  /** basket.navPerShare(), converted to usd6 per 1e18 shares. */
+  navPerShareUsd6?: bigint;
+  bands?: { absBandBps: number; relBandBps: number; capBps: number };
+  /** Pending recipe change (creator proposed; keeper executes at executableAt). */
+  pendingRecipe?: { weightsBps: number[]; executableAt: number; reasonHash: `0x${string}`; reason?: string } | null;
+  /** Unix seconds; 0 = never. */
+  lastRebalanceAt?: number;
+  lastRecipeExecutionAt?: number;
+  nextTrimAt?: number;
+  /** usd6; 0 = unlimited. */
+  tvlCapUsd6?: bigint;
+  imageUrl?: string | null;
+  tags?: string[];
 };
 
 export type NavPoint = { t: number; navPerShareUsd6: bigint };
@@ -87,3 +114,8 @@ export type Position = {
   /** Net USDC put in (buys - sells), 6 decimals. */
   costUsd6: bigint;
 };
+
+export type PricePoint = { t: number; price8: bigint };
+
+/** Tokens a user is owed after an incomplete redeem (claim with Basket.claimOwed). */
+export type OwedBalance = { basket: Address; token: Address; symbol: string; amount8: bigint };

@@ -4,14 +4,17 @@ import { loadEnv } from "./config/env";
 import { connectDb } from "./config/db";
 import type { AppDeps } from "./deps";
 import { createPrivyVerifier } from "./lib/auth";
-import { createViemCreatorReader } from "./lib/chain";
+import { createChainClients, createViemCreatorReader } from "./lib/chain";
 import { strictCors } from "./middleware/cors";
 import { errorHandler, notFound } from "./middleware/errorHandler";
 import { DEFAULT_RATE_LIMITS, createLimiters } from "./middleware/rateLimit";
 import { basketsRouter } from "./modules/baskets/baskets.routes";
 import { healthRouter } from "./modules/health/health.routes";
 import { proposalsRouter } from "./modules/proposals/proposals.routes";
-import { notImplementedQuoteService } from "./modules/quote/quote.service";
+import { createMongoMetaStore } from "./modules/baskets/basketMeta.store";
+import { createFaucetRelayer } from "./modules/faucet/faucet.service";
+import { faucetRouter } from "./modules/faucet/faucet.routes";
+import { createChainQuoteService } from "./modules/quote/quote.service";
 import { quoteRouter } from "./modules/quote/quote.routes";
 import { reasonsRouter } from "./modules/reasons/reasons.routes";
 import { stocksRouter } from "./modules/stocks/stocks.routes";
@@ -24,13 +27,18 @@ import { waitlistRouter } from "./modules/waitlist/waitlist.routes";
  */
 export function createApp(overrides: Partial<AppDeps> = {}): Express {
   const env = overrides.env ?? loadEnv();
+  const chain = overrides.chain ?? createChainClients(env);
+  const connect = overrides.connectDb ?? (() => connectDb(env.MONGO_URI));
   const deps: AppDeps = {
     env,
     auth: overrides.auth ?? createPrivyVerifier(env),
     creators: overrides.creators ?? createViemCreatorReader(env),
-    quotes: overrides.quotes ?? notImplementedQuoteService,
+    chain,
+    quotes: overrides.quotes ?? createChainQuoteService(chain),
+    faucet: overrides.faucet !== undefined ? overrides.faucet : createFaucetRelayer(env),
+    basketMeta: overrides.basketMeta ?? createMongoMetaStore(connect),
     fetch: overrides.fetch ?? globalThis.fetch,
-    connectDb: overrides.connectDb ?? (() => connectDb(env.MONGO_URI)),
+    connectDb: connect,
     rateLimits: overrides.rateLimits ?? DEFAULT_RATE_LIMITS,
   };
 
@@ -53,6 +61,7 @@ export function createApp(overrides: Partial<AppDeps> = {}): Express {
   api.use(reasonsRouter(deps, limiters));
   api.use(proposalsRouter(deps, limiters));
   api.use(quoteRouter(deps));
+  api.use(faucetRouter(deps));
   api.use(waitlistRouter(deps, limiters));
 
   app.use("/api/v1", api); // legacy prefix the web app already uses

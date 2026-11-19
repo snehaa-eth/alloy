@@ -1,10 +1,9 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { getAddress } from "viem";
 import request from "supertest";
 import { describe, expect, it, vi } from "vitest";
 import { BASE_MAINNET_UNIVERSE } from "../src/config/universe";
-import { buildApp, testEnv } from "./helpers";
+import { S, mockChain } from "./chainMock";
+import { buildApp } from "./helpers";
 
 const NVDA = BASE_MAINNET_UNIVERSE.find((s) => s.symbol === "NVDAc")!;
 
@@ -63,19 +62,36 @@ describe("GET /stocks", () => {
     expect(res.body.error.code).toBe("validation_error");
   });
 
-  it("reads Base Sepolia stocks from TESTNET_DEPLOYMENTS_PATH", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "alloy-api-"));
-    const file = join(dir, "deployments.json");
-    writeFileSync(file, JSON.stringify({ stocks: [{ symbol: "tNVDA", address: "0x" + "ab".repeat(20) }] }));
-    const app = buildApp({ env: testEnv({ TESTNET_DEPLOYMENTS_PATH: file }) });
-    const res = await request(app).get("/stocks?chainId=84532");
+  it("serves Base Sepolia test stocks from @alloy/sdk with feed prices and real-ticker icons", async () => {
+    const fetchMock = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          tokens: [{ contract_address: NVDA.address, symbol: "NVDAc", icon_url: "https://metadata.coinbase.com/nvda.png" }],
+        }),
+        { status: 200 },
+      ),
+    ) as unknown as typeof fetch;
+    const chain = mockChain({ latestRoundData: [1n, 151_36187976n, 0n, 1_795_000_000n, 1n] });
+    const res = await request(buildApp({ fetch: fetchMock, chain })).get("/stocks?chainId=84532");
     expect(res.status).toBe(200);
-    expect(res.body.data).toEqual([expect.objectContaining({ chainId: 84532, symbol: "tNVDA", decimals: 8 })]);
+    expect(res.body.data).toHaveLength(6);
+    const nvda = res.body.data.find((s: { symbol: string }) => s.symbol === "tNVDAc");
+    expect(nvda).toMatchObject({
+      chainId: 84532,
+      address: getAddress(S.tNVDAc.token),
+      decimals: 8,
+      iconUrl: "https://metadata.coinbase.com/nvda.png",
+      testnet: { underlying: "NVDA", feed: S.tNVDAc.feed, pool: S.tNVDAc.pool, allowed: true, priceUsd8: "15136187976", price: 151.36187976 },
+    });
+    expect(res.body.data.find((s: { symbol: string }) => s.symbol === "tTSLAc").iconUrl).toBeNull();
   });
 
-  it("returns an empty list for Base Sepolia when no deployments file is configured", async () => {
-    const res = await request(buildApp()).get("/stocks?chainId=84532");
+  it("still lists Base Sepolia stocks when icons and feeds are unreachable", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const fetchMock = vi.fn(async () => new Response("x", { status: 500 })) as unknown as typeof fetch;
+    const res = await request(buildApp({ fetch: fetchMock })).get("/stocks?chainId=84532");
     expect(res.status).toBe(200);
-    expect(res.body.data).toEqual([]);
+    expect(res.body.data).toHaveLength(6);
+    expect(res.body.data[0].testnet.price).toBeNull();
   });
 });

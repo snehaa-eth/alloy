@@ -1,0 +1,29 @@
+{
+  "name": "@alloy/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "ponder dev",
+    "indexer": "ponder start",
+    "codegen": "ponder codegen",
+    "keeper": "tsx services/keeper/index.ts",
+    "price-sync": "tsx services/pricesync.ts",
+    "start": "tsx services/main.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "hono": "^4.13.19",
+    "ponder": "0.18.9",
+    "viem": "2.38.0",
+    "tsx": "4.19.2"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.0",
+    "typescript": "5.7.2"
+  }
+}

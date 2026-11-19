@@ -1,0 +1,41 @@
+{
+  "aAIBO": {
+    "address": "0x708fE03f9829023edF000Ff47482d784bed7F9e4",
+    "creatorShares": "999000000000000000000",
+    "demo": false,
+    "mode": "balanced",
+    "name": "The AI Build-Out",
+    "navUsd8": 99902119879,
+    "seedUsdc6": 1000000000
+  },
+  "aBIGT": {
+    "address": "0x59BbaAE469CBB1429a1a71e8a9154997db59b5BE",
+    "creatorShares": "999000000000000000000",
+    "demo": false,
+    "mode": "balanced",
+    "name": "Big Tech, Trimmed",
+    "navUsd8": 99857698431,
+    "seedUsdc6": 1000000000
+  },
+  "aCONV": {
+    "address": "0xa92a6e8DE62a96849c93D768b8E11eB242379B25",
+    "creatorShares": "999000000000000000000",
+    "demo": false,
+    "mode": "let-winners-run",
+    "name": "Conviction Bets",
+    "navUsd8": 99809080087,
+    "seedUsdc6": 1000000000
+  },
+  "aDEMO": {
+    "address": "0x9f0A8C7a04AF5a22F5382278BDB2290b5b948aCF",
+    "creatorShares": "499500000000000000000",
+    "demo": true,
+    "mode": "balanced",
+    "name": "Alloy Demo: Judges' Basket",
+    "navUsd8": 49852294869,
+    "seedUsdc6": 500000000
+  },
+  "chainId": 84532,
+  "creator": "0xcBe600349CE4cF89842Bc371E4a4062140CDCCcD",
+  "factory": "0x2AeA38fb99D411607201EE42058520Fe8B19785f"
+}

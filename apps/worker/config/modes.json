@@ -1,0 +1,9 @@
+{
+  "_doc": "Keeper policy per basket: balanced | let-winners-run | trend. Keys = basket address or share symbol (case-insensitive). Unlisted baskets: let-winners-run if absBand=relBand=10000, else balanced. KEEPER_MODES env (same 'modes' object as JSON) overrides this file.",
+  "modes": {
+    "aAIBO": "balanced",
+    "aBIGT": "balanced",
+    "aCONV": "let-winners-run",
+    "aDEMO": "balanced"
+  }
+}

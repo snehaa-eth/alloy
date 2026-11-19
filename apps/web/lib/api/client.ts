@@ -9,6 +9,8 @@
 import { z } from "zod";
 
 export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v2").replace(/\/$/, "");
+/** False when NEXT_PUBLIC_API_URL is unset: callers skip the API and use on-chain fallbacks. */
+export const API_CONFIGURED = !!process.env.NEXT_PUBLIC_API_URL;
 
 export class ApiError extends Error {
   constructor(
@@ -27,6 +29,8 @@ type FetchOptions<T> = {
   accessToken?: string | null;
   schema: z.ZodType<T, z.ZodTypeDef, unknown>;
   signal?: AbortSignal;
+  /** Abort after this many ms (default 8000). */
+  timeoutMs?: number;
   /** Next.js fetch cache options for server components. */
   next?: { revalidate?: number | false; tags?: string[] };
 };
@@ -40,7 +44,7 @@ export async function apiFetch<T>(path: string, opts: FetchOptions<T>): Promise<
     method: opts.method ?? "GET",
     headers,
     body: opts.body === undefined ? undefined : JSON.stringify(opts.body, bigintReplacer),
-    signal: opts.signal,
+    signal: opts.signal ?? AbortSignal.timeout(opts.timeoutMs ?? 8_000),
     next: opts.next,
   });
 

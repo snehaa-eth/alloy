@@ -1,6 +1,6 @@
 import request from "supertest";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { BasketMeta } from "../src/modules/baskets/basketMeta.model";
+import { RebalanceReason } from "../src/modules/reasons/reason.model";
 import { Waitlist } from "../src/modules/waitlist/waitlist.model";
 import { VAULT, buildApp, fakeQuery } from "./helpers";
 
@@ -44,9 +44,9 @@ describe("input validation and injection attempts", () => {
   });
 
   it("hides internal error details behind a generic 500", async () => {
-    vi.spyOn(BasketMeta, "findOne").mockReturnValue(fakeQuery(new Error("MongoServerError: secret cluster detail")));
+    vi.spyOn(RebalanceReason, "find").mockReturnValue(fakeQuery(new Error("MongoServerError: secret cluster detail")));
     const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    const res = await request(app).get(`/baskets/${VAULT}`);
+    const res = await request(app).get(`/baskets/${VAULT}/rebalance-reasons`);
     expect(res.status).toBe(500);
     expect(res.body).toEqual({ error: { code: "internal_error", message: "Internal server error" } });
     expect(spy).toHaveBeenCalled();
@@ -75,9 +75,9 @@ describe("GET /quote", () => {
     expect((await request(app).get(`/quote?basket=${VAULT}&side=short&amount=1`)).status).toBe(400);
   });
 
-  it("returns 501 until contracts land", async () => {
-    const res = await request(app).get(`/quote?basket=${VAULT}&side=buy&amount=10000000`);
+  it("returns 501 on chains where Alloy is not deployed", async () => {
+    const res = await request(app).get(`/quote?chainId=8453&basket=${VAULT}&side=buy&amount=10000000`);
     expect(res.status).toBe(501);
-    expect(res.body.error.code).toBe("not_implemented");
+    expect(res.body.error.code).toBe("not_deployed");
   });
 });

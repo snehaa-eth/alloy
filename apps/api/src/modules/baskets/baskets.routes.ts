@@ -8,11 +8,13 @@ import { requireDb } from "../../middleware/db";
 import type { createLimiters } from "../../middleware/rateLimit";
 import { getValid, validate } from "../../middleware/validate";
 import { BasketMeta, toBasketMetaDto } from "./basketMeta.model";
+import { createBasketsService } from "./baskets.service";
 
 const zTag = z.string().trim().toLowerCase().regex(/^[a-z0-9-]{1,32}$/, "tags are 1-32 chars of a-z, 0-9, -");
 
 export const MetaBody = z
   .strictObject({
+    title: z.string().trim().min(1).max(80).optional(),
     thesis: z.string().trim().min(1).max(2000).optional(),
     imageUrl: z
       .url({ protocol: /^https$/ })
@@ -24,15 +26,18 @@ export const MetaBody = z
       .transform((t) => [...new Set(t)])
       .optional(),
   })
-  .refine((b) => Object.keys(b).length > 0, { message: "provide at least one of thesis, imageUrl, tags" });
+  .refine((b) => Object.keys(b).length > 0, { message: "provide at least one of title, thesis, imageUrl, tags" });
 
 export function basketsRouter(deps: AppDeps, limiters: ReturnType<typeof createLimiters>) {
   const router = Router();
   const db = requireDb(deps.connectDb);
   const chainId = zChainId(deps.env);
 
-  // TODO(indexer): merge on-chain data (comps, weights, NAV, AUM, followers, fee) from Ponder,
-  // support ?sort=aum|perf, and only list baskets the indexer knows (BasketCreated events).
+  const baskets = createBasketsService(deps.chain, { logsMaxRange: deps.env.RPC_LOGS_MAX_RANGE });
+
+  // On-chain state (factory enumeration + basket reads, cached 15s) merged with Mongo text metadata.
+  // Mongo being down degrades to meta: null instead of failing the request.
+  // TODO(indexer): replace factory enumeration + Transfer-log followers with Ponder; add ?sort=aum|perf.
   const listSchemas = {
     query: z.object({
       chainId,
@@ -41,20 +46,34 @@ export function basketsRouter(deps: AppDeps, limiters: ReturnType<typeof createL
       offset: z.coerce.number().int().min(0).max(10_000).default(0),
     }),
   };
-  router.get("/baskets", validate(listSchemas), db, async (_req, res) => {
+  router.get("/baskets", validate(listSchemas), async (_req, res) => {
     const { query } = getValid(res, listSchemas);
-    const filter: Record<string, unknown> = { chainId: query.chainId };
-    if (query.tag) filter.tags = query.tag;
-    const docs = await BasketMeta.find(filter).sort({ updatedAt: -1 }).skip(query.offset).limit(query.limit).lean();
-    res.json({ data: docs.map(toBasketMetaDto), meta: { limit: query.limit, offset: query.offset } });
+    const [onchain, meta] = await Promise.all([
+      baskets.list(query.chainId).catch(rpcError),
+      deps.basketMeta.byChain(query.chainId),
+    ]);
+    let merged = onchain.map((b) => ({ ...b, meta: meta?.get(b.vault.toLowerCase()) ?? null }));
+    if (query.tag) merged = merged.filter((b) => b.meta?.tags.includes(query.tag!));
+    res.set("Cache-Control", "public, s-maxage=15, stale-while-revalidate=30");
+    res.json({
+      data: merged.slice(query.offset, query.offset + query.limit),
+      meta: { limit: query.limit, offset: query.offset, total: merged.length, metadata: meta ? "ok" : "unavailable" },
+    });
   });
 
   const detailSchemas = { params: z.object({ vault: zAddress }), query: z.object({ chainId }) };
-  router.get("/baskets/:vault", validate(detailSchemas), db, async (_req, res) => {
+  router.get("/baskets/:vault", validate(detailSchemas), async (_req, res) => {
     const { params, query } = getValid(res, detailSchemas);
-    const doc = await BasketMeta.findOne({ chainId: query.chainId, vault: params.vault }).lean();
-    if (!doc) throw HttpError.notFound("No metadata for this basket");
-    res.json({ data: toBasketMetaDto(doc) });
+    const [b, meta] = await Promise.all([
+      baskets.get(query.chainId, params.vault).catch(rpcError),
+      deps.basketMeta.byChain(query.chainId),
+    ]);
+    if (!b) throw HttpError.notFound("Not an Alloy basket on this chain");
+    res.set("Cache-Control", "public, s-maxage=15, stale-while-revalidate=30");
+    res.json({
+      data: { ...b, meta: meta?.get(b.vault.toLowerCase()) ?? null },
+      meta: { metadata: meta ? "ok" : "unavailable" },
+    });
   });
 
   const metaSchemas = { params: z.object({ vault: zAddress }), query: z.object({ chainId }), body: MetaBody };
@@ -72,6 +91,7 @@ export function basketsRouter(deps: AppDeps, limiters: ReturnType<typeof createL
       const { params, query, body } = getValid(res, metaSchemas);
       // Only whitelisted fields from the strict zod schema are written (no mass assignment).
       const set: Record<string, unknown> = { updatedBy: res.locals.creator };
+      if (body.title !== undefined) set.title = body.title;
       if (body.thesis !== undefined) set.thesis = body.thesis;
       if (body.imageUrl !== undefined) set.imageUrl = body.imageUrl;
       if (body.tags !== undefined) set.tags = body.tags;
@@ -85,4 +105,9 @@ export function basketsRouter(deps: AppDeps, limiters: ReturnType<typeof createL
   );
 
   return router;
+}
+
+function rpcError(err: unknown): never {
+  console.error("[baskets] chain read failed:", err instanceof Error ? err.message.split("\n")[0] : err);
+  throw new HttpError(502, "rpc_unavailable", "Chain RPC temporarily unavailable");
 }

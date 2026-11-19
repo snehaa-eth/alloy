@@ -23,7 +23,9 @@ Other scripts:
 | --- | --- |
 | `npm test` | vitest + supertest. No network, Mongo or Privy needed. |
 | `npm run build` | `tsc` to `dist/` (also a full typecheck). |
-| `npm start` | Runs `dist/src/server.js`. |
+| `npm start` | Runs `dist/apps/api/src/server.js`. |
+| `npm run smoke` | Live check against Base Sepolia: `/quote` buy $10 + sell, `/stocks`, `/baskets`. No keys or Mongo needed. |
+| `npm run seed:metadata [-- --dry-run]` | Upserts seed-basket metadata (title, thesis, `/brand/covers/*.webp`, tags). Writes only if `MONGO_URI` is reachable, otherwise it does a dry run. |
 
 ## Environment
 
@@ -39,7 +41,12 @@ fails fast and names the variable, never its value. See `.env.example`.
 | `RPC_URL_BASE`, `RPC_URL_BASE_SEPOLIA` | no | Falls back to the public RPC. |
 | `INVITE_CODES` | no | Comma-separated waitlist invite codes. |
 | `CRON_SECRET` | no | 32+ chars. Machine callers (AI agent, cron) send `Authorization: Bearer <CRON_SECRET>`. |
-| `TESTNET_DEPLOYMENTS_PATH` | no | JSON file of Base Sepolia test stocks from `packages/testnet-env`. |
+| `RELAYER_PK` | no | Base Sepolia gas-only relayer key for `POST /faucet/drip`. Unset = 501. Testnet only. |
+| `RPC_LOGS_MAX_RANGE` | no | Default `200` (public RPC limit). Block range per `eth_getLogs` for follower counts. |
+
+Addresses and ABIs come from `@alloy/sdk` (`packages/sdk/src`, imported by relative path through
+`src/config/sdk.ts`). So `tsc` uses `rootDir: ../..` and the build output is `dist/apps/api/src/...`.
+On Vercel, keep "Include files outside the Root Directory" on (the default) so `packages/sdk` is bundled.
 
 ## Endpoints
 
@@ -52,17 +59,18 @@ Every route is mounted at `/` and at the legacy `/api/v1` prefix.
 | Route | Notes |
 | --- | --- |
 | `GET /health` | |
-| `GET /stocks` | v2 universe from the Coinbase tokenized-stocks API (8453), or the testnet deployments file (84532). Cached for 5 min. |
-| `GET /baskets?tag=&limit=&offset=` | Basket metadata. |
-| `GET /baskets/:vault` | |
+| `GET /stocks` | 8453: v2 universe from the Coinbase tokenized-stocks API, cached for 5 min. 84532: sdk test stocks with `testnet.{feed,pool,priceUsd8}` and the real ticker's Coinbase icon, cached for 15s. |
+| `GET /baskets?tag=&limit=&offset=` | On-chain baskets (factory `basketCount`/`allBaskets`, then getBundle, nav, navPerShare, creator, fee, mode, pendingRecipe, TVL cap) merged with Mongo `meta` (title, thesis, imageUrl, tags). Cached for 15s. If Mongo is down, `meta` is null. `followers` stays null until the Transfer-log scan reaches the chain head. |
+| `GET /baskets/:vault` | Same shape. 404 if the address is not a factory basket. |
 | `GET /baskets/:vault/rebalance-reasons` | |
 | `GET /baskets/:vault/rebalance-reasons/:hash` | |
 | `GET /baskets/:vault/proposals?status=` | |
 | `GET /proposals/:id` | |
-| `GET /quote?basket=&side=buy\|sell&amount=<base units>&slippageBps=` | Returns **501** until the contracts land. |
+| `GET /quote?basket=&side=buy\|sell&amount=<base units>&slippageBps=` | Real quotes on 84532 (501 on 8453). **buy:** `amount` is tUSDC (6 dec). It runs `router.splitUsdc`, then QuoterV2 per leg, then `router.sharesFor`. **sell:** `amount` is shares (18 dec). It runs `basket.previewRedeem`, then QuoterV2 per leg to tUSDC. Returns per-leg `minOut`, `expectedResult`/`minResult`, `cost` vs oracle (pool fee + impact), ready `tx` args, `approval` and `expiresAt` (+30s). `slippageBps` defaults to 100. Cached for 10s. |
 | `GET /waitlist/check?wallet=&inviteCode=` | |
 | `GET /waitlist/count` | Alias: `/waitlist/waitlist-users`. |
 | `POST /waitlist/join` `{ email, wallet? }` | |
+| `POST /faucet/drip` `{ address }` | Base Sepolia only. The relayer calls `Faucet.dripTo(address)` and returns `202 { txHash }`. Limits: 5/day per IP, 1 successful drip/day per address, plus the contract's 24h cooldown (429 `faucet_cooldown`). Returns 501 if `RELAYER_PK` is unset. |
 
 **Creator writes**
 
@@ -70,7 +78,7 @@ These need a Privy access token (`Authorization: Bearer <token>`). One of the us
 
 | Route | Body |
 | --- | --- |
-| `POST /baskets/:vault/meta` | `{ thesis?, imageUrl?, tags? }` |
+| `POST /baskets/:vault/meta` | `{ title?, thesis?, imageUrl?, tags? }` |
 | `POST /baskets/:vault/rebalance-reason` | `{ text }`. Returns `reasonHash = keccak256(utf8(NFC-trimmed text))` to pass to `proposeRecipe`. |
 | `POST /proposals/:id/approve` | |
 | `POST /proposals/:id/reject` | |
@@ -94,7 +102,8 @@ src/server.ts         local listen + graceful shutdown
 src/config/           env (zod), db (cached mongoose, sanitizeFilter), universe
 src/lib/              auth (Privy, requireCreator, service key), chain (viem), errors, zod schemas
 src/middleware/       validate, rateLimit, cors, db, errorHandler
-src/modules/<name>/   health, stocks, baskets, reasons, proposals, quote, waitlist
+src/modules/<name>/   health, stocks, baskets, reasons, proposals, quote, faucet, waitlist
+scripts/              smoke.ts (live Base Sepolia), seed-metadata.ts
 test/                 vitest + supertest
 ```
 
@@ -103,4 +112,4 @@ test/                 vitest + supertest
 - **Auth.** Privy JWTs are verified server-side and linked wallets are resolved via the Privy API, cached for 60s per user. Creator checks read `creator()` on-chain via viem.
 - **Inputs.** All inputs are zod-parsed, with strict bodies (no mass assignment). The query parser is set to `simple` (no nested objects), and mongoose `sanitizeFilter` is on.
 - **Rate limits.** Global 300/min/IP, writes 30/min, waitlist 10/min. The store is **in-memory, per instance** (see TODO).
-- **No server-side signing keys.** The API holds no private keys. The keeper key lives only on the Railway worker.
+- **Signing keys.** The only key the API may hold is the optional `RELAYER_PK`: a Base Sepolia gas-only key used solely for `Faucet.dripTo`. It is zod-validated without echoing its value and never logged. The keeper key lives only on the Railway worker.

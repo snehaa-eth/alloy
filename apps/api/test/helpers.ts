@@ -5,6 +5,7 @@ import { loadEnv, type Env } from "../src/config/env";
 import type { AppDeps } from "../src/deps";
 import type { AuthVerifier } from "../src/lib/auth";
 import type { CreatorReader } from "../src/lib/chain";
+import { mockChain } from "./chainMock";
 
 export const CREATOR: Address = "0x1111111111111111111111111111111111111111";
 export const STRANGER: Address = "0x2222222222222222222222222222222222222222";
@@ -46,6 +47,9 @@ export function buildApp(overrides: Partial<AppDeps> = {}) {
     auth: stubAuth,
     creators: stubCreators,
     connectDb: async () => undefined,
+    chain: mockChain({}),
+    faucet: null,
+    basketMeta: { byChain: async () => new Map() },
     fetch: vi.fn() as unknown as typeof fetch,
     rateLimits: { windowMs: 60_000, globalMax: 10_000, writeMax: 10_000, waitlistMax: 10_000 },
     ...overrides,

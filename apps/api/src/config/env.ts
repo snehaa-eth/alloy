@@ -47,7 +47,19 @@ const EnvSchema = z.object({
   PRIVY_APP_SECRET: z.string().min(1),
   INVITE_CODES: z.string().default("").transform(csv),
   CRON_SECRET: optionalString.pipe(z.string().min(32).optional()),
-  TESTNET_DEPLOYMENTS_PATH: optionalString,
+  /**
+   * Base Sepolia relayer key for POST /faucet/drip (pays gas for Faucet.dripTo). Testnet only,
+   * holds only test ETH. Unset = the faucet endpoint returns 501.
+   */
+  RELAYER_PK: optionalString.pipe(
+    z
+      .string()
+      .regex(/^0x[0-9a-fA-F]{64}$/, "must be a 0x-prefixed 32-byte hex private key")
+      .transform((v) => v as `0x${string}`)
+      .optional(),
+  ),
+  /** Max block range per eth_getLogs call (public sepolia.base.org allows 200). Used for follower counts. */
+  RPC_LOGS_MAX_RANGE: z.coerce.number().int().min(1).max(1_000_000).default(200),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

@@ -1,20 +1,22 @@
 /**
  * Transaction helpers shared by every write:
- *   quote -> simulate -> exact approve (or permit) -> write -> receipt.status check -> invalidate
+ *   quote -> exact approve (simulated, receipt-checked) -> simulate main call -> write
+ *   -> receipt.status check -> invalidate queries
+ *
+ * Approve runs before the main simulation because simulating a router call that pulls tokens
+ * reverts until the allowance exists. tUSDC is a B20 token that does expose EIP-2612
+ * (`DOMAIN_SEPARATOR`/`nonces`), but AlloyRouter has no permit entrypoint, so a permit would still
+ * need its own transaction: exact approve is used.
+ *
+ * Every tx carries the Builder Code `dataSuffix` (lib/contracts.ts) and is sent through a `Sender`,
+ * which is either the wagmi wallet or Privy's sponsored `sendTransaction` (gasless embedded wallet).
  */
-import {
-  BaseError,
-  ContractFunctionRevertedError,
-  UserRejectedRequestError,
-  erc20Abi,
-  type Address,
-  type Hash,
-  type TransactionReceipt,
-} from "viem";
-import { readContract, simulateContract, waitForTransactionReceipt, writeContract } from "wagmi/actions";
+import { erc20Abi, type Address, type Hash, type Hex, type TransactionReceipt } from "viem";
+import { readContract, sendTransaction, simulateContract, waitForTransactionReceipt } from "wagmi/actions";
 import type { Config } from "wagmi";
 import type { SupportedChainId } from "./chains";
-import { NotWiredError } from "./contracts";
+import { BUILDER_DATA_SUFFIX, NotWiredError, encodeTx, type ContractTx } from "./contracts";
+import { describeTxErrorCore } from "./errors";
 
 export type TxStep = "idle" | "quote" | "approve" | "simulate" | "write" | "confirm" | "done" | "error";
 
@@ -36,6 +38,14 @@ export class TxRevertedError extends Error {
   }
 }
 
+/** Sends a raw tx (calldata already includes the Builder Code suffix). Returns the hash. */
+export type Sender = (tx: { to: Address; data: Hex; chainId: SupportedChainId; account: Address }) => Promise<Hash>;
+
+/** Default sender: the connected wagmi wallet (Privy embedded or external). */
+export function wagmiSender(config: Config): Sender {
+  return ({ to, data, chainId, account }) => sendTransaction(config, { to, data, chainId, account });
+}
+
 /** Wait for the receipt and fail loudly unless status === "success". */
 export async function waitForSuccess(
   config: Config,
@@ -47,14 +57,32 @@ export async function waitForSuccess(
   return receipt;
 }
 
+export type TxCtx = { config: Config; chainId: SupportedChainId; account: Address; sender?: Sender };
+
+/** eth_call the tx from the user (decodes custom errors on revert); returns the function's return value. */
+export async function simulateTx<R = unknown>(ctx: TxCtx, tx: ContractTx): Promise<R> {
+  const { result } = await simulateContract(ctx.config, {
+    ...(tx as never as Parameters<typeof simulateContract>[1]),
+    chainId: ctx.chainId,
+    account: ctx.account,
+    dataSuffix: BUILDER_DATA_SUFFIX,
+  });
+  return result as R;
+}
+
+/** Send an already-simulated tx with the Builder Code suffix. */
+export async function sendTx(ctx: TxCtx, tx: ContractTx): Promise<Hash> {
+  const sender = ctx.sender ?? wagmiSender(ctx.config);
+  return sender({ to: tx.address, data: encodeTx(tx), chainId: ctx.chainId, account: ctx.account });
+}
+
 /**
  * Ensure `spender` may pull exactly `amount` of `token`. Approves the exact amount
- * (never infinite). Simulated before sending; receipt checked.
- * TODO(permit): use USDC EIP-2612 permit when the router exposes a permit entrypoint.
+ * (never infinite). Simulated before sending; receipt checked. Returns the approve hash or null.
  */
 export async function ensureExactAllowance(
   config: Config,
-  args: { chainId: SupportedChainId; token: Address; owner: Address; spender: Address; amount: bigint },
+  args: { chainId: SupportedChainId; token: Address; owner: Address; spender: Address; amount: bigint; sender?: Sender },
 ): Promise<Hash | null> {
   const current = await readContract(config, {
     chainId: args.chainId,
@@ -64,42 +92,17 @@ export async function ensureExactAllowance(
     args: [args.owner, args.spender],
   });
   if (current >= args.amount) return null;
-  const { request } = await simulateContract(config, {
-    chainId: args.chainId,
-    account: args.owner,
-    address: args.token,
-    abi: erc20Abi,
-    functionName: "approve",
-    args: [args.spender, args.amount],
-  });
-  const hash = await writeContract(config, request);
+  const ctx: TxCtx = { config, chainId: args.chainId, account: args.owner, sender: args.sender };
+  const tx: ContractTx = { address: args.token, abi: erc20Abi, functionName: "approve", args: [args.spender, args.amount] };
+  await simulateTx(ctx, tx);
+  const hash = await sendTx(ctx, tx);
   await waitForSuccess(config, args.chainId, hash);
   return hash;
 }
 
-/** Known custom errors -> user-facing copy. Names must match the contracts' errors. */
-const REVERT_COPY: Record<string, string> = {
-  PolicyForbids: "A stock token's transfer policy blocked this transfer. Try withdrawing in-kind or contact support.",
-  StaleFeed: "Price feeds are stale (market may be closed). Try again during US market hours.",
-  FeedPaused: "A price feed is paused (possible corporate action). Try again later.",
-  SlippageExceeded: "Price moved more than your slippage limit. Get a new quote and retry.",
-  InsufficientOutput: "Price moved more than your slippage limit. Get a new quote and retry.",
-  TvlCapExceeded: "This basket has reached its deposit cap.",
-  Paused: "Deposits are paused. You can still sell or withdraw.",
-};
-
+/** Plain-English message for any error thrown in a write flow. */
 export function describeTxError(err: unknown): string {
   if (err instanceof NotWiredError) return err.message;
   if (err instanceof TxRevertedError) return err.message;
-  if (err instanceof BaseError) {
-    if (err.walk((e) => e instanceof UserRejectedRequestError)) return "You rejected the request in your wallet.";
-    const revert = err.walk((e) => e instanceof ContractFunctionRevertedError);
-    if (revert instanceof ContractFunctionRevertedError) {
-      const name = revert.data?.errorName;
-      if (name && REVERT_COPY[name]) return REVERT_COPY[name];
-      return revert.reason ?? `Transaction would revert${name ? ` (${name})` : ""}.`;
-    }
-    return err.shortMessage;
-  }
-  return err instanceof Error ? err.message : "Something went wrong.";
+  return describeTxErrorCore(err);
 }

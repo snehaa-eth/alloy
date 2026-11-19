@@ -8,6 +8,10 @@ export type RateLimitConfig = {
   writeMax: number;
   /** Waitlist join/check (invite-code brute force), per IP per window. */
   waitlistMax: number;
+  /** POST /faucet/drip per IP per 24h (default 5). */
+  faucetIpPerDay?: number;
+  /** POST /faucet/drip successful drips per address per 24h (default 1). */
+  faucetAddressPerDay?: number;
 };
 
 export const DEFAULT_RATE_LIMITS: RateLimitConfig = {
@@ -15,6 +19,8 @@ export const DEFAULT_RATE_LIMITS: RateLimitConfig = {
   globalMax: 300,
   writeMax: 30,
   waitlistMax: 10,
+  faucetIpPerDay: 5,
+  faucetAddressPerDay: 1,
 };
 
 // NOTE: the default store is in-memory, i.e. per serverless instance.

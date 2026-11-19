@@ -9,6 +9,8 @@ const BasketMetaSchema = new Schema(
   {
     chainId: { type: Number, required: true },
     vault: { type: String, required: true }, // EIP-55 checksummed
+    /** Display name override (on-chain name() is the default). */
+    title: { type: String, maxlength: 80 },
     thesis: { type: String, maxlength: 2000 },
     imageUrl: { type: String, maxlength: 2048 },
     tags: { type: [String], default: [] },
@@ -27,6 +29,7 @@ export function toBasketMetaDto(doc: BasketMetaDoc & { updatedAt?: Date; created
   return {
     chainId: doc.chainId,
     vault: doc.vault,
+    title: doc.title ?? null,
     thesis: doc.thesis ?? null,
     imageUrl: doc.imageUrl ?? null,
     tags: doc.tags ?? [],

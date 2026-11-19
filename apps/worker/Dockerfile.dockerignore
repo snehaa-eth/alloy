@@ -1,0 +1,14 @@
+**/node_modules
+**/.ponder
+**/.env
+**/.env.*
+!**/.env.example
+.git
+apps/web
+apps/api
+docs
+packages/contracts
+packages/testnet-env/lib
+packages/testnet-env/out
+packages/testnet-env/cache
+packages/testnet-env/broadcast

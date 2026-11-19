@@ -3,17 +3,19 @@
   "version": "2.0.0",
   "private": true,
   "description": "Alloy v2 API: stocks, basket metadata, rebalance reasons, proposals, quote",
-  "main": "dist/src/server.js",
+  "main": "dist/apps/api/src/server.js",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/src/server.js",
+    "start": "node dist/apps/api/src/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "smoke": "tsx scripts/smoke.ts",
+    "seed:metadata": "tsx scripts/seed-metadata.ts"
   },
   "license": "UNLICENSED",
   "dependencies": {

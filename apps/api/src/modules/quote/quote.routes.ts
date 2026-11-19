@@ -16,14 +16,14 @@ export function quoteRouter(deps: AppDeps) {
         .string()
         .regex(/^[1-9][0-9]{0,77}$/, "amount must be a positive integer in base units")
         .transform((s) => BigInt(s)),
-      slippageBps: z.coerce.number().int().min(1).max(500).default(50),
+      slippageBps: z.coerce.number().int().min(1).max(500).default(100),
     }),
   };
 
   router.get("/quote", validate(schemas), async (_req, res) => {
     const { query } = getValid(res, schemas);
     const quote = await deps.quotes.quote(query);
-    res.set("Cache-Control", "no-store");
+    res.set("Cache-Control", "public, max-age=5, s-maxage=10");
     res.json({ data: quote });
   });
   return router;
